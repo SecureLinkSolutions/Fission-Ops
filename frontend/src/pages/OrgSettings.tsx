@@ -1,4 +1,4 @@
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, FormEvent, useCallback } from 'react';
 import { apiClient } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 
@@ -50,6 +50,37 @@ export default function OrgSettings() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [apiKeys, setApiKeys] = useState<{ service: string; api_key_masked: string }[]>([]);
+  const [keyInputs, setKeyInputs] = useState<Record<string, string>>({ virustotal: '', abuseipdb: '', shodan: '' });
+  const [keySaving, setKeySaving] = useState<Record<string, boolean>>({});
+
+  const fetchApiKeys = useCallback(() => {
+    apiClient.get<{ service: string; api_key_masked: string }[]>('/organizations/me/api-keys').then((r) => {
+      setApiKeys(r.data);
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetchApiKeys();
+  }, [fetchApiKeys]);
+
+  async function handleSaveKey(service: string) {
+    const key = keyInputs[service];
+    if (!key.trim()) return;
+    setKeySaving((prev) => ({ ...prev, [service]: true }));
+    try {
+      await apiClient.put(`/organizations/me/api-keys/${service}`, { api_key: key });
+      setKeyInputs((prev) => ({ ...prev, [service]: '' }));
+      fetchApiKeys();
+    } finally {
+      setKeySaving((prev) => ({ ...prev, [service]: false }));
+    }
+  }
+
+  async function handleDeleteKey(service: string) {
+    await apiClient.delete(`/organizations/me/api-keys/${service}`).catch(() => {});
+    fetchApiKeys();
+  }
 
   useEffect(() => {
     apiClient.get<OrgData>('/organizations/me').then((r) => {
@@ -170,6 +201,49 @@ export default function OrgSettings() {
             </div>
           </div>
         </div>
+
+        {/* API Keys */}
+        {canEdit && (
+          <div style={s.section}>
+            <div style={s.sectionTitle}>Threat Intelligence API Keys</div>
+            <div style={{ color: '#8b949e', fontSize: '12px', marginBottom: '16px' }}>
+              API keys are stored encrypted and used for entity enrichment.
+            </div>
+            {(['virustotal', 'abuseipdb', 'shodan'] as const).map((service) => {
+              const existing = apiKeys.find((k) => k.service === service);
+              return (
+                <div key={service} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                  <span style={{ ...s.fieldLabel, width: '120px', textTransform: 'capitalize' }}>{service}</span>
+                  {existing && (
+                    <span style={{ ...s.fieldValue, fontFamily: 'monospace', color: '#8b949e', fontSize: '12px' }}>{existing.api_key_masked}</span>
+                  )}
+                  <input
+                    style={{ ...s.input, flex: 1 }}
+                    type="password"
+                    placeholder={existing ? 'Update key…' : 'Enter API key…'}
+                    value={keyInputs[service]}
+                    onChange={(e) => setKeyInputs((prev) => ({ ...prev, [service]: e.target.value }))}
+                  />
+                  <button
+                    style={s.btn}
+                    onClick={() => handleSaveKey(service)}
+                    disabled={keySaving[service] || !keyInputs[service].trim()}
+                  >
+                    {keySaving[service] ? 'Saving…' : 'Save'}
+                  </button>
+                  {existing && (
+                    <button
+                      style={{ ...s.btn, background: '#6e1a1a', marginLeft: 0 }}
+                      onClick={() => handleDeleteKey(service)}
+                    >
+                      Delete
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* Danger Zone */}
         <div style={s.danger}>

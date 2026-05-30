@@ -5,7 +5,14 @@ All notable changes to Fission Ops are documented in this file.
 ## [Unreleased]
 
 ### Added
-- Multi-tenancy: `organizations` table with `org_id` scoped to all users, incidents, and audit logs
+- **Real-Time Collaboration**: Socket.io integration with JWT auth, incident rooms, presence bar (avatar chips with online status), connection dot in NavBar
+- **Executive Summary**: Full executive summary page with editable overview, attack timeline, business impact, key findings, remediation, and risk rating; print/export support; accessible from incident tabs
+- **Notification System**: In-app notification bell with unread count badge, dropdown of recent notifications, mark-read/mark-all-read; socket-driven live updates; Nodemailer email service for critical notifications
+- **Comments & Mentions**: Threaded comments on incidents and entities; markdown rendering (bold, italic, code); `@mention` autocomplete from incident team; edit/delete with role-based permissions
+- **Incident Tasking**: Kanban-style task board (Open/In Progress/Complete columns); priority badges; due date with overdue highlighting; "My Tasks" page grouping tasks across incidents; task completion progress in incident header
+- **Threat Intelligence Enrichment**: VirusTotal v3, AbuseIPDB, and Shodan integrations; automatic enrichment on entity creation; verdict (malicious/suspicious/clean); enrichment panel on EntityDetail; org API key management in settings
+- **IOC Flagging**: `ioc_status` (suspected/confirmed/cleared) on entities; role-based status transitions; IOC confirmation triggers notifications + email + socket event; IOC summary panel on incident page; status badges throughout kill chain and entity views
+- Multi-tenancy: `organizations` table with `org_id` scoped to all users, incidents, and audit logs `organizations` table with `org_id` scoped to all users, incidents, and audit logs
 - Super admin role with platform-wide access across all organizations
 - Public organization registration endpoint (`POST /auth/register`)
 - Organization onboarding wizard (3-step flow after registration)

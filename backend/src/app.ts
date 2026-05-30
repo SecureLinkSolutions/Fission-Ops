@@ -19,6 +19,12 @@ import auditRouter from './routes/audit';
 import usersRouter from './routes/users';
 import organizationsRouter from './routes/organizations';
 import superAdminRouter from './routes/superadmin';
+import notificationsRouter from './routes/notifications';
+import commentsRouter from './routes/comments';
+import tasksRouter from './routes/tasks';
+import executiveSummaryRouter from './routes/executiveSummary';
+import enrichmentRouter from './routes/enrichment';
+import iocRouter from './routes/ioc';
 import { errorHandler, notFound } from './middleware/errorHandler';
 
 const app = express();
@@ -66,6 +72,12 @@ v1.use('/users', usersRouter);
 v1.use('/organizations', organizationsRouter);
 v1.use('/superadmin', superAdminRouter);
 v1.use('/', killChainRouter);
+v1.use('/notifications', notificationsRouter);
+v1.use('/', commentsRouter);
+v1.use('/', tasksRouter);
+v1.use('/', executiveSummaryRouter);
+v1.use('/', enrichmentRouter);
+v1.use('/', iocRouter);
 
 app.use('/api/v1', v1);
 app.use(notFound);

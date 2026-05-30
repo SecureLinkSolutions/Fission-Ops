@@ -5,6 +5,8 @@ import { auditLog } from '../middleware/audit';
 import { createEntitySchema } from '../schemas/entity';
 import * as repo from '../repositories/entityRepository';
 import * as incidentRepo from '../repositories/incidentRepository';
+import { runEnrichment } from '../services/enrichment/enrichmentService';
+import { emitToIncident } from '../socket';
 
 const router = Router({ mergeParams: true });
 
@@ -22,6 +24,11 @@ router.post('/', authenticate, requireRole('analyst'), auditLog('entity', 'CREAT
   const body = createEntitySchema.parse(req.body);
   const entity = await repo.createEntity({ ...body, incident_id: req.params.incidentId, created_by: req.user!.sub });
   res.status(201).json(entity);
+  // Fire-and-forget enrichment
+  if (req.user!.org_id) {
+    runEnrichment(entity.id, req.user!.org_id).catch(() => {});
+  }
+  emitToIncident(req.params.incidentId, 'entity:created', entity);
 });
 
 export default router;

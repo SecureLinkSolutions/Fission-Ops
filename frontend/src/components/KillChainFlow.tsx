@@ -35,6 +35,8 @@ interface MatrixRow {
   mapping_id: string;
   framework?: string;
   ttps?: TTPInfo[];
+  ioc_status?: string;
+  enrichment_data?: { verdict?: string };
 }
 
 interface StageNodeData {
@@ -113,7 +115,12 @@ function StageNode({ data }: NodeProps) {
             >
               <span>{ENTITY_TYPE_ICONS[ent.type] ?? '•'}</span>
               <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'monospace' }}>{ent.value}</span>
-              <span style={{ color: CONFIDENCE_COLORS[ent.confidence] ?? '#8b949e', fontSize: '9px' }}>●</span>
+              {ent.ioc_status === 'confirmed' && <span style={{ fontSize: '8px', color: '#f85149' }}>💀</span>}
+              {ent.ioc_status === 'suspected' && <span style={{ fontSize: '8px', color: '#d29922' }}>⚠</span>}
+              {ent.enrichment_data?.verdict === 'malicious' && !ent.ioc_status && <span style={{ color: '#f85149', fontSize: '9px' }}>●</span>}
+              {ent.enrichment_data?.verdict === 'suspicious' && !ent.ioc_status && <span style={{ color: '#d29922', fontSize: '9px' }}>●</span>}
+              {ent.enrichment_data?.verdict === 'clean' && !ent.ioc_status && <span style={{ color: '#3fb950', fontSize: '9px' }}>●</span>}
+              {!ent.enrichment_data?.verdict && <span style={{ color: CONFIDENCE_COLORS[ent.confidence] ?? '#8b949e', fontSize: '9px' }}>●</span>}
             </div>
             {(ent.ttps ?? []).length > 0 && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px', marginTop: '3px' }}>

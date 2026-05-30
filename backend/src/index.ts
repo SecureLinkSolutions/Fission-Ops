@@ -1,12 +1,9 @@
-import { config } from './config';
 import { checkSchema } from './db/checkSchema';
-import app from './app';
+import './server';
 
 async function main() {
   await checkSchema();
-  app.listen(config.PORT, () => {
-    console.log(`🚀 Fission Ops backend running on port ${config.PORT}`);
-  });
+  console.log('🚀 Fission Ops backend started');
 }
 
 main().catch((err) => {

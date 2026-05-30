@@ -99,4 +99,41 @@ router.patch('/:id/reactivate', authenticate, requireRole('super_admin'), async 
   res.json(org);
 });
 
+// GET /organizations/me/api-keys — list org API keys (masked)
+router.get('/me/api-keys', authenticate, requireRole('incident_commander'), async (req: Request, res: Response) => {
+  const orgId = req.user!.org_id;
+  if (!orgId) { res.status(400).json({ error: 'No org', code: 'NO_ORG' }); return; }
+  const { pool } = await import('../db/pool');
+  const result = await pool.query(
+    `SELECT id, service, LEFT(api_key, 4) || '****' AS api_key_masked, created_at FROM org_api_keys WHERE org_id = $1`,
+    [orgId],
+  );
+  res.json(result.rows);
+});
+
+// PUT /organizations/me/api-keys/:service — upsert key
+router.put('/me/api-keys/:service', authenticate, requireRole('incident_commander'), async (req: Request, res: Response) => {
+  const orgId = req.user!.org_id;
+  if (!orgId) { res.status(400).json({ error: 'No org', code: 'NO_ORG' }); return; }
+  const service = z.enum(['virustotal', 'abuseipdb', 'shodan']).parse(req.params.service);
+  const { api_key } = z.object({ api_key: z.string().min(1) }).parse(req.body);
+  const { pool } = await import('../db/pool');
+  await pool.query(
+    `INSERT INTO org_api_keys (org_id, service, api_key)
+     VALUES ($1, $2, $3)
+     ON CONFLICT (org_id, service) DO UPDATE SET api_key = EXCLUDED.api_key`,
+    [orgId, service, api_key],
+  );
+  res.json({ ok: true });
+});
+
+// DELETE /organizations/me/api-keys/:service
+router.delete('/me/api-keys/:service', authenticate, requireRole('incident_commander'), async (req: Request, res: Response) => {
+  const orgId = req.user!.org_id;
+  if (!orgId) { res.status(400).json({ error: 'No org', code: 'NO_ORG' }); return; }
+  const { pool } = await import('../db/pool');
+  await pool.query('DELETE FROM org_api_keys WHERE org_id = $1 AND service = $2', [orgId, req.params.service]);
+  res.status(204).send();
+});
+
 export default router;
