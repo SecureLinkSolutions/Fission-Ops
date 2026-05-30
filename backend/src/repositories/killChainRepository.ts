@@ -1,8 +1,17 @@
 import { pool } from '../db/pool';
 import { KillChainStage, EntityKillChainMapping, ConfidenceLevel } from '../types';
 
-export async function listStages(): Promise<KillChainStage[]> {
-  const result = await pool.query('SELECT * FROM kill_chain_stages ORDER BY order_index');
+export async function listStages(framework?: string): Promise<KillChainStage[]> {
+  const fw = framework ?? 'lockheed_martin';
+  const result = await pool.query(
+    'SELECT * FROM kill_chain_stages WHERE framework = $1 ORDER BY order_index',
+    [fw],
+  );
+  // Fallback: if no rows (migration not yet run), return all without framework filter
+  if (result.rowCount === 0) {
+    const fallback = await pool.query('SELECT * FROM kill_chain_stages ORDER BY order_index');
+    return fallback.rows;
+  }
   return result.rows;
 }
 
@@ -24,6 +33,14 @@ export async function mapEntityToStage(data: {
   return result.rows[0];
 }
 
+export async function updateMappingStage(mappingId: string, stageId: string, mappedBy: string): Promise<EntityKillChainMapping | null> {
+  const result = await pool.query(
+    `UPDATE entity_kill_chain_mappings SET stage_id = $1, mapped_by = $2, mapped_at = NOW() WHERE id = $3 RETURNING *`,
+    [stageId, mappedBy, mappingId],
+  );
+  return result.rows[0] ?? null;
+}
+
 export async function removeMappingById(mappingId: string): Promise<boolean> {
   const result = await pool.query('DELETE FROM entity_kill_chain_mappings WHERE id = $1', [mappingId]);
   return (result.rowCount ?? 0) > 0;
@@ -32,7 +49,7 @@ export async function removeMappingById(mappingId: string): Promise<boolean> {
 export async function getKillChainMatrix(incidentId: string): Promise<unknown[]> {
   const result = await pool.query(
     `SELECT e.id AS entity_id, e.type, e.value,
-            kcs.id AS stage_id, kcs.name AS stage_name, kcs.order_index,
+            kcs.id AS stage_id, kcs.name AS stage_name, kcs.order_index, kcs.framework,
             ekm.confidence, ekm.id AS mapping_id
      FROM entities e
      JOIN entity_kill_chain_mappings ekm ON ekm.entity_id = e.id

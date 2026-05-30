@@ -1,4 +1,6 @@
 import { pool } from './pool';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 export async function checkSchema(): Promise<void> {
   const result = await pool.query(
@@ -10,4 +12,19 @@ export async function checkSchema(): Promise<void> {
     process.exit(1);
   }
   console.log('✅ Database schema verified');
+  await runMigrations();
+}
+
+async function runMigrations(): Promise<void> {
+  const needsMigration = await pool.query(
+    `SELECT 1 FROM information_schema.tables
+     WHERE table_schema = 'public' AND table_name = 'entity_relationships'`,
+  );
+  if ((needsMigration.rowCount ?? 0) === 0) {
+    console.log('⚙️  Running migration 001...');
+    const migrationPath = join(__dirname, '../../../../db/migrate_001.sql');
+    const sql = readFileSync(migrationPath, 'utf8');
+    await pool.query(sql);
+    console.log('✅ Migration 001 applied');
+  }
 }

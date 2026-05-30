@@ -8,6 +8,7 @@ import entitiesRouter from './routes/entities';
 import entityStandaloneRouter from './routes/entityStandalone';
 import killChainRouter from './routes/killChain';
 import boundaryRouter, { entityBoundaryRouter } from './routes/boundaries';
+import relationshipsRouter from './routes/relationships';
 import { errorHandler, notFound } from './middleware/errorHandler';
 
 const app = express();
@@ -21,6 +22,7 @@ v1.use('/auth', authRouter);
 v1.use('/incidents', incidentsRouter);
 v1.use('/incidents/:incidentId/entities', entitiesRouter);
 v1.use('/incidents/:incidentId/boundaries', boundaryRouter);
+v1.use('/incidents/:incidentId/relationships', relationshipsRouter);
 v1.use('/entities', entityStandaloneRouter);
 v1.use('/entities/:entityId/boundaries', entityBoundaryRouter);
 v1.use('/', killChainRouter);

@@ -38,11 +38,29 @@ export interface Entity {
   boundary_mappings?: BoundaryMappingWithBoundary[];
 }
 
+export type KillChainFramework = 'lockheed_martin' | 'mitre_attack' | 'mitre_ics';
+
 export interface KillChainStage {
   id: string;
   name: string;
   description?: string;
   order_index: number;
+  framework?: KillChainFramework;
+}
+
+export interface EntityRelationship {
+  id: string;
+  incident_id: string;
+  source_entity_id: string;
+  target_entity_id: string;
+  relationship_type: string;
+  notes?: string;
+  created_by: string;
+  created_at: string;
+  source_value?: string;
+  source_type?: string;
+  target_value?: string;
+  target_type?: string;
 }
 
 export interface KillChainMappingWithStage {

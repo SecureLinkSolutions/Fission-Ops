@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useFetch } from '../hooks/useFetch';
 import { apiClient } from '../api/client';
-import { Incident, Entity, NetworkBoundary, KillChainStage } from '../types';
+import { Incident, Entity, NetworkBoundary } from '../types';
 import EntityForm from '../components/EntityForm';
 import NetworkMapPanel from '../components/NetworkMapPanel';
+import KillChainFlow from '../components/KillChainFlow';
+import EntityRelationshipGraph from '../components/EntityRelationshipGraph';
 
 const ENTITY_TYPE_ICONS: Record<string, string> = { hostname: '🖥', ip: '🌐', email: '📧', domain: '🔗', account: '👤' };
 const ENTITY_TYPE_COLORS: Record<string, string> = { hostname: '#58a6ff', ip: '#3fb950', email: '#d29922', domain: '#a371f7', account: '#f0883e' };
@@ -15,19 +17,11 @@ function badge(color: string, text: string): React.ReactElement {
   return <span style={{ background: `${color}22`, color, border: `1px solid ${color}44`, borderRadius: '12px', padding: '4px 12px', fontSize: '12px', fontWeight: 600 }}>{text}</span>;
 }
 
-interface MatrixRow {
-  entity_id: string;
-  value: string;
-  type: string;
-  stage_id: string;
-  stage_name: string;
-  order_index: number;
-  confidence: string;
-}
+type Tab = 'entities' | 'killchain' | 'relationships' | 'network';
 
 export default function IncidentDetail() {
   const { id } = useParams<{ id: string }>();
-  const [activeTab, setActiveTab] = useState<'entities' | 'killchain' | 'network'>('entities');
+  const [activeTab, setActiveTab] = useState<Tab>('entities');
   const [newBoundaryName, setNewBoundaryName] = useState('');
   const [newBoundaryZone, setNewBoundaryZone] = useState('IT');
   const [addingBoundary, setAddingBoundary] = useState(false);
@@ -40,12 +34,6 @@ export default function IncidentDetail() {
   );
   const { data: boundaries, refetch: refetchBoundaries } = useFetch<NetworkBoundary[]>(
     () => apiClient.get(`/incidents/${id}/boundaries`).then((r) => r.data), [id],
-  );
-  const { data: killChainMatrix } = useFetch<MatrixRow[]>(
-    () => apiClient.get(`/incidents/${id}/kill-chain/matrix`).then((r) => r.data), [id],
-  );
-  const { data: stages } = useFetch<KillChainStage[]>(
-    () => apiClient.get('/kill-chain/stages').then((r) => r.data),
   );
 
   async function addBoundary() {
@@ -73,7 +61,7 @@ export default function IncidentDetail() {
   if (incError || !incident) return <div style={{ padding: '32px', color: '#f85149' }}>Failed to load incident.</div>;
 
   return (
-    <div style={{ padding: '32px', maxWidth: '1200px', margin: '0 auto' }}>
+    <div style={{ padding: '32px', maxWidth: '1400px', margin: '0 auto' }}>
       <div style={{ marginBottom: '24px' }}>
         <div style={{ fontSize: '28px', fontWeight: 700, color: '#e6edf3', marginBottom: '8px' }}>{incident.title}</div>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -84,9 +72,18 @@ export default function IncidentDetail() {
       </div>
 
       <div style={{ display: 'flex', borderBottom: '1px solid #30363d', marginBottom: '24px' }}>
-        <button style={tabStyle(activeTab === 'entities')} onClick={() => setActiveTab('entities')}>Entities ({entities?.length ?? 0})</button>
-        <button style={tabStyle(activeTab === 'killchain')} onClick={() => setActiveTab('killchain')}>Kill Chain</button>
-        <button style={tabStyle(activeTab === 'network')} onClick={() => setActiveTab('network')}>Network Map</button>
+        <button style={tabStyle(activeTab === 'entities')} onClick={() => setActiveTab('entities')}>
+          Entities ({entities?.length ?? 0})
+        </button>
+        <button style={tabStyle(activeTab === 'killchain')} onClick={() => setActiveTab('killchain')}>
+          Kill Chain
+        </button>
+        <button style={tabStyle(activeTab === 'relationships')} onClick={() => setActiveTab('relationships')}>
+          Relationships
+        </button>
+        <button style={tabStyle(activeTab === 'network')} onClick={() => setActiveTab('network')}>
+          Network Map
+        </button>
       </div>
 
       {activeTab === 'entities' && (
@@ -106,27 +103,9 @@ export default function IncidentDetail() {
         </>
       )}
 
-      {activeTab === 'killchain' && (
-        <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', marginBottom: '24px' }}>
-            {(stages ?? []).map((stage) => {
-              const stageEntities = (killChainMatrix ?? []).filter((m) => m.stage_id === stage.id);
-              const active = stageEntities.length > 0;
-              return (
-                <div key={stage.id} style={{ background: active ? '#1f3a2b' : '#161b22', border: `1px solid ${active ? '#3fb950' : '#30363d'}`, borderRadius: '6px', padding: '12px 8px', textAlign: 'center', minHeight: '80px' }}>
-                  <div style={{ color: '#8b949e', fontSize: '11px', fontWeight: 600, marginBottom: '8px', textTransform: 'uppercase' }}>{stage.name}</div>
-                  {stageEntities.map((m) => (
-                    <span key={m.entity_id + m.stage_id} style={{ background: '#21262d', border: '1px solid #30363d', borderRadius: '4px', padding: '3px 6px', fontSize: '11px', color: '#e6edf3', margin: '2px', display: 'inline-block' }}>
-                      {ENTITY_TYPE_ICONS[m.type]} {m.value}
-                    </span>
-                  ))}
-                </div>
-              );
-            })}
-          </div>
-          <div style={{ color: '#8b949e', fontSize: '12px' }}>Map entities to stages from the entity detail page.</div>
-        </>
-      )}
+      {activeTab === 'killchain' && <KillChainFlow incidentId={id!} />}
+
+      {activeTab === 'relationships' && <EntityRelationshipGraph incidentId={id!} />}
 
       {activeTab === 'network' && (
         <>
