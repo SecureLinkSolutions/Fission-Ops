@@ -56,18 +56,19 @@ router.post('/login', async (req: Request, res: Response) => {
   await pool.query('UPDATE users SET last_login_at = NOW() WHERE id = $1', [user.id]);
 
   const fullUser = await pool.query(
-    'SELECT password_reset_required FROM users WHERE id = $1',
+    'SELECT password_reset_required, org_id FROM users WHERE id = $1',
     [user.id],
   );
   const passwordResetRequired = fullUser.rows[0]?.password_reset_required ?? false;
+  const orgId: string | null = fullUser.rows[0]?.org_id ?? null;
 
   const token = jwt.sign(
-    { sub: user.id, email: user.email, role: user.role, password_reset_required: passwordResetRequired },
+    { sub: user.id, email: user.email, role: user.role, password_reset_required: passwordResetRequired, ...(orgId ? { org_id: orgId } : {}) },
     config.JWT_SECRET,
     { expiresIn: '8h' },
   );
 
-  res.json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role, password_reset_required: passwordResetRequired } });
+  res.json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role, org_id: orgId, password_reset_required: passwordResetRequired } });
 });
 
 router.get('/sso/azure', async (req: Request, res: Response) => {
@@ -231,8 +232,11 @@ router.get('/sso/callback', async (req: Request, res: Response) => {
       return;
     }
 
+    const ssoUserFull = await pool.query('SELECT org_id FROM users WHERE id = $1', [user.id]);
+    const ssoOrgId: string | null = ssoUserFull.rows[0]?.org_id ?? null;
+
     const token = jwt.sign(
-      { sub: user.id, email: user.email, role: user.role },
+      { sub: user.id, email: user.email, role: user.role, ...(ssoOrgId ? { org_id: ssoOrgId } : {}) },
       config.JWT_SECRET,
       { expiresIn: '8h' },
     );

@@ -8,6 +8,7 @@ interface ListOptions {
   limit: number;
   requestingUserId?: string;
   requestingUserRole?: UserRole;
+  orgId?: string;
 }
 
 export async function listIncidents(opts: ListOptions): Promise<{ incidents: Incident[]; total: number }> {
@@ -15,11 +16,12 @@ export async function listIncidents(opts: ListOptions): Promise<{ incidents: Inc
   const params: unknown[] = [];
   let i = 1;
 
+  if (opts.orgId) { conditions.push(`i.org_id = $${i++}`); params.push(opts.orgId); }
   if (opts.status) { conditions.push(`i.status = $${i++}`); params.push(opts.status); }
   if (opts.severity) { conditions.push(`i.severity = $${i++}`); params.push(opts.severity); }
 
   // Visibility filter for non-commanders
-  if (opts.requestingUserId && opts.requestingUserRole !== 'incident_commander') {
+  if (opts.requestingUserId && opts.requestingUserRole !== 'incident_commander' && opts.requestingUserRole !== 'super_admin') {
     params.push(opts.requestingUserId);
     const uidParam = `$${i++}`;
     conditions.push(
@@ -48,14 +50,20 @@ export async function listIncidents(opts: ListOptions): Promise<{ incidents: Inc
   return { incidents: result.rows, total };
 }
 
-export async function getIncidentById(id: string): Promise<(Incident & { entity_count: number }) | null> {
+export async function getIncidentById(id: string, orgId?: string): Promise<(Incident & { entity_count: number }) | null> {
+  const params: unknown[] = [id];
+  let orgFilter = '';
+  if (orgId) {
+    orgFilter = ' AND i.org_id = $2';
+    params.push(orgId);
+  }
   const result = await pool.query(
     `SELECT i.*, COUNT(e.id)::int AS entity_count
      FROM incidents i
      LEFT JOIN entities e ON e.incident_id = i.id
-     WHERE i.id = $1
+     WHERE i.id = $1${orgFilter}
      GROUP BY i.id`,
-    [id],
+    params,
   );
   return result.rows[0] ?? null;
 }
@@ -65,12 +73,13 @@ export async function createIncident(data: {
   description?: string;
   severity: IncidentSeverity;
   created_by: string;
+  org_id?: string;
 }): Promise<Incident> {
   const result = await pool.query(
-    `INSERT INTO incidents (title, description, severity, created_by)
-     VALUES ($1, $2, $3, $4)
+    `INSERT INTO incidents (title, description, severity, created_by, org_id)
+     VALUES ($1, $2, $3, $4, $5)
      RETURNING *`,
-    [data.title, data.description ?? null, data.severity, data.created_by],
+    [data.title, data.description ?? null, data.severity, data.created_by, data.org_id ?? null],
   );
   return result.rows[0];
 }
@@ -78,6 +87,7 @@ export async function createIncident(data: {
 export async function updateIncident(
   id: string,
   data: Partial<Pick<Incident, 'title' | 'description' | 'severity' | 'status'>>,
+  orgId?: string,
 ): Promise<Incident | null> {
   const fields: string[] = [];
   const params: unknown[] = [];
@@ -92,18 +102,45 @@ export async function updateIncident(
 
   fields.push(`updated_at = NOW()`);
   params.push(id);
+  let orgFilter = '';
+  if (orgId) {
+    params.push(orgId);
+    orgFilter = ` AND org_id = $${i + 1}`;
+  }
 
   const result = await pool.query(
-    `UPDATE incidents SET ${fields.join(', ')} WHERE id = $${i} RETURNING *`,
+    `UPDATE incidents SET ${fields.join(', ')} WHERE id = $${i}${orgFilter} RETURNING *`,
     params,
   );
   return result.rows[0] ?? null;
 }
 
-export async function closeIncident(id: string): Promise<Incident | null> {
+export async function closeIncident(id: string, orgId?: string): Promise<Incident | null> {
+  const params: unknown[] = [id];
+  let orgFilter = '';
+  if (orgId) {
+    params.push(orgId);
+    orgFilter = ' AND org_id = $2';
+  }
   const result = await pool.query(
-    `UPDATE incidents SET status = 'closed', updated_at = NOW() WHERE id = $1 RETURNING *`,
-    [id],
+    `UPDATE incidents SET status = 'closed', updated_at = NOW() WHERE id = $1${orgFilter} RETURNING *`,
+    params,
   );
   return result.rows[0] ?? null;
+}
+
+/**
+ * Assert that the given incident belongs to the given org. Throws a 404-like error if not.
+ * Super admin callers should skip this check entirely.
+ */
+export async function assertIncidentOrg(incidentId: string, orgId: string): Promise<void> {
+  const result = await pool.query(
+    `SELECT 1 FROM incidents WHERE id = $1 AND org_id = $2`,
+    [incidentId, orgId],
+  );
+  if ((result.rowCount ?? 0) === 0) {
+    const err = new Error('Incident not found') as Error & { statusCode?: number };
+    err.statusCode = 404;
+    throw err;
+  }
 }

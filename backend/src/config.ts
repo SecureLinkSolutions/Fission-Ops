@@ -13,6 +13,11 @@ const envSchema = z.object({
   OIDC_OKTA_CLIENT_SECRET: z.string().optional(),
   OIDC_OKTA_DOMAIN: z.string().optional(),
   SSO_REDIRECT_BASE_URL: z.string().default('http://localhost:3001'),
+  DOMAIN: z.string().optional(),
+  SSL_EMAIL: z.string().email().optional(),
+  RATE_LIMIT_GLOBAL_MAX: z.coerce.number().default(100),
+  RATE_LIMIT_AUTH_MAX: z.coerce.number().default(10),
+  RATE_LIMIT_WINDOW_MS: z.coerce.number().default(15 * 60 * 1000),
 });
 
 const parsed = envSchema.safeParse(process.env);

@@ -1,5 +1,9 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
+import Register from './pages/Register';
+import Onboarding from './pages/Onboarding';
+import OrgSettings from './pages/OrgSettings';
+import SuperAdmin from './pages/SuperAdmin';
 import IncidentList from './pages/IncidentList';
 import IncidentNew from './pages/IncidentNew';
 import IncidentDetail from './pages/IncidentDetail';
@@ -18,7 +22,11 @@ export default function App() {
       {user && <NavBar />}
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route path="/sso-callback" element={<SSOCallback />} />
+        <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+        <Route path="/settings/org" element={<ProtectedRoute><OrgSettings /></ProtectedRoute>} />
+        <Route path="/superadmin" element={<ProtectedRoute><SuperAdmin /></ProtectedRoute>} />
         <Route path="/incidents" element={<ProtectedRoute><IncidentList /></ProtectedRoute>} />
         <Route path="/incidents/new" element={<ProtectedRoute><IncidentNew /></ProtectedRoute>} />
         <Route path="/incidents/:id" element={<ProtectedRoute><IncidentDetail /></ProtectedRoute>} />

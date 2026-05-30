@@ -1,4 +1,4 @@
-export type UserRole = 'analyst' | 'senior_analyst' | 'incident_commander';
+export type UserRole = 'analyst' | 'senior_analyst' | 'incident_commander' | 'super_admin';
 export type IncidentSeverity = 'low' | 'medium' | 'high' | 'critical';
 export type IncidentStatus = 'open' | 'contained' | 'closed';
 export type EntityType = 'hostname' | 'ip' | 'email' | 'domain' | 'account';
@@ -6,11 +6,21 @@ export type ConfidenceLevel = 'low' | 'medium' | 'high';
 export type ZoneType = 'IT' | 'OT' | 'trusted' | 'untrusted' | 'dmz';
 export type DirectionType = 'ingress' | 'egress' | 'lateral';
 
+export interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  tier: string;
+  active: boolean;
+  created_at: string;
+}
+
 export interface User {
   id: string;
   email: string;
   name: string;
   role: UserRole;
+  org_id?: string;
 }
 
 export interface Incident {

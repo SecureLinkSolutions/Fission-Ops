@@ -24,7 +24,7 @@ export default function NavBar() {
       <div style={styles.right}>
         <span style={styles.role}>{user?.role?.replace(/_/g, ' ').toUpperCase()}</span>
         <span style={{ color: '#e6edf3', fontSize: '14px' }}>{user?.email}</span>
-        {user?.role === 'incident_commander' && (
+        {(user?.role === 'incident_commander' || user?.role === 'super_admin') && (
           <div style={{ position: 'relative' }}>
             <button style={styles.adminBtn} onClick={() => setAdminOpen(!adminOpen)}>
               Admin ▾
@@ -33,6 +33,10 @@ export default function NavBar() {
               <div style={styles.dropdown} onMouseLeave={() => setAdminOpen(false)}>
                 <Link to="/admin/audit" style={styles.dropdownItem} onClick={() => setAdminOpen(false)}>Audit Log</Link>
                 <Link to="/admin/users" style={styles.dropdownItem} onClick={() => setAdminOpen(false)}>Users</Link>
+                <Link to="/settings/org" style={styles.dropdownItem} onClick={() => setAdminOpen(false)}>Org Settings</Link>
+                {user?.role === 'super_admin' && (
+                  <Link to="/superadmin" style={{ ...styles.dropdownItem, color: '#a371f7' }} onClick={() => setAdminOpen(false)}>Super Admin</Link>
+                )}
               </div>
             )}
           </div>

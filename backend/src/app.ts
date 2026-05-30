@@ -1,8 +1,11 @@
 import 'express-async-errors';
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { config } from './config';
 import authRouter from './routes/auth';
+import registerRouter from './routes/register';
 import incidentsRouter from './routes/incidents';
 import entitiesRouter from './routes/entities';
 import entityStandaloneRouter from './routes/entityStandalone';
@@ -14,16 +17,41 @@ import { ttpSearchRouter } from './routes/ttps';
 import reportRouter from './routes/report';
 import auditRouter from './routes/audit';
 import usersRouter from './routes/users';
+import organizationsRouter from './routes/organizations';
+import superAdminRouter from './routes/superadmin';
 import { errorHandler, notFound } from './middleware/errorHandler';
 
 const app = express();
 
-app.use(cors({ origin: config.FRONTEND_URL, credentials: true }));
+// Security headers
+app.use(helmet({
+  contentSecurityPolicy: false, // Disabled — frontend served separately
+}));
+
+// CORS — support comma-separated origins in FRONTEND_URL
+const allowedOrigins = config.FRONTEND_URL.split(',').map((s) => s.trim());
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin || allowedOrigins.includes(origin)) cb(null, true);
+    else cb(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+}));
+
 app.use(express.json());
+
+// Rate limiting
+const globalLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100, standardHeaders: true, legacyHeaders: false });
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, standardHeaders: true, legacyHeaders: false });
+
+app.use('/api/', globalLimiter);
+app.use('/api/v1/auth/login', authLimiter);
+app.use('/api/v1/auth/register', authLimiter);
 
 const v1 = express.Router();
 
 v1.use('/auth', authRouter);
+v1.use('/auth/register', registerRouter);
 v1.use('/incidents', incidentsRouter);
 v1.use('/incidents', reportRouter);
 v1.use('/incidents/:incidentId/entities', entitiesRouter);
@@ -35,6 +63,8 @@ v1.use('/entities/:entityId/boundaries', entityBoundaryRouter);
 v1.use('/ttps', ttpSearchRouter);
 v1.use('/audit', auditRouter);
 v1.use('/users', usersRouter);
+v1.use('/organizations', organizationsRouter);
+v1.use('/superadmin', superAdminRouter);
 v1.use('/', killChainRouter);
 
 app.use('/api/v1', v1);

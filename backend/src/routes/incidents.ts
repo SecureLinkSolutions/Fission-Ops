@@ -12,10 +12,16 @@ const router = Router();
 
 router.get('/', authenticate, async (req: Request, res: Response) => {
   const query = listIncidentsQuerySchema.parse(req.query);
+  const isSuperAdmin = req.user!.role === 'super_admin';
+  // Super admin can pass ?org_id= to inspect a specific org; otherwise no org filter
+  const orgId = isSuperAdmin
+    ? (req.query.org_id as string | undefined)
+    : req.user!.org_id;
   const result = await repo.listIncidents({
     ...query,
     requestingUserId: req.user!.sub,
     requestingUserRole: req.user!.role,
+    orgId,
   });
   res.json(result);
 });
@@ -27,13 +33,15 @@ router.post(
   auditLog('incident', 'CREATE'),
   async (req: Request, res: Response) => {
     const body = createIncidentSchema.parse(req.body);
-    const incident = await repo.createIncident({ ...body, created_by: req.user!.sub });
+    const incident = await repo.createIncident({ ...body, created_by: req.user!.sub, org_id: req.user!.org_id });
     res.status(201).json(incident);
   },
 );
 
 router.get('/:id', authenticate, async (req: Request, res: Response) => {
-  const incident = await repo.getIncidentById(req.params.id);
+  const isSuperAdmin = req.user!.role === 'super_admin';
+  const orgId = isSuperAdmin ? undefined : req.user!.org_id;
+  const incident = await repo.getIncidentById(req.params.id, orgId);
   if (!incident) {
     res.status(404).json({ error: 'Incident not found', code: 'NOT_FOUND' });
     return;
@@ -48,7 +56,9 @@ router.put(
   auditLog('incident', 'UPDATE'),
   async (req: Request, res: Response) => {
     const body = updateIncidentSchema.parse(req.body);
-    const incident = await repo.updateIncident(req.params.id, body);
+    const isSuperAdmin = req.user!.role === 'super_admin';
+    const orgId = isSuperAdmin ? undefined : req.user!.org_id;
+    const incident = await repo.updateIncident(req.params.id, body, orgId);
     if (!incident) {
       res.status(404).json({ error: 'Incident not found', code: 'NOT_FOUND' });
       return;
@@ -63,7 +73,9 @@ router.delete(
   requireRole('incident_commander'),
   auditLog('incident', 'DELETE'),
   async (req: Request, res: Response) => {
-    const incident = await repo.closeIncident(req.params.id);
+    const isSuperAdmin = req.user!.role === 'super_admin';
+    const orgId = isSuperAdmin ? undefined : req.user!.org_id;
+    const incident = await repo.closeIncident(req.params.id, orgId);
     if (!incident) {
       res.status(404).json({ error: 'Incident not found', code: 'NOT_FOUND' });
       return;
