@@ -50,11 +50,19 @@ export async function getKillChainMatrix(incidentId: string): Promise<unknown[]>
   const result = await pool.query(
     `SELECT e.id AS entity_id, e.type, e.value,
             kcs.id AS stage_id, kcs.name AS stage_name, kcs.order_index, kcs.framework,
-            ekm.confidence, ekm.id AS mapping_id
+            ekm.confidence, ekm.id AS mapping_id,
+            COALESCE(
+              json_agg(
+                json_build_object('id', est.id, 'ttp_id', t.id, 'technique_id', t.technique_id, 'name', t.name)
+              ) FILTER (WHERE t.id IS NOT NULL), '[]'
+            ) AS ttps
      FROM entities e
      JOIN entity_kill_chain_mappings ekm ON ekm.entity_id = e.id
      JOIN kill_chain_stages kcs ON kcs.id = ekm.stage_id
+     LEFT JOIN entity_stage_ttps est ON est.kill_chain_mapping_id = ekm.id
+     LEFT JOIN ttps t ON t.id = est.ttp_id
      WHERE e.incident_id = $1
+     GROUP BY e.id, e.type, e.value, kcs.id, kcs.name, kcs.order_index, kcs.framework, ekm.confidence, ekm.id
      ORDER BY kcs.order_index, e.value`,
     [incidentId],
   );

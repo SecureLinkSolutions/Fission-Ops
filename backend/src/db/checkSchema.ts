@@ -27,4 +27,16 @@ async function runMigrations(): Promise<void> {
     await pool.query(sql);
     console.log('✅ Migration 001 applied');
   }
+
+  const needsMigration002 = await pool.query(
+    `SELECT 1 FROM information_schema.tables
+     WHERE table_schema = 'public' AND table_name = 'ttps'`,
+  );
+  if ((needsMigration002.rowCount ?? 0) === 0) {
+    console.log('⚙️  Running migration 002...');
+    const migrationPath = join(__dirname, '../../../../db/migrate_002.sql');
+    const sql = readFileSync(migrationPath, 'utf8');
+    await pool.query(sql);
+    console.log('✅ Migration 002 applied');
+  }
 }

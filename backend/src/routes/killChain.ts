@@ -6,6 +6,7 @@ import { killChainMappingSchema } from '../schemas/mapping';
 import * as repo from '../repositories/killChainRepository';
 import * as entityRepo from '../repositories/entityRepository';
 import { createError } from '../middleware/errorHandler';
+import { ttpMappingRouter } from './ttps';
 
 const router = Router();
 
@@ -42,5 +43,7 @@ router.get('/incidents/:incidentId/kill-chain/matrix', authenticate, async (req:
   const matrix = await repo.getKillChainMatrix(req.params.incidentId);
   res.json(matrix);
 });
+
+router.use('/entities/:entityId/kill-chain/:mappingId/ttps', ttpMappingRouter);
 
 export default router;

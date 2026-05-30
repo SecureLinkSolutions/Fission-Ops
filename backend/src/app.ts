@@ -9,6 +9,9 @@ import entityStandaloneRouter from './routes/entityStandalone';
 import killChainRouter from './routes/killChain';
 import boundaryRouter, { entityBoundaryRouter } from './routes/boundaries';
 import relationshipsRouter from './routes/relationships';
+import boundaryVizRouter from './routes/boundaryVisualization';
+import { ttpSearchRouter } from './routes/ttps';
+import reportRouter from './routes/report';
 import { errorHandler, notFound } from './middleware/errorHandler';
 
 const app = express();
@@ -20,11 +23,14 @@ const v1 = express.Router();
 
 v1.use('/auth', authRouter);
 v1.use('/incidents', incidentsRouter);
+v1.use('/incidents', reportRouter);
 v1.use('/incidents/:incidentId/entities', entitiesRouter);
 v1.use('/incidents/:incidentId/boundaries', boundaryRouter);
 v1.use('/incidents/:incidentId/relationships', relationshipsRouter);
+v1.use('/incidents/:incidentId/boundary-viz', boundaryVizRouter);
 v1.use('/entities', entityStandaloneRouter);
 v1.use('/entities/:entityId/boundaries', entityBoundaryRouter);
+v1.use('/ttps', ttpSearchRouter);
 v1.use('/', killChainRouter);
 
 app.use('/api/v1', v1);

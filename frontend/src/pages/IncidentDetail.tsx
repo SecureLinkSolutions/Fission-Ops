@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useFetch } from '../hooks/useFetch';
 import { apiClient } from '../api/client';
-import { Incident, Entity, NetworkBoundary } from '../types';
+import { Incident, Entity } from '../types';
 import EntityForm from '../components/EntityForm';
-import NetworkMapPanel from '../components/NetworkMapPanel';
 import KillChainFlow from '../components/KillChainFlow';
 import EntityRelationshipGraph from '../components/EntityRelationshipGraph';
+import NetworkBoundaryFlow from '../components/NetworkBoundaryFlow';
+
+const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
 
 const ENTITY_TYPE_ICONS: Record<string, string> = { hostname: '🖥', ip: '🌐', email: '📧', domain: '🔗', account: '👤' };
 const ENTITY_TYPE_COLORS: Record<string, string> = { hostname: '#58a6ff', ip: '#3fb950', email: '#d29922', domain: '#a371f7', account: '#f0883e' };
@@ -22,9 +24,6 @@ type Tab = 'entities' | 'killchain' | 'relationships' | 'network';
 export default function IncidentDetail() {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState<Tab>('entities');
-  const [newBoundaryName, setNewBoundaryName] = useState('');
-  const [newBoundaryZone, setNewBoundaryZone] = useState('IT');
-  const [addingBoundary, setAddingBoundary] = useState(false);
 
   const { data: incident, loading: incLoading, error: incError } = useFetch<Incident>(
     () => apiClient.get(`/incidents/${id}`).then((r) => r.data), [id],
@@ -32,21 +31,6 @@ export default function IncidentDetail() {
   const { data: entities, refetch: refetchEntities } = useFetch<Entity[]>(
     () => apiClient.get(`/incidents/${id}/entities`).then((r) => r.data), [id],
   );
-  const { data: boundaries, refetch: refetchBoundaries } = useFetch<NetworkBoundary[]>(
-    () => apiClient.get(`/incidents/${id}/boundaries`).then((r) => r.data), [id],
-  );
-
-  async function addBoundary() {
-    if (!newBoundaryName) return;
-    setAddingBoundary(true);
-    try {
-      await apiClient.post(`/incidents/${id}/boundaries`, { name: newBoundaryName, zone_type: newBoundaryZone });
-      setNewBoundaryName('');
-      refetchBoundaries();
-    } finally {
-      setAddingBoundary(false);
-    }
-  }
 
   const tabStyle = (active: boolean): React.CSSProperties => ({
     padding: '10px 20px', cursor: 'pointer', border: 'none', background: 'transparent',
@@ -55,20 +39,30 @@ export default function IncidentDetail() {
     fontSize: '14px', fontWeight: active ? 600 : 400,
   });
 
-  const inputStyle: React.CSSProperties = { background: '#0d1117', border: '1px solid #30363d', borderRadius: '6px', padding: '8px 12px', color: '#e6edf3', fontSize: '13px', outline: 'none' };
-
   if (incLoading) return <div style={{ padding: '32px', color: '#8b949e' }}>Loading incident…</div>;
   if (incError || !incident) return <div style={{ padding: '32px', color: '#f85149' }}>Failed to load incident.</div>;
 
   return (
     <div style={{ padding: '32px', maxWidth: '1400px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '24px' }}>
-        <div style={{ fontSize: '28px', fontWeight: 700, color: '#e6edf3', marginBottom: '8px' }}>{incident.title}</div>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          {badge(SEVERITY_COLORS[incident.severity], incident.severity)}
-          {badge(STATUS_COLORS[incident.status], incident.status)}
-          {incident.description && <span style={{ color: '#8b949e', fontSize: '13px' }}>{incident.description}</span>}
+      <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <div style={{ fontSize: '28px', fontWeight: 700, color: '#e6edf3', marginBottom: '8px' }}>{incident.title}</div>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            {badge(SEVERITY_COLORS[incident.severity], incident.severity)}
+            {badge(STATUS_COLORS[incident.status], incident.status)}
+            {incident.description && <span style={{ color: '#8b949e', fontSize: '13px' }}>{incident.description}</span>}
+          </div>
         </div>
+        <button
+          onClick={() => window.open(`${API_BASE}/incidents/${id}/report`, '_blank')}
+          style={{
+            background: '#21262d', border: '1px solid #30363d', borderRadius: '6px',
+            padding: '8px 16px', color: '#8b949e', fontSize: '13px', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0,
+          }}
+        >
+          📄 Export Report
+        </button>
       </div>
 
       <div style={{ display: 'flex', borderBottom: '1px solid #30363d', marginBottom: '24px' }}>
@@ -107,21 +101,7 @@ export default function IncidentDetail() {
 
       {activeTab === 'relationships' && <EntityRelationshipGraph incidentId={id!} />}
 
-      {activeTab === 'network' && (
-        <>
-          <div style={{ background: '#161b22', border: '1px solid #30363d', borderRadius: '8px', padding: '20px', marginBottom: '24px' }}>
-            <div style={{ fontSize: '14px', fontWeight: 600, color: '#e6edf3', marginBottom: '12px' }}>Add Network Boundary</div>
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <input style={{ ...inputStyle, flex: 1 }} value={newBoundaryName} onChange={(e) => setNewBoundaryName(e.target.value)} placeholder="Boundary name (e.g. Corporate LAN)" />
-              <select style={{ ...inputStyle, width: '160px' }} value={newBoundaryZone} onChange={(e) => setNewBoundaryZone(e.target.value)}>
-                {['IT', 'OT', 'trusted', 'untrusted', 'dmz'].map((z) => <option key={z} value={z}>{z}</option>)}
-              </select>
-              <button style={{ background: '#238636', border: 'none', borderRadius: '6px', padding: '8px 16px', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }} onClick={addBoundary} disabled={addingBoundary || !newBoundaryName}>Add</button>
-            </div>
-          </div>
-          <NetworkMapPanel boundaries={boundaries ?? []} />
-        </>
-      )}
+      {activeTab === 'network' && <NetworkBoundaryFlow incidentId={id!} />}
     </div>
   );
 }

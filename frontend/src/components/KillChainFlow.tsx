@@ -15,6 +15,14 @@ import {
 import { useFetch } from '../hooks/useFetch';
 import { apiClient } from '../api/client';
 import { KillChainStage, KillChainFramework } from '../types';
+import TTPSearch from './TTPSearch';
+
+interface TTPInfo {
+  id: string;
+  ttp_id: string;
+  technique_id: string;
+  name: string;
+}
 
 interface MatrixRow {
   entity_id: string;
@@ -26,6 +34,7 @@ interface MatrixRow {
   confidence: string;
   mapping_id: string;
   framework?: string;
+  ttps?: TTPInfo[];
 }
 
 interface StageNodeData {
@@ -34,6 +43,7 @@ interface StageNodeData {
   entities: MatrixRow[];
   stageId: string;
   onDrop: (mappingId: string, newStageId: string) => void;
+  onEntityClick: (row: MatrixRow) => void;
   [key: string]: unknown;
 }
 
@@ -95,14 +105,25 @@ function StageNode({ data }: NodeProps) {
               fontSize: '11px',
               color: '#e6edf3',
               cursor: 'grab',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px',
             }}
           >
-            <span>{ENTITY_TYPE_ICONS[ent.type] ?? '•'}</span>
-            <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'monospace' }}>{ent.value}</span>
-            <span style={{ color: CONFIDENCE_COLORS[ent.confidence] ?? '#8b949e', fontSize: '9px' }}>●</span>
+            <div
+              style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
+              onClick={(e) => { e.stopPropagation(); d.onEntityClick(ent); }}
+            >
+              <span>{ENTITY_TYPE_ICONS[ent.type] ?? '•'}</span>
+              <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'monospace' }}>{ent.value}</span>
+              <span style={{ color: CONFIDENCE_COLORS[ent.confidence] ?? '#8b949e', fontSize: '9px' }}>●</span>
+            </div>
+            {(ent.ttps ?? []).length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px', marginTop: '3px' }}>
+                {(ent.ttps ?? []).map((t) => (
+                  <span key={t.id} style={{ fontSize: '9px', fontFamily: 'monospace', background: '#0d111799', border: '1px solid #30363d', borderRadius: '3px', padding: '1px 4px', color: '#58a6ff' }}>
+                    {t.technique_id}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         ))}
         {!hasEntities && (
@@ -125,6 +146,7 @@ interface KillChainFlowInnerProps {
 function KillChainFlowInner({ incidentId }: KillChainFlowInnerProps) {
   const [framework, setFramework] = useState<KillChainFramework>('lockheed_martin');
   const [updating, setUpdating] = useState(false);
+  const [ttpModal, setTtpModal] = useState<MatrixRow | null>(null);
   const matrixRef = useRef<MatrixRow[]>([]);
 
   const { data: stages, loading: stagesLoading } = useFetch<KillChainStage[]>(
@@ -138,6 +160,10 @@ function KillChainFlowInner({ incidentId }: KillChainFlowInnerProps) {
   );
 
   matrixRef.current = matrix ?? [];
+
+  const handleEntityClick = useCallback((row: MatrixRow) => {
+    setTtpModal(row);
+  }, []);
 
   const handleDrop = useCallback(async (mappingId: string, newStageId: string) => {
     const mapping = matrixRef.current.find((m) => m.mapping_id === mappingId);
@@ -167,11 +193,12 @@ function KillChainFlowInner({ incidentId }: KillChainFlowInnerProps) {
           entities: stageEntities,
           stageId: stage.id,
           onDrop: handleDrop,
+          onEntityClick: handleEntityClick,
         } as StageNodeData,
         draggable: false,
       };
     });
-  }, [stages, matrix, handleDrop]);
+  }, [stages, matrix, handleDrop, handleEntityClick]);
 
   const buildEdges = useCallback((): Edge[] => {
     if (!stages || stages.length < 2) return [];
@@ -236,8 +263,17 @@ function KillChainFlowInner({ incidentId }: KillChainFlowInnerProps) {
         </ReactFlow>
       </div>
       <div style={{ marginTop: '10px', color: '#484f58', fontSize: '11px' }}>
-        Drag entity chips between stages to update kill chain mappings.
+        Drag entity chips between stages to update kill chain mappings. Click a chip to assign TTPs.
       </div>
+      {ttpModal && (
+        <TTPSearch
+          mappingId={ttpModal.mapping_id}
+          entityId={ttpModal.entity_id}
+          entityValue={ttpModal.value}
+          onUpdated={refetchMatrix}
+          onClose={() => setTtpModal(null)}
+        />
+      )}
     </div>
   );
 }
