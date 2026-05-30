@@ -6,6 +6,13 @@ const envSchema = z.object({
   PORT: z.coerce.number().default(3001),
   FRONTEND_URL: z.string().default('http://localhost:3000'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  OIDC_AZURE_CLIENT_ID: z.string().optional(),
+  OIDC_AZURE_CLIENT_SECRET: z.string().optional(),
+  OIDC_AZURE_TENANT_ID: z.string().optional(),
+  OIDC_OKTA_CLIENT_ID: z.string().optional(),
+  OIDC_OKTA_CLIENT_SECRET: z.string().optional(),
+  OIDC_OKTA_DOMAIN: z.string().optional(),
+  SSO_REDIRECT_BASE_URL: z.string().default('http://localhost:3001'),
 });
 
 const parsed = envSchema.safeParse(process.env);

@@ -53,8 +53,8 @@ export default function Login() {
           <button style={s.btn} type="submit" disabled={loading}>{loading ? 'Signing in…' : 'Sign in'}</button>
         </form>
         <div style={s.divider}><span style={s.dividerText}>OR</span></div>
-        <button style={s.ssoBtn} onClick={() => alert('SSO not configured')}>Sign in with Azure AD</button>
-        <button style={s.ssoBtn} onClick={() => alert('SSO not configured')}>Sign in with Okta</button>
+        <button style={s.ssoBtn} onClick={() => { window.location.href = `${import.meta.env.VITE_API_URL || '/api/v1'}/auth/sso/azure`; }}>Sign in with Azure AD</button>
+        <button style={s.ssoBtn} onClick={() => { window.location.href = `${import.meta.env.VITE_API_URL || '/api/v1'}/auth/sso/okta`; }}>Sign in with Okta</button>
       </div>
     </div>
   );

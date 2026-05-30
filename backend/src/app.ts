@@ -12,6 +12,8 @@ import relationshipsRouter from './routes/relationships';
 import boundaryVizRouter from './routes/boundaryVisualization';
 import { ttpSearchRouter } from './routes/ttps';
 import reportRouter from './routes/report';
+import auditRouter from './routes/audit';
+import usersRouter from './routes/users';
 import { errorHandler, notFound } from './middleware/errorHandler';
 
 const app = express();
@@ -31,6 +33,8 @@ v1.use('/incidents/:incidentId/boundary-viz', boundaryVizRouter);
 v1.use('/entities', entityStandaloneRouter);
 v1.use('/entities/:entityId/boundaries', entityBoundaryRouter);
 v1.use('/ttps', ttpSearchRouter);
+v1.use('/audit', auditRouter);
+v1.use('/users', usersRouter);
 v1.use('/', killChainRouter);
 
 app.use('/api/v1', v1);

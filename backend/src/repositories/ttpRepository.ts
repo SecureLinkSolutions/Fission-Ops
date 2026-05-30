@@ -19,7 +19,7 @@ export async function searchTtps(query?: string, tactic?: string, framework?: st
 
   const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
   const result = await pool.query(
-    `SELECT * FROM ttps ${where} ORDER BY tactic, technique_id LIMIT 50`,
+    `SELECT * FROM ttps ${where} ORDER BY tactic, technique_id LIMIT 100`,
     params,
   );
   return result.rows;

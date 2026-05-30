@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useFetch } from '../hooks/useFetch';
 import { apiClient } from '../api/client';
-import { Incident, Entity } from '../types';
+import { Incident, Entity, TimelineEntry } from '../types';
 import EntityForm from '../components/EntityForm';
 import KillChainFlow from '../components/KillChainFlow';
 import EntityRelationshipGraph from '../components/EntityRelationshipGraph';
@@ -15,21 +15,52 @@ const ENTITY_TYPE_COLORS: Record<string, string> = { hostname: '#58a6ff', ip: '#
 const SEVERITY_COLORS: Record<string, string> = { low: '#3fb950', medium: '#d29922', high: '#f85149', critical: '#ff7b72' };
 const STATUS_COLORS: Record<string, string> = { open: '#58a6ff', contained: '#d29922', closed: '#8b949e' };
 
+const ACTION_TYPE_COLORS: Record<string, string> = {
+  ENTITY_CREATED: '#3fb950',
+  KILL_CHAIN_MAPPED: '#58a6ff',
+  TTP_ASSIGNED: '#a371f7',
+  RELATIONSHIP_CREATED: '#d29922',
+  BOUNDARY_TRAVERSAL: '#f0883e',
+};
+
 function badge(color: string, text: string): React.ReactElement {
   return <span style={{ background: `${color}22`, color, border: `1px solid ${color}44`, borderRadius: '12px', padding: '4px 12px', fontSize: '12px', fontWeight: 600 }}>{text}</span>;
 }
 
-type Tab = 'entities' | 'killchain' | 'relationships' | 'network';
+function relativeTime(ts: string): string {
+  const diff = Date.now() - new Date(ts).getTime();
+  const secs = Math.floor(diff / 1000);
+  if (secs < 60) return `${secs}s ago`;
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
+}
+
+type Tab = 'entities' | 'killchain' | 'relationships' | 'network' | 'timeline';
 
 export default function IncidentDetail() {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState<Tab>('entities');
+  const [timelineActionType, setTimelineActionType] = useState('');
+  const [timelineUserId, setTimelineUserId] = useState('');
 
   const { data: incident, loading: incLoading, error: incError } = useFetch<Incident>(
     () => apiClient.get(`/incidents/${id}`).then((r) => r.data), [id],
   );
   const { data: entities, refetch: refetchEntities } = useFetch<Entity[]>(
     () => apiClient.get(`/incidents/${id}/entities`).then((r) => r.data), [id],
+  );
+
+  const timelineParams = new URLSearchParams();
+  if (timelineActionType) timelineParams.set('action_type', timelineActionType);
+  if (timelineUserId) timelineParams.set('user_id', timelineUserId);
+  const { data: timeline } = useFetch<TimelineEntry[]>(
+    () => activeTab === 'timeline'
+      ? apiClient.get(`/incidents/${id}/timeline?${timelineParams.toString()}`).then((r) => r.data)
+      : Promise.resolve([]),
+    [activeTab, id, timelineActionType, timelineUserId],
   );
 
   const tabStyle = (active: boolean): React.CSSProperties => ({
@@ -41,6 +72,11 @@ export default function IncidentDetail() {
 
   if (incLoading) return <div style={{ padding: '32px', color: '#8b949e' }}>Loading incident…</div>;
   if (incError || !incident) return <div style={{ padding: '32px', color: '#f85149' }}>Failed to load incident.</div>;
+
+  // Unique users from timeline for filter dropdown
+  const timelineUsers = Array.from(
+    new Map((timeline ?? []).map((e) => [e.user_id, e.user_email])).entries(),
+  );
 
   return (
     <div style={{ padding: '32px', maxWidth: '1400px', margin: '0 auto' }}>
@@ -78,6 +114,9 @@ export default function IncidentDetail() {
         <button style={tabStyle(activeTab === 'network')} onClick={() => setActiveTab('network')}>
           Network Map
         </button>
+        <button style={tabStyle(activeTab === 'timeline')} onClick={() => setActiveTab('timeline')}>
+          Timeline
+        </button>
       </div>
 
       {activeTab === 'entities' && (
@@ -102,6 +141,76 @@ export default function IncidentDetail() {
       {activeTab === 'relationships' && <EntityRelationshipGraph incidentId={id!} />}
 
       {activeTab === 'network' && <NetworkBoundaryFlow incidentId={id!} />}
+
+      {activeTab === 'timeline' && (
+        <div>
+          {/* Filters */}
+          <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+            <select
+              style={{ background: '#0d1117', border: '1px solid #30363d', borderRadius: '6px', padding: '6px 10px', color: '#e6edf3', fontSize: '13px' }}
+              value={timelineActionType}
+              onChange={(e) => setTimelineActionType(e.target.value)}
+            >
+              <option value="">All Action Types</option>
+              <option value="ENTITY_CREATED">Entity Created</option>
+              <option value="KILL_CHAIN_MAPPED">Kill Chain Mapped</option>
+              <option value="TTP_ASSIGNED">TTP Assigned</option>
+              <option value="RELATIONSHIP_CREATED">Relationship Created</option>
+              <option value="BOUNDARY_TRAVERSAL">Boundary Traversal</option>
+            </select>
+            <select
+              style={{ background: '#0d1117', border: '1px solid #30363d', borderRadius: '6px', padding: '6px 10px', color: '#e6edf3', fontSize: '13px' }}
+              value={timelineUserId}
+              onChange={(e) => setTimelineUserId(e.target.value)}
+            >
+              <option value="">All Analysts</option>
+              {timelineUsers.map(([uid, email]) => (
+                <option key={uid} value={uid}>{email}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Timeline entries */}
+          <div style={{ position: 'relative', paddingLeft: '24px' }}>
+            {/* Vertical line */}
+            {(timeline ?? []).length > 0 && (
+              <div style={{ position: 'absolute', left: '7px', top: '12px', bottom: '12px', width: '2px', background: '#30363d' }} />
+            )}
+
+            {(timeline ?? []).map((entry) => {
+              const color = ACTION_TYPE_COLORS[entry.action_type] ?? '#8b949e';
+              return (
+                <div key={entry.resource_id + entry.ts} style={{ display: 'flex', gap: '16px', marginBottom: '20px', position: 'relative' }}>
+                  {/* Dot */}
+                  <div style={{ position: 'absolute', left: '-20px', top: '4px', width: '14px', height: '14px', borderRadius: '50%', background: color, border: '2px solid #0d1117', flexShrink: 0 }} />
+
+                  <div style={{ flex: 1, background: '#161b22', border: '1px solid #30363d', borderRadius: '8px', padding: '12px 16px' }}>
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap' }}>
+                      <span
+                        title={new Date(entry.ts).toLocaleString()}
+                        style={{ color: '#8b949e', fontSize: '12px', cursor: 'default' }}
+                      >
+                        {relativeTime(entry.ts)}
+                      </span>
+                      <span style={{ background: '#21262d', color: '#8b949e', borderRadius: '10px', padding: '2px 8px', fontSize: '11px' }}>
+                        {entry.user_email}
+                      </span>
+                      <span style={{ background: `${color}22`, color, border: `1px solid ${color}44`, borderRadius: '10px', padding: '2px 8px', fontSize: '11px', fontWeight: 600 }}>
+                        {entry.action_type.replace(/_/g, ' ')}
+                      </span>
+                    </div>
+                    <div style={{ color: '#e6edf3', fontSize: '13px' }}>{entry.description}</div>
+                  </div>
+                </div>
+              );
+            })}
+
+            {(timeline ?? []).length === 0 && (
+              <div style={{ color: '#8b949e', fontSize: '14px' }}>No timeline entries found.</div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

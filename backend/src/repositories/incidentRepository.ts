@@ -1,11 +1,13 @@
 import { pool } from '../db/pool';
-import { Incident, IncidentSeverity, IncidentStatus } from '../types';
+import { Incident, IncidentSeverity, IncidentStatus, UserRole } from '../types';
 
 interface ListOptions {
   status?: IncidentStatus;
   severity?: IncidentSeverity;
   page: number;
   limit: number;
+  requestingUserId?: string;
+  requestingUserRole?: UserRole;
 }
 
 export async function listIncidents(opts: ListOptions): Promise<{ incidents: Incident[]; total: number }> {
@@ -15,6 +17,15 @@ export async function listIncidents(opts: ListOptions): Promise<{ incidents: Inc
 
   if (opts.status) { conditions.push(`i.status = $${i++}`); params.push(opts.status); }
   if (opts.severity) { conditions.push(`i.severity = $${i++}`); params.push(opts.severity); }
+
+  // Visibility filter for non-commanders
+  if (opts.requestingUserId && opts.requestingUserRole !== 'incident_commander') {
+    params.push(opts.requestingUserId);
+    const uidParam = `$${i++}`;
+    conditions.push(
+      `(i.created_by = ${uidParam} OR EXISTS (SELECT 1 FROM incident_assignments ia WHERE ia.incident_id = i.id AND ia.user_id = ${uidParam}))`,
+    );
+  }
 
   const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
   const offset = (opts.page - 1) * opts.limit;

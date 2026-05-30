@@ -1,6 +1,7 @@
 import { pool } from './pool';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { seedMitre } from './seedMitre';
 
 export async function checkSchema(): Promise<void> {
   const result = await pool.query(
@@ -13,6 +14,7 @@ export async function checkSchema(): Promise<void> {
   }
   console.log('✅ Database schema verified');
   await runMigrations();
+  await seedMitre();
 }
 
 async function runMigrations(): Promise<void> {
@@ -38,5 +40,17 @@ async function runMigrations(): Promise<void> {
     const sql = readFileSync(migrationPath, 'utf8');
     await pool.query(sql);
     console.log('✅ Migration 002 applied');
+  }
+
+  const needsMigration003 = await pool.query(
+    `SELECT 1 FROM information_schema.tables
+     WHERE table_schema = 'public' AND table_name = 'audit_logs'`,
+  );
+  if ((needsMigration003.rowCount ?? 0) === 0) {
+    console.log('⚙️  Running migration 003...');
+    const migrationPath = join(__dirname, '../../../../db/migrate_003.sql');
+    const sql = readFileSync(migrationPath, 'utf8');
+    await pool.query(sql);
+    console.log('✅ Migration 003 applied');
   }
 }

@@ -85,6 +85,42 @@ export interface NetworkBoundary {
   created_at: string;
 }
 
+export interface TimelineEntry {
+  ts: string;
+  user_id: string;
+  user_email: string;
+  action_type: string;
+  resource_type: string;
+  resource_id: string;
+  description: string;
+}
+
+export interface AuditLog {
+  id: string;
+  user_id: string | null;
+  user_email: string | null;
+  action: string;
+  resource_type: string;
+  resource_id: string | null;
+  old_values: unknown;
+  new_values: unknown;
+  ip_address: string | null;
+  created_at: string;
+}
+
+export interface ManagedUser {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  sso_provider: string | null;
+  sso_subject: string | null;
+  deactivated_at: string | null;
+  last_login_at: string | null;
+  password_reset_required: boolean;
+  created_at: string;
+}
+
 export interface BoundaryMappingWithBoundary {
   id: string;
   entity_id: string;
