@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const PdfPrinter = require('pdfmake');
+const _pdfmake = require('pdfmake');
+const PdfPrinter = _pdfmake.default ?? _pdfmake;
 import { TDocumentDefinitions, Content, TableCell } from 'pdfmake/interfaces';
 import { authenticate } from '../middleware/auth';
 import { createError } from '../middleware/errorHandler';
