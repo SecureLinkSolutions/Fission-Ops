@@ -1,7 +1,6 @@
 import { Router, Request, Response } from 'express';
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const _pdfmake = require('pdfmake');
-const PdfPrinter = _pdfmake.default ?? _pdfmake;
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const PdfPrinter = require('pdfmake/js/Printer').default;
 import { TDocumentDefinitions, Content, TableCell } from 'pdfmake/interfaces';
 import { authenticate } from '../middleware/auth';
 import { createError } from '../middleware/errorHandler';
@@ -15,6 +14,8 @@ import * as ttpRepo from '../repositories/ttpRepository';
 
 const router = Router();
 
+// pdfmake v0.3.x server-side: Printer lives in js/Printer.js (ESM default export).
+// Built-in PDF standard fonts — no vfs needed for Helvetica on Node.
 const fonts = {
   Helvetica: {
     normal: 'Helvetica',
