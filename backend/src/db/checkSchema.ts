@@ -60,6 +60,13 @@ async function runMigrations(): Promise<void> {
   );
   if ((needsMigration004.rowCount ?? 0) === 0) {
     console.log('⚙️  Running migration 004...');
+    // ALTER TYPE ADD VALUE must be committed before 'super_admin' can be used in same session.
+    await pool.query(`
+      DO $$ BEGIN
+        ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'super_admin';
+      EXCEPTION WHEN duplicate_object THEN NULL;
+      END $$;
+    `);
     const migrationPath = join(__dirname, '../../../../db/migrate_004.sql');
     const sql = readFileSync(migrationPath, 'utf8');
     await pool.query(sql);
