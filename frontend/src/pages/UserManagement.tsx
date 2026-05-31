@@ -9,6 +9,7 @@ const ROLE_COLORS: Record<UserRole, string> = {
   analyst: '#3fb950',
   senior_analyst: '#58a6ff',
   incident_commander: '#a371f7',
+  super_admin: '#f0883e',
 };
 
 function roleBadge(role: UserRole) {

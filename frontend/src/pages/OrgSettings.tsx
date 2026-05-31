@@ -39,7 +39,8 @@ const s: Record<string, React.CSSProperties> = {
   dangerTitle: { fontSize: '16px', fontWeight: 600, marginBottom: '8px', color: '#f85149' },
   ssoRow: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' },
   ssoLabel: { color: '#8b949e', fontSize: '13px', width: '120px' },
-  ssoStatus: (active: boolean): React.CSSProperties => ({ color: active ? '#3fb950' : '#8b949e', fontSize: '13px', fontWeight: 600 }),
+  ssoStatusActive: { color: '#3fb950', fontSize: '13px', fontWeight: 600 },
+  ssoStatusInactive: { color: '#8b949e', fontSize: '13px', fontWeight: 600 },
 };
 
 export default function OrgSettings() {
@@ -168,11 +169,11 @@ export default function OrgSettings() {
           </div>
           <div style={s.ssoRow}>
             <span style={s.ssoLabel}>Azure AD</span>
-            <span style={s.ssoStatus(azureEnabled)}>{azureEnabled ? 'Enabled' : 'Not configured'}</span>
+            <span style={azureEnabled ? s.ssoStatusActive : s.ssoStatusInactive}>{azureEnabled ? 'Enabled' : 'Not configured'}</span>
           </div>
           <div style={s.ssoRow}>
             <span style={s.ssoLabel}>Okta</span>
-            <span style={s.ssoStatus(oktaEnabled)}>{oktaEnabled ? 'Enabled' : 'Not configured'}</span>
+            <span style={oktaEnabled ? s.ssoStatusActive : s.ssoStatusInactive}>{oktaEnabled ? 'Enabled' : 'Not configured'}</span>
           </div>
           <div style={{ color: '#484f58', fontSize: '12px', marginTop: '12px' }}>
             Variables: OIDC_AZURE_CLIENT_ID, OIDC_AZURE_CLIENT_SECRET, OIDC_AZURE_TENANT_ID, OIDC_OKTA_CLIENT_ID, OIDC_OKTA_CLIENT_SECRET, OIDC_OKTA_DOMAIN

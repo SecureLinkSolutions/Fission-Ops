@@ -24,7 +24,8 @@ const s: Record<string, React.CSSProperties> = {
   table: { width: '100%', borderCollapse: 'collapse' as const },
   th: { textAlign: 'left' as const, color: '#8b949e', fontSize: '12px', fontWeight: 600, padding: '8px 12px', borderBottom: '1px solid #30363d', textTransform: 'uppercase' as const },
   td: { padding: '10px 12px', fontSize: '13px', color: '#e6edf3', borderBottom: '1px solid #21262d' },
-  badge: (active: boolean): React.CSSProperties => ({ display: 'inline-block', padding: '2px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 600, background: active ? '#1a3a1a' : '#3a1a1a', color: active ? '#3fb950' : '#f85149', border: `1px solid ${active ? '#3fb950' : '#f85149'}44` }),
+  badgeActive: { display: 'inline-block', padding: '2px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 600, background: '#1a3a1a', color: '#3fb950', border: '1px solid #3fb95044' },
+  badgeInactive: { display: 'inline-block', padding: '2px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 600, background: '#3a1a1a', color: '#f85149', border: '1px solid #f8514944' },
   tierBadge: { background: '#21262d', border: '1px solid #30363d', borderRadius: '12px', padding: '2px 8px', fontSize: '11px', color: '#58a6ff' },
   btn: { background: '#21262d', border: '1px solid #30363d', borderRadius: '4px', padding: '4px 10px', color: '#e6edf3', fontSize: '12px', cursor: 'pointer', marginRight: '4px' },
   btnDanger: { background: '#3d1a1a', border: '1px solid #f8514944', borderRadius: '4px', padding: '4px 10px', color: '#f85149', fontSize: '12px', cursor: 'pointer' },
@@ -133,7 +134,7 @@ export default function SuperAdmin() {
                     <td style={s.td}>{org.name}</td>
                     <td style={{ ...s.td, fontFamily: 'monospace', color: '#8b949e' }}>{org.slug}</td>
                     <td style={s.td}><span style={s.tierBadge}>{org.tier}</span></td>
-                    <td style={s.td}><span style={s.badge(org.active)}>{org.active ? 'Active' : 'Inactive'}</span></td>
+                    <td style={s.td}><span style={org.active ? s.badgeActive : s.badgeInactive}>{org.active ? 'Active' : 'Inactive'}</span></td>
                     <td style={s.td}>{org.stats?.incident_count ?? '—'}</td>
                     <td style={s.td}>{org.stats?.active_user_count ?? '—'}</td>
                     <td style={{ ...s.td, color: '#8b949e' }}>{new Date(org.created_at).toLocaleDateString()}</td>
