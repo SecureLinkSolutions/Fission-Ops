@@ -18,6 +18,8 @@ const envSchema = z.object({
   RATE_LIMIT_GLOBAL_MAX: z.coerce.number().default(100),
   RATE_LIMIT_AUTH_MAX: z.coerce.number().default(10),
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(15 * 60 * 1000),
+  LICENSE_KEY: z.string().optional(),
+  LICENSE_SERVER_URL: z.string().url().optional().default('http://license-server:3002'),
 });
 
 const parsed = envSchema.safeParse(process.env);

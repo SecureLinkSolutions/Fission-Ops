@@ -5,6 +5,15 @@ All notable changes to Fission Ops are documented in this file.
 ## [Unreleased]
 
 ### Added
+- **License Key Service** (`fission-license-server`): Standalone Node.js/Express/TypeScript microservice with RSA-signed JWT license keys, PostgreSQL-backed storage, and endpoints for validate/activate/revoke/status
+- **Deployment Fingerprinting**: Stable per-deployment identity derived from a DB-persisted seed, hostname, and DATABASE_URL hash; stored in `deployment_config` table
+- **License Validation Service**: Startup + 24h periodic validation against license server; 7-day offline cache with grace mode that restricts enterprise features without full lockout; never crashes the main app
+- **Feature Gating Middleware** (`requireFeature`): Tier-based route middleware returning HTTP 402 for unlicensed features; `isFeatureEnabled()` returns `true` in dev mode (no LICENSE_KEY configured)
+- **License Activation UI**: `/activate` page for entering a license key before setup; `/admin/license` management page (incident_commander+) showing tier, expiry, features, grace mode status
+- **License Admin Portal**: Single-file HTML admin UI at `/admin` on the license server with dashboard stats, license table with revoke actions, and generate license form; dark SOC theme; authenticates via `ADMIN_API_KEY` stored in localStorage
+- **Frontend License Context** (`LicenseContext`): Polls `GET /api/v1/license/status` on mount; exposes `useLicense()` with `isFeatureEnabled()`, tier, grace mode flags
+- **Upgrade Prompt Component**: Tasteful lock overlay for gated features with required tier badge and administrator contact message
+- Feature gates applied in frontend: MITRE ATT&CK framework buttons locked behind `mitre_full`; Entity Relationship Graph behind `relationships`; Network Boundary Flow behind `network_boundaries`; Export Report button behind `pdf_export`
 - **Real-Time Collaboration**: Socket.io integration with JWT auth, incident rooms, presence bar (avatar chips with online status), connection dot in NavBar
 - **Executive Summary**: Full executive summary page with editable overview, attack timeline, business impact, key findings, remediation, and risk rating; print/export support; accessible from incident tabs
 - **Notification System**: In-app notification bell with unread count badge, dropdown of recent notifications, mark-read/mark-all-read; socket-driven live updates; Nodemailer email service for critical notifications

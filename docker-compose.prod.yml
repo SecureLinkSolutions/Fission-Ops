@@ -74,6 +74,45 @@ services:
       - "traefik.http.services.frontend.loadbalancer.server.port=80"
     restart: unless-stopped
 
+  license-db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: fission_license
+      POSTGRES_USER: license_user
+      POSTGRES_PASSWORD: ${LICENSE_DB_PASSWORD}
+    volumes:
+      - license_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U license_user -d fission_license"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  license-server:
+    build:
+      context: ./fission-license-server
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql://license_user:${LICENSE_DB_PASSWORD}@license-db:5432/fission_license
+      PORT: 3002
+      ADMIN_API_KEY: ${LICENSE_ADMIN_API_KEY}
+      NODE_ENV: production
+    depends_on:
+      license-db:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.license.rule=Host(`${DOMAIN}`) && PathPrefix(`/license-admin`)"
+      - "traefik.http.routers.license.entrypoints=websecure"
+      - "traefik.http.routers.license.tls.certresolver=letsencrypt"
+      - "traefik.http.services.license.loadbalancer.server.port=3002"
+    restart: unless-stopped
+    volumes:
+      - license_keys:/app/keys
+
 volumes:
   postgres_data:
   letsencrypt:
+  license_db_data:
+  license_keys:

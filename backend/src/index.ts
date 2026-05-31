@@ -1,8 +1,10 @@
 import { checkSchema } from './db/checkSchema';
+import { runStartupValidation } from './services/licenseService';
 import './server';
 
 async function main() {
   await checkSchema();
+  await runStartupValidation();
   console.log('🚀 Fission Ops backend started');
 }
 

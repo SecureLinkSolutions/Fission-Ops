@@ -13,6 +13,8 @@ import MyTasks from './pages/MyTasks';
 import SSOCallback from './pages/SSOCallback';
 import AuditLog from './pages/AuditLog';
 import UserManagement from './pages/UserManagement';
+import LicenseActivation from './pages/LicenseActivation';
+import LicenseAdmin from './pages/LicenseAdmin';
 import ProtectedRoute from './components/ProtectedRoute';
 import NavBar from './components/NavBar';
 import { useAuth } from './context/AuthContext';
@@ -23,6 +25,7 @@ export default function App() {
     <>
       {user && <NavBar />}
       <Routes>
+        <Route path="/activate" element={<LicenseActivation />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/sso-callback" element={<SSOCallback />} />
@@ -36,6 +39,7 @@ export default function App() {
         <Route path="/incidents/:id/entities/:entityId" element={<ProtectedRoute><EntityDetail /></ProtectedRoute>} />
         <Route path="/admin/audit" element={<ProtectedRoute><AuditLog /></ProtectedRoute>} />
         <Route path="/admin/users" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
+        <Route path="/admin/license" element={<ProtectedRoute><LicenseAdmin /></ProtectedRoute>} />
         <Route path="/tasks/mine" element={<ProtectedRoute><MyTasks /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to={user ? '/incidents' : '/login'} replace />} />
       </Routes>

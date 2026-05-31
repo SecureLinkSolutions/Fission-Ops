@@ -12,6 +12,7 @@ import TaskBoard, { Task } from '../components/TaskBoard';
 import PresenceBar from '../components/PresenceBar';
 import { useIncidentSocket } from '../hooks/useIncidentSocket';
 import { useAuth } from '../context/AuthContext';
+import { useLicense } from '../context/LicenseContext';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
 
@@ -53,6 +54,7 @@ type Tab = 'entities' | 'killchain' | 'relationships' | 'network' | 'timeline' |
 export default function IncidentDetail() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const { isFeatureEnabled } = useLicense();
   const [activeTab, setActiveTab] = useState<Tab>('entities');
   const [timelineActionType, setTimelineActionType] = useState('');
   const [timelineUserId, setTimelineUserId] = useState('');
@@ -137,16 +139,30 @@ export default function IncidentDetail() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
           <PresenceBar presenceList={presenceList} connected={connected} />
-          <button
-            onClick={() => window.open(`${API_BASE}/incidents/${id}/report`, '_blank')}
-            style={{
-              background: '#21262d', border: '1px solid #30363d', borderRadius: '6px',
-              padding: '8px 16px', color: '#8b949e', fontSize: '13px', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: '6px',
-            }}
-          >
-            📄 Export Report
-          </button>
+          {isFeatureEnabled('pdf_export') ? (
+            <button
+              onClick={() => window.open(`${API_BASE}/incidents/${id}/report`, '_blank')}
+              style={{
+                background: '#21262d', border: '1px solid #30363d', borderRadius: '6px',
+                padding: '8px 16px', color: '#8b949e', fontSize: '13px', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: '6px',
+              }}
+            >
+              📄 Export Report
+            </button>
+          ) : (
+            <button
+              title="PDF Export requires Professional license"
+              onClick={() => {}}
+              style={{
+                background: '#21262d', border: '1px solid #30363d', borderRadius: '6px',
+                padding: '8px 16px', color: '#484f58', fontSize: '13px', cursor: 'not-allowed',
+                display: 'flex', alignItems: 'center', gap: '6px', opacity: 0.5,
+              }}
+            >
+              🔒 Export Report
+            </button>
+          )}
         </div>
       </div>
 

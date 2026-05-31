@@ -1,4 +1,6 @@
 import { useState, useCallback } from 'react';
+import { useLicense } from '../context/LicenseContext';
+import UpgradePrompt from './UpgradePrompt';
 import {
   ReactFlow,
   Node,
@@ -393,6 +395,10 @@ function NetworkBoundaryFlowInner({ incidentId }: NetworkBoundaryFlowInnerProps)
 }
 
 export default function NetworkBoundaryFlow({ incidentId }: Props) {
+  const { isFeatureEnabled } = useLicense();
+  if (!isFeatureEnabled('network_boundaries')) {
+    return <UpgradePrompt feature="network_boundaries" requiredTier="professional" />;
+  }
   return (
     <ReactFlowProvider>
       <NetworkBoundaryFlowInner incidentId={incidentId} />

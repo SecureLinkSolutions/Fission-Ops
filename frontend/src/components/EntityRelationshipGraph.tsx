@@ -1,4 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
+import { useLicense } from '../context/LicenseContext';
+import UpgradePrompt from './UpgradePrompt';
 import {
   ReactFlow,
   Node,
@@ -376,6 +378,10 @@ function GraphInner({ incidentId }: GraphInnerProps) {
 }
 
 export default function EntityRelationshipGraph({ incidentId }: { incidentId: string }) {
+  const { isFeatureEnabled } = useLicense();
+  if (!isFeatureEnabled('relationships')) {
+    return <UpgradePrompt feature="relationships" requiredTier="professional" />;
+  }
   return (
     <ReactFlowProvider>
       <div style={{ height: '560px', display: 'flex', flexDirection: 'column' }}>

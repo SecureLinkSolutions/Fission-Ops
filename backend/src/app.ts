@@ -25,6 +25,8 @@ import tasksRouter from './routes/tasks';
 import executiveSummaryRouter from './routes/executiveSummary';
 import enrichmentRouter from './routes/enrichment';
 import iocRouter from './routes/ioc';
+import licenseRouter from './routes/license';
+import { requireFeature } from './middleware/featureGate';
 import { errorHandler, notFound } from './middleware/errorHandler';
 
 const app = express();
@@ -56,26 +58,30 @@ app.use('/api/v1/auth/register', authLimiter);
 
 const v1 = express.Router();
 
+v1.use('/auth/sso', requireFeature('sso'));
 v1.use('/auth', authRouter);
 v1.use('/auth/register', registerRouter);
+v1.use('/license', licenseRouter);
 v1.use('/incidents', incidentsRouter);
+v1.use('/incidents/:id/report', requireFeature('pdf_export'));
 v1.use('/incidents', reportRouter);
 v1.use('/incidents/:incidentId/entities', entitiesRouter);
 v1.use('/incidents/:incidentId/boundaries', boundaryRouter);
-v1.use('/incidents/:incidentId/relationships', relationshipsRouter);
-v1.use('/incidents/:incidentId/boundary-viz', boundaryVizRouter);
+v1.use('/incidents/:incidentId/relationships', requireFeature('relationships'), relationshipsRouter);
+v1.use('/incidents/:incidentId/boundary-viz', requireFeature('network_boundaries'), boundaryVizRouter);
 v1.use('/entities', entityStandaloneRouter);
 v1.use('/entities/:entityId/boundaries', entityBoundaryRouter);
 v1.use('/ttps', ttpSearchRouter);
-v1.use('/audit', auditRouter);
+v1.use('/audit', requireFeature('audit_log'), auditRouter);
 v1.use('/users', usersRouter);
-v1.use('/organizations', organizationsRouter);
+v1.use('/organizations', requireFeature('multi_tenancy'), organizationsRouter);
 v1.use('/superadmin', superAdminRouter);
 v1.use('/', killChainRouter);
 v1.use('/notifications', notificationsRouter);
 v1.use('/', commentsRouter);
 v1.use('/', tasksRouter);
 v1.use('/', executiveSummaryRouter);
+v1.use('/entities/:entityId/enrich', requireFeature('threat_intelligence'));
 v1.use('/', enrichmentRouter);
 v1.use('/', iocRouter);
 

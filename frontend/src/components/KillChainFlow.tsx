@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import { useLicense } from '../context/LicenseContext';
 import {
   ReactFlow,
   Node,
@@ -151,6 +152,7 @@ interface KillChainFlowInnerProps {
 }
 
 function KillChainFlowInner({ incidentId }: KillChainFlowInnerProps) {
+  const { isFeatureEnabled } = useLicense();
   const [framework, setFramework] = useState<KillChainFramework>('lockheed_martin');
   const [updating, setUpdating] = useState(false);
   const [ttpModal, setTtpModal] = useState<MatrixRow | null>(null);
@@ -231,24 +233,30 @@ function KillChainFlowInner({ incidentId }: KillChainFlowInnerProps) {
     <div>
       <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', alignItems: 'center' }}>
         <span style={{ color: '#8b949e', fontSize: '12px', fontWeight: 600 }}>Framework:</span>
-        {(['lockheed_martin', 'mitre_attack', 'mitre_ics'] as KillChainFramework[]).map((fw) => (
-          <button
-            key={fw}
-            onClick={() => setFramework(fw)}
-            style={{
-              background: framework === fw ? '#21262d' : 'transparent',
-              border: `1px solid ${framework === fw ? '#58a6ff' : '#30363d'}`,
-              borderRadius: '6px',
-              padding: '5px 12px',
-              color: framework === fw ? '#58a6ff' : '#8b949e',
-              fontSize: '12px',
-              cursor: 'pointer',
-              fontWeight: framework === fw ? 600 : 400,
-            }}
-          >
-            {FRAMEWORK_LABELS[fw]}
-          </button>
-        ))}
+        {(['lockheed_martin', 'mitre_attack', 'mitre_ics'] as KillChainFramework[]).map((fw) => {
+          const isMitre = fw !== 'lockheed_martin';
+          const locked = isMitre && !isFeatureEnabled('mitre_full');
+          return (
+            <button
+              key={fw}
+              onClick={() => !locked && setFramework(fw)}
+              title={locked ? 'Requires Professional license' : undefined}
+              style={{
+                background: framework === fw ? '#21262d' : 'transparent',
+                border: `1px solid ${locked ? '#30363d' : framework === fw ? '#58a6ff' : '#30363d'}`,
+                borderRadius: '6px',
+                padding: '5px 12px',
+                color: locked ? '#484f58' : framework === fw ? '#58a6ff' : '#8b949e',
+                fontSize: '12px',
+                cursor: locked ? 'not-allowed' : 'pointer',
+                fontWeight: framework === fw ? 600 : 400,
+                opacity: locked ? 0.5 : 1,
+              }}
+            >
+              {FRAMEWORK_LABELS[fw]}{locked ? ' 🔒' : ''}
+            </button>
+          );
+        })}
         {updating && <span style={{ color: '#8b949e', fontSize: '12px' }}>Updating…</span>}
       </div>
       <div style={{ height: '480px', background: '#0d1117', border: '1px solid #30363d', borderRadius: '8px', overflow: 'hidden' }}>
