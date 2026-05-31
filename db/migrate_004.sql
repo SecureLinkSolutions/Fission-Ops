@@ -51,5 +51,5 @@ UPDATE audit_logs SET org_id = '00000000-0000-0000-0000-000000000001' WHERE org_
 
 -- Seed a super_admin user (password: superadmin123)
 INSERT INTO users (email, name, role, password_hash, org_id)
-VALUES ('superadmin@fission.local', 'Super Admin', 'super_admin', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', NULL)
+VALUES ('superadmin@fission.local', 'Super Admin', 'super_admin', '$2a$10$7M7mkF0cQf.y3kkaKytINe5s1UX2DHeuV/oCUQbrgWQmhwbGhmTOy', NULL)
 ON CONFLICT (email) DO NOTHING;

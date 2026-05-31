@@ -96,7 +96,7 @@ INSERT INTO kill_chain_stages (name, description, order_index) VALUES
   ('Command & Control', 'Adversary establishes remote command channel', 6),
   ('Actions on Objectives', 'Adversary achieves original goals', 7);
 
--- Seed demo analyst user (password: analyst123)
+-- Seed demo users (password for both: analyst123)
 INSERT INTO users (email, name, role, password_hash) VALUES
-  ('analyst@fission.local', 'Demo Analyst', 'analyst', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy'),
-  ('commander@fission.local', 'Incident Commander', 'incident_commander', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy');
+  ('analyst@fission.local', 'Demo Analyst', 'analyst', '$2a$10$uvHFKAKbSxDrTwoCoXM2nuOuhY4J7AWvwG/lGH7uScccNrid/qrOe'),
+  ('commander@fission.local', 'Incident Commander', 'incident_commander', '$2a$10$uvHFKAKbSxDrTwoCoXM2nuOuhY4J7AWvwG/lGH7uScccNrid/qrOe');
