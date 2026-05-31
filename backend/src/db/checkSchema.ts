@@ -89,4 +89,21 @@ async function runMigrations(): Promise<void> {
     await pool.query(sql);
     console.log('✅ Migration 006 applied');
   }
+
+  // Migration 007 is identified by a sentinel in deployment_config so it
+  // runs exactly once on any existing database, fixing the broken seed hashes.
+  const needsMigration007 = await pool.query(
+    `SELECT 1 FROM deployment_config WHERE key = 'migration_007_applied'`,
+  );
+  if ((needsMigration007.rowCount ?? 0) === 0) {
+    console.log('⚙️  Running migration 007 (fix seed password hashes)...');
+    const migrationPath = join(__dirname, '../../../../db/migrate_007.sql');
+    const sql = readFileSync(migrationPath, 'utf8');
+    await pool.query(sql);
+    await pool.query(
+      `INSERT INTO deployment_config (key, value) VALUES ('migration_007_applied', 'true')
+       ON CONFLICT (key) DO NOTHING`,
+    );
+    console.log('✅ Migration 007 applied');
+  }
 }
