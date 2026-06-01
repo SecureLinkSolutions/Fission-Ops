@@ -55,7 +55,11 @@ function TaskCard({ task, teamMembers, onRefresh, canManage }: TaskCardProps) {
   const isOverdue = task.due_date && task.status !== 'complete' && new Date(task.due_date) < new Date();
 
   async function handleSave() {
-    await apiClient.patch(`/incidents/${task.incident_id}/tasks/${task.id}`, form).catch(() => {});
+    const payload: Record<string, unknown> = { title: form.title, priority: form.priority, status: form.status };
+    if (form.description) payload.description = form.description;
+    if (form.assignee_id) payload.assignee_id = form.assignee_id;
+    if (form.due_date) payload.due_date = form.due_date;
+    await apiClient.patch(`/incidents/${task.incident_id}/tasks/${task.id}`, payload).catch(() => {});
     setEditing(false);
     onRefresh();
   }
@@ -145,7 +149,11 @@ export default function TaskBoard({ incidentId, tasks, teamMembers = [], onRefre
 
   async function handleCreate() {
     if (!form.title.trim()) return;
-    await apiClient.post(`/incidents/${incidentId}/tasks`, form).catch(() => {});
+    const payload: Record<string, unknown> = { title: form.title, priority: form.priority };
+    if (form.description) payload.description = form.description;
+    if (form.assignee_id) payload.assignee_id = form.assignee_id;
+    if (form.due_date) payload.due_date = form.due_date;
+    await apiClient.post(`/incidents/${incidentId}/tasks`, payload).catch(() => {});
     setForm({ title: '', description: '', assignee_id: '', priority: 'medium', due_date: '' });
     setShowForm(false);
     onRefresh();

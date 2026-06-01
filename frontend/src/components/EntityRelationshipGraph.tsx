@@ -20,8 +20,8 @@ import { useFetch } from '../hooks/useFetch';
 import { apiClient } from '../api/client';
 import { Entity, EntityRelationship } from '../types';
 
-const ENTITY_TYPE_ICONS: Record<string, string> = { hostname: '🖥', ip: '🌐', email: '📧', domain: '🔗', account: '👤' };
-const ENTITY_TYPE_COLORS: Record<string, string> = { hostname: '#58a6ff', ip: '#3fb950', email: '#d29922', domain: '#a371f7', account: '#f0883e' };
+const ENTITY_TYPE_ICONS: Record<string, string> = { hostname: '🖥', ip: '🌐', email: '📧', domain: '🔗', account: '👤', file: '📄' };
+const ENTITY_TYPE_COLORS: Record<string, string> = { hostname: '#58a6ff', ip: '#3fb950', email: '#d29922', domain: '#a371f7', account: '#f0883e', file: '#79c0ff' };
 const RELATIONSHIP_SUGGESTIONS = ['visited', 'downloaded', 'executed', 'communicated_with', 'owns', 'hosted_on', 'resolved_to', 'lateral_movement_to', 'authenticated_to', 'spawned'];
 
 interface EntityNodeData {
@@ -269,17 +269,27 @@ function GraphInner({ incidentId }: GraphInnerProps) {
   }, [entities, relationships]);
 
   const { nodes: initNodes, edges: initEdges } = buildGraph();
-  const [, setNodes, onNodesChange] = useNodesState(initNodes);
-  const [, , onEdgesChange] = useEdgesState(initEdges);
+  const [nodes, setNodes, onNodesChange] = useNodesState(initNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initEdges);
 
-  // Sync node positions when data changes
+  // Only reset node positions when the set of entity IDs changes (new/removed entities).
+  // Relationship changes only update edges so dragged positions are preserved.
+  const entityIds = (entities ?? []).map((e) => e.id).join(',');
   useEffect(() => {
     const { nodes: n } = buildGraph();
-    setNodes(n);
+    // Preserve positions of nodes that already exist in state.
+    setNodes((prev) => {
+      const posMap = new Map(prev.map((p) => [p.id, p.position]));
+      return n.map((node) => ({ ...node, position: posMap.get(node.id) ?? node.position }));
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entities, relationships]);
+  }, [entityIds]);
 
-  const currentGraph = buildGraph();
+  useEffect(() => {
+    const { edges: e } = buildGraph();
+    setEdges(e);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [relationships]);
 
   const autoLayout = useCallback(() => {
     const ents = entities ?? [];
@@ -339,8 +349,8 @@ function GraphInner({ incidentId }: GraphInnerProps) {
             </div>
           ) : (
             <ReactFlow
-              nodes={currentGraph.nodes}
-              edges={currentGraph.edges}
+              nodes={nodes}
+              edges={edges}
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
               nodeTypes={nodeTypes}

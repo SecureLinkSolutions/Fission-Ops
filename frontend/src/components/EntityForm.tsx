@@ -7,7 +7,7 @@ interface Props {
   onCreated: () => void;
 }
 
-const ENTITY_TYPES: EntityType[] = ['hostname', 'ip', 'email', 'domain', 'account'];
+const ENTITY_TYPES: EntityType[] = ['hostname', 'ip', 'email', 'domain', 'account', 'file'];
 
 const s: Record<string, React.CSSProperties> = {
   form: { background: '#161b22', border: '1px solid #30363d', borderRadius: '8px', padding: '20px', marginBottom: '24px' },
