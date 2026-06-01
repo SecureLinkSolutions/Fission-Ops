@@ -7,6 +7,7 @@ import * as repo from '../repositories/entityRepository';
 import * as incidentRepo from '../repositories/incidentRepository';
 import { runEnrichment } from '../services/enrichment/enrichmentService';
 import { emitToIncident } from '../socket';
+import { z } from 'zod';
 
 const router = Router({ mergeParams: true });
 

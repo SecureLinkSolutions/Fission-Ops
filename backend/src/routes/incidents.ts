@@ -67,6 +67,25 @@ router.put(
   },
 );
 
+router.patch(
+  '/:id/incident-status',
+  authenticate,
+  requireRole('senior_analyst'),
+  async (req: Request, res: Response) => {
+    const { incident_status } = z.object({
+      incident_status: z.enum(['active', 'contained', 'eradicated', 'recovered', 'closed']),
+    }).parse(req.body);
+    const isSuperAdmin = req.user!.role === 'super_admin';
+    const orgId = isSuperAdmin ? undefined : req.user!.org_id;
+    const incident = await repo.updateIncidentOperationalStatus(req.params.id, incident_status, req.user!.sub, orgId);
+    if (!incident) {
+      res.status(404).json({ error: 'Incident not found', code: 'NOT_FOUND' });
+      return;
+    }
+    res.json(incident);
+  },
+);
+
 router.delete(
   '/:id',
   authenticate,

@@ -23,7 +23,8 @@ const ZONE_COLORS: Record<string, string> = {
 };
 
 const ENTITY_TYPE_ICONS: Record<string, string> = {
-  hostname: '🖥', ip: '🌐', email: '📧', domain: '🔗', account: '👤',
+  hostname: '🖥', ip: '🌐', email: '📧', domain: '🔗', account: '👤', file: '📄',
+  process: '🔧', registry: '🗝', certificate: '🏅', url: '🌍', custom: '📌',
 };
 
 interface EntityZoneAssignment {
@@ -33,6 +34,7 @@ interface EntityZoneAssignment {
   boundary_id: string;
   boundary_name: string;
   zone_type: string;
+  entity_status?: string;
 }
 
 interface BoundaryTraversal {

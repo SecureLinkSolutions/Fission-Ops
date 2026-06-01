@@ -75,11 +75,13 @@ router.get('/:id/report', authenticate, async (req: Request, res: Response) => {
         table: {
           widths: ['*', '*', '*'],
           body: [
-            [{ text: 'Value', bold: true }, { text: 'Notes', bold: true }, { text: 'Details', bold: true }],
+            [{ text: 'Value', bold: true }, { text: 'Notes', bold: true }, { text: 'Metadata', bold: true }],
             ...typeEntities.map((e) => [
               e.value,
               e.notes ?? '',
-              e.entity_details ? JSON.stringify(e.entity_details) : '',
+              e.entity_details && Object.keys(e.entity_details as Record<string, unknown>).length > 0
+                ? Object.entries(e.entity_details as Record<string, unknown>).map(([k, v]) => `${k}: ${v}`).join('\n')
+                : '',
             ]),
           ] as TableCell[][],
         },

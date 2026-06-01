@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useFetch } from '../hooks/useFetch';
 import { apiClient } from '../api/client';
 import { Incident } from '../types';
+import IncidentStatusBadge from '../components/IncidentStatusBadge';
 
 const SEVERITY_COLORS: Record<string, string> = { low: '#3fb950', medium: '#d29922', high: '#f85149', critical: '#ff7b72' };
 const STATUS_COLORS: Record<string, string> = { open: '#58a6ff', contained: '#d29922', closed: '#8b949e' };
@@ -61,7 +62,7 @@ export default function IncidentList() {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
-              {['Title', 'Severity', 'Status', 'Entities', 'Created'].map((h) => (
+              {['Title', 'Severity', 'Status', 'Op. Status', 'Entities', 'Created'].map((h) => (
                 <th key={h} style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid #30363d', color: '#8b949e', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase' }}>{h}</th>
               ))}
             </tr>
@@ -72,6 +73,9 @@ export default function IncidentList() {
                 <td style={{ padding: '14px 16px', borderBottom: '1px solid #21262d', color: '#58a6ff', fontWeight: 600 }}>{inc.title}</td>
                 <td style={{ padding: '14px 16px', borderBottom: '1px solid #21262d' }}>{badge(SEVERITY_COLORS[inc.severity], inc.severity)}</td>
                 <td style={{ padding: '14px 16px', borderBottom: '1px solid #21262d' }}>{badge(STATUS_COLORS[inc.status], inc.status)}</td>
+                <td style={{ padding: '14px 16px', borderBottom: '1px solid #21262d' }}>
+                  {inc.incident_status && <IncidentStatusBadge status={inc.incident_status} />}
+                </td>
                 <td style={{ padding: '14px 16px', borderBottom: '1px solid #21262d', color: '#e6edf3' }}>{inc.entity_count ?? 0}</td>
                 <td style={{ padding: '14px 16px', borderBottom: '1px solid #21262d', color: '#8b949e', fontSize: '13px' }}>{new Date(inc.created_at).toLocaleDateString()}</td>
               </tr>

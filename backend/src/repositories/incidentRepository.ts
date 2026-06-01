@@ -115,6 +115,56 @@ export async function updateIncident(
   return result.rows[0] ?? null;
 }
 
+export async function updateIncidentOperationalStatus(
+  id: string,
+  incident_status: string,
+  userId: string,
+  orgId?: string,
+): Promise<Incident | null> {
+  // get old status first
+  const oldResult = await pool.query(`SELECT incident_status FROM incidents WHERE id = $1`, [id]);
+  const oldStatus = oldResult.rows[0]?.incident_status ?? 'active';
+
+  const params: unknown[] = [incident_status, id];
+  let orgFilter = '';
+  if (orgId) {
+    params.push(orgId);
+    orgFilter = ` AND org_id = $3`;
+  }
+
+  const result = await pool.query(
+    `UPDATE incidents SET incident_status = $1, updated_at = NOW() WHERE id = $2${orgFilter} RETURNING *`,
+    params,
+  );
+  const incident = result.rows[0] ?? null;
+  if (incident) {
+    // Log audit
+    await pool.query(
+      `INSERT INTO audit_logs (user_id, action, resource_type, resource_id, old_values, new_values)
+       VALUES ($1, 'incident_status_changed', 'incident', $2, $3, $4)`,
+      [userId, id, JSON.stringify({ incident_status: oldStatus }), JSON.stringify({ incident_status })],
+    );
+    // Notify assigned users
+    const assignedUsers = await pool.query(
+      `SELECT user_id FROM incident_assignments WHERE incident_id = $1`,
+      [id],
+    );
+    for (const row of assignedUsers.rows) {
+      await pool.query(
+        `INSERT INTO notifications (user_id, type, title, message, incident_id)
+         VALUES ($1, 'incident_status_changed', $2, $3, $4)`,
+        [
+          row.user_id,
+          `Incident status changed to ${incident_status}`,
+          `Incident operational status changed from ${oldStatus} to ${incident_status}`,
+          id,
+        ],
+      );
+    }
+  }
+  return incident;
+}
+
 export async function closeIncident(id: string, orgId?: string): Promise<Incident | null> {
   const params: unknown[] = [id];
   let orgFilter = '';

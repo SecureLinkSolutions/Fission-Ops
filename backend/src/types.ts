@@ -1,7 +1,9 @@
 export type UserRole = 'analyst' | 'senior_analyst' | 'incident_commander' | 'super_admin';
 export type IncidentSeverity = 'low' | 'medium' | 'high' | 'critical';
 export type IncidentStatus = 'open' | 'contained' | 'closed';
-export type EntityType = 'hostname' | 'ip' | 'email' | 'domain' | 'account' | 'file';
+export type EntityType = 'hostname' | 'ip' | 'email' | 'domain' | 'account' | 'file' | 'process' | 'registry' | 'certificate' | 'url' | 'custom';
+export type EntityStatus = 'unreviewed' | 'under_investigation' | 'isolated' | 'contained' | 'cleared' | 'confirmed_malicious';
+export type IncidentOperationalStatus = 'active' | 'contained' | 'eradicated' | 'recovered' | 'closed';
 export type ConfidenceLevel = 'low' | 'medium' | 'high';
 export type ZoneType = 'IT' | 'OT' | 'trusted' | 'untrusted' | 'dmz';
 export type DirectionType = 'ingress' | 'egress' | 'lateral';
@@ -22,6 +24,7 @@ export interface Incident {
   description?: string;
   severity: IncidentSeverity;
   status: IncidentStatus;
+  incident_status: IncidentOperationalStatus;
   created_by: string;
   created_at: Date;
   updated_at: Date;
@@ -34,6 +37,7 @@ export interface Entity {
   value: string;
   notes?: string;
   entity_details?: Record<string, unknown>;
+  status: EntityStatus;
   created_by: string;
   created_at: Date;
 }

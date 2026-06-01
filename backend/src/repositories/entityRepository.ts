@@ -83,6 +83,22 @@ export async function updateEntity(
   return result.rows[0] ?? null;
 }
 
+export async function updateEntityStatus(id: string, status: string, userId: string): Promise<Entity | null> {
+  const result = await pool.query(
+    `UPDATE entities SET status = $1 WHERE id = $2 RETURNING *`,
+    [status, id],
+  );
+  const entity = result.rows[0] ?? null;
+  if (entity) {
+    await pool.query(
+      `INSERT INTO audit_logs (user_id, action, resource_type, resource_id, new_values)
+       VALUES ($1, 'entity_status_changed', 'entity', $2, $3)`,
+      [userId, id, JSON.stringify({ status })],
+    );
+  }
+  return entity;
+}
+
 export async function deleteEntity(id: string): Promise<boolean> {
   const result = await pool.query('DELETE FROM entities WHERE id = $1', [id]);
   return (result.rowCount ?? 0) > 0;

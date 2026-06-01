@@ -16,6 +16,7 @@ import {
 import { useFetch } from '../hooks/useFetch';
 import { apiClient } from '../api/client';
 import { KillChainStage, KillChainFramework } from '../types';
+import EntityStatusBadge from './EntityStatusBadge';
 import TTPSearch from './TTPSearch';
 
 interface TTPInfo {
@@ -37,6 +38,7 @@ interface MatrixRow {
   framework?: string;
   ttps?: TTPInfo[];
   ioc_status?: string;
+  status?: string;
   enrichment_data?: { verdict?: string };
 }
 
@@ -121,6 +123,7 @@ function StageNode({ data }: NodeProps) {
               {ent.enrichment_data?.verdict === 'malicious' && !ent.ioc_status && <span style={{ color: '#f85149', fontSize: '9px' }}>●</span>}
               {ent.enrichment_data?.verdict === 'suspicious' && !ent.ioc_status && <span style={{ color: '#d29922', fontSize: '9px' }}>●</span>}
               {ent.enrichment_data?.verdict === 'clean' && !ent.ioc_status && <span style={{ color: '#3fb950', fontSize: '9px' }}>●</span>}
+              {ent.status && ent.status !== 'unreviewed' && <EntityStatusBadge status={ent.status} compact />}
               {!ent.enrichment_data?.verdict && <span style={{ color: CONFIDENCE_COLORS[ent.confidence] ?? '#8b949e', fontSize: '9px' }}>●</span>}
             </div>
             {(ent.ttps ?? []).length > 0 && (

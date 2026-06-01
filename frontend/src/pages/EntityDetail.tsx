@@ -7,9 +7,10 @@ import KillChainPanel from '../components/KillChainPanel';
 import BoundaryMappingPanel from '../components/BoundaryMappingPanel';
 import CommentThread from '../components/CommentThread';
 import { useAuth } from '../context/AuthContext';
+import EntityStatusBadge, { ENTITY_STATUS_CONFIG } from '../components/EntityStatusBadge';
 
-const ENTITY_TYPE_ICONS: Record<string, string> = { hostname: '🖥', ip: '🌐', email: '📧', domain: '🔗', account: '👤' };
-const ENTITY_TYPE_COLORS: Record<string, string> = { hostname: '#58a6ff', ip: '#3fb950', email: '#d29922', domain: '#a371f7', account: '#f0883e' };
+const ENTITY_TYPE_ICONS: Record<string, string> = { hostname: '🖥', ip: '🌐', email: '📧', domain: '🔗', account: '👤', file: '📄', process: '🔧', registry: '🗝', certificate: '🏅', url: '🌍', custom: '📌' };
+const ENTITY_TYPE_COLORS: Record<string, string> = { hostname: '#58a6ff', ip: '#3fb950', email: '#d29922', domain: '#a371f7', account: '#f0883e', file: '#79c0ff', process: '#79c0ff', registry: '#d2a8ff', certificate: '#56d364', url: '#ffa657', custom: '#8b949e' };
 
 const IOC_STATUS_DISPLAY: Record<string, { label: string; color: string }> = {
   confirmed: { label: '💀 CONFIRMED', color: '#f85149' },
@@ -27,6 +28,30 @@ const ENRICHMENT_STATUS_COLORS: Record<string, string> = {
 
 const ROLE_RANK: Record<string, number> = { analyst: 1, senior_analyst: 2, incident_commander: 3, super_admin: 99 };
 
+const LABEL_MAP: Record<string, string> = {
+  sha256: 'SHA-256', md5: 'MD5', sha1: 'SHA-1', file_size: 'File Size', file_type: 'File Type',
+  file_path: 'File Path', first_seen: 'First Seen', last_seen: 'Last Seen',
+  signature_status: 'Signature Status', asn: 'ASN', isp: 'ISP/Organization', open_ports: 'Open Ports',
+  reverse_dns: 'Reverse DNS', registrar: 'Registrar', registration_date: 'Registration Date',
+  expiry_date: 'Expiry Date', nameservers: 'Nameservers', a_records: 'A Records',
+  mx_records: 'MX Records', whois_data: 'WHOIS Data', full_url: 'Full URL',
+  http_status: 'HTTP Status', redirect_chain: 'Redirect Chain', page_title: 'Page Title',
+  hosting_ip: 'Hosting IP', username: 'Username', account_type: 'Account Type',
+  last_login: 'Last Login', mfa_enabled: 'MFA Enabled', created_date: 'Created Date',
+  ip_address: 'IP Address', operating_system: 'Operating System', os_version: 'OS Version',
+  mac_address: 'MAC Address', domain_joined: 'Domain Joined', sender_address: 'Sender Address',
+  recipients: 'Recipients', date_sent: 'Date Sent', sending_ip: 'Sending IP',
+  attachments: 'Attachments', process_name: 'Process Name', pid: 'PID',
+  parent_process: 'Parent Process', command_line: 'Command Line', executable_path: 'Executable Path',
+  user_context: 'User Context', key_path: 'Key Path', value_name: 'Value Name',
+  value_data: 'Value Data', last_modified: 'Last Modified', serial_number: 'Serial Number',
+  valid_from: 'Valid From', valid_to: 'Valid To', thumbprint: 'Thumbprint',
+};
+
+function humanLabel(key: string): string {
+  return LABEL_MAP[key] ?? key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 interface ExtendedEntity extends Entity {
   ioc_status?: 'suspected' | 'confirmed' | 'cleared';
   ioc_notes?: string;
@@ -40,6 +65,7 @@ export default function EntityDetail() {
   const { id, entityId } = useParams<{ id: string; entityId: string }>();
   const { user } = useAuth();
   const [iocNotes, setIocNotes] = useState('');
+  const [statusChanging, setStatusChanging] = useState(false);
   const [settingIOC, setSettingIOC] = useState(false);
 
   const { data: entity, loading, error, refetch } = useFetch<ExtendedEntity>(
@@ -57,6 +83,16 @@ export default function EntityDetail() {
       setIocNotes('');
     } finally {
       setSettingIOC(false);
+    }
+  }
+
+  async function handleSetEntityStatus(status: string) {
+    setStatusChanging(true);
+    try {
+      await apiClient.patch(`/entities/${entityId}/status`, { status });
+      refetch();
+    } finally {
+      setStatusChanging(false);
     }
   }
 
@@ -95,19 +131,46 @@ export default function EntityDetail() {
               {ioc.label}
             </span>
           )}
+          <EntityStatusBadge status={entity.status ?? 'unreviewed'} />
         </div>
         <div style={{ fontFamily: 'monospace', fontSize: '20px', fontWeight: 700, color: '#e6edf3', marginBottom: '8px' }}>{entity.value}</div>
         {entity.notes && <div style={{ color: '#8b949e', fontSize: '13px', lineHeight: '1.5' }}>{entity.notes}</div>}
         {entity.entity_details && Object.keys(entity.entity_details).length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginTop: '12px' }}>
-            {Object.entries(entity.entity_details).map(([k, v]) => (
-              <div key={k} style={{ background: '#0d1117', borderRadius: '6px', padding: '8px 12px' }}>
-                <div style={{ color: '#8b949e', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase' }}>{k}</div>
-                <div style={{ color: '#e6edf3', fontSize: '13px', marginTop: '2px', fontFamily: 'monospace' }}>{String(v)}</div>
-              </div>
-            ))}
+          <div style={{ marginTop: '16px' }}>
+            <div style={{ color: '#8b949e', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', marginBottom: '8px' }}>Metadata</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+              {Object.entries(entity.entity_details).map(([k, v]) => (
+                <div key={k} style={{ background: '#0d1117', borderRadius: '6px', padding: '8px 12px' }}>
+                  <div style={{ color: '#8b949e', fontSize: '11px', fontWeight: 600 }}>{humanLabel(k)}</div>
+                  <div style={{ color: '#e6edf3', fontSize: '13px', marginTop: '2px', fontFamily: 'monospace', wordBreak: 'break-all' }}>{String(v)}</div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
+      </div>
+
+      {/* Entity Status Section */}
+      <div style={{ background: '#161b22', border: '1px solid #30363d', borderRadius: '8px', padding: '20px', marginBottom: '24px' }}>
+        <div style={{ fontWeight: 600, fontSize: '14px', color: '#e6edf3', marginBottom: '12px' }}>Entity Status</div>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          {Object.entries(ENTITY_STATUS_CONFIG).map(([s, cfg]) => (
+            <button
+              key={s}
+              onClick={() => handleSetEntityStatus(s)}
+              disabled={statusChanging || entity.status === s}
+              style={{
+                background: `${cfg.color}22`, color: cfg.color, border: `1px solid ${cfg.color}${entity.status === s ? '88' : '44'}`,
+                borderRadius: '12px', padding: '4px 12px', fontSize: '12px', fontWeight: 600,
+                cursor: entity.status === s ? 'default' : 'pointer',
+                opacity: entity.status === s ? 1 : 0.7,
+                outline: entity.status === s ? `2px solid ${cfg.color}` : 'none',
+              }}
+            >
+              {cfg.icon} {cfg.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* IOC Section */}

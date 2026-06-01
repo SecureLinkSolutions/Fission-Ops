@@ -3,6 +3,8 @@ import { useParams, Link } from 'react-router-dom';
 import { useFetch } from '../hooks/useFetch';
 import { apiClient } from '../api/client';
 import { Incident, Entity, TimelineEntry } from '../types';
+import EntityStatusBadge from '../components/EntityStatusBadge';
+import IncidentStatusBadge, { INCIDENT_STATUS_CONFIG } from '../components/IncidentStatusBadge';
 import EntityForm from '../components/EntityForm';
 import KillChainFlow from '../components/KillChainFlow';
 import EntityRelationshipGraph from '../components/EntityRelationshipGraph';
@@ -57,9 +59,11 @@ export default function IncidentDetail() {
   const { isFeatureEnabled } = useLicense();
   const [activeTab, setActiveTab] = useState<Tab>('entities');
   const [timelineActionType, setTimelineActionType] = useState('');
+  const [incidentStatusChanging, setIncidentStatusChanging] = useState(false);
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [timelineUserId, setTimelineUserId] = useState('');
 
-  const { data: incident, loading: incLoading, error: incError } = useFetch<Incident>(
+  const { data: incident, loading: incLoading, error: incError, refetch: refetchIncident } = useFetch<Incident>(
     () => apiClient.get(`/incidents/${id}`).then((r) => r.data), [id],
   );
   const { data: entities, refetch: refetchEntities } = useFetch<Entity[]>(
@@ -101,6 +105,19 @@ export default function IncidentDetail() {
     onKillchainUpdated: () => {},
   });
 
+  async function handleIncidentStatusChange(newStatus: string) {
+    setIncidentStatusChanging(true);
+    setShowStatusDropdown(false);
+    try {
+      await apiClient.patch(`/incidents/${id}/incident-status`, { incident_status: newStatus });
+      refetchIncident();
+    } catch (_e) {
+      // ignore
+    } finally {
+      setIncidentStatusChanging(false);
+    }
+  }
+
   // IOC summary: entities with ioc_status
   const iocEntities = (entities ?? []).filter((e) => (e as Entity & { ioc_status?: string }).ioc_status);
 
@@ -120,6 +137,8 @@ export default function IncidentDetail() {
   );
 
   const teamMembers = (assignments ?? []).map((a) => ({ id: a.user_id, email: a.email, name: a.name }));
+  const ROLE_RANK_INC: Record<string, number> = { analyst: 1, senior_analyst: 2, incident_commander: 3, super_admin: 99 };
+  const canChangeIncidentStatus = ROLE_RANK_INC[user?.role ?? ''] >= ROLE_RANK_INC['senior_analyst'];
 
   return (
     <div style={{ padding: '32px', maxWidth: '1400px', margin: '0 auto' }}>
@@ -129,6 +148,39 @@ export default function IncidentDetail() {
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
             {badge(SEVERITY_COLORS[incident.severity], incident.severity)}
             {badge(STATUS_COLORS[incident.status], incident.status)}
+            {incident.incident_status && !showStatusDropdown && (
+              canChangeIncidentStatus ? (
+                <button
+                  onClick={() => setShowStatusDropdown(true)}
+                  disabled={incidentStatusChanging}
+                  style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }}
+                  title="Click to change operational status"
+                >
+                  <IncidentStatusBadge status={incident.incident_status} />
+                </button>
+              ) : (
+                <IncidentStatusBadge status={incident.incident_status} />
+              )
+            )}
+            {showStatusDropdown && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                {Object.entries(INCIDENT_STATUS_CONFIG).map(([s, cfg]) => (
+                  <button
+                    key={s}
+                    onClick={() => handleIncidentStatusChange(s)}
+                    style={{
+                      background: `${cfg.color}22`, color: cfg.color, border: `1px solid ${cfg.color}44`,
+                      borderRadius: '12px', padding: '3px 10px', fontSize: '11px', fontWeight: 600,
+                      cursor: 'pointer',
+                      outline: incident.incident_status === s ? `2px solid ${cfg.color}` : 'none',
+                    }}
+                  >
+                    {cfg.label}
+                  </button>
+                ))}
+                <button onClick={() => setShowStatusDropdown(false)} style={{ background: 'transparent', border: '1px solid #30363d', borderRadius: '6px', padding: '2px 8px', color: '#8b949e', fontSize: '11px', cursor: 'pointer' }}>✕</button>
+              </div>
+            )}
             {incident.description && <span style={{ color: '#8b949e', fontSize: '13px' }}>{incident.description}</span>}
             {taskStats && taskStats.total > 0 && (
               <span style={{ color: '#8b949e', fontSize: '13px', background: '#21262d', padding: '2px 8px', borderRadius: '4px' }}>
@@ -210,6 +262,7 @@ export default function IncidentDetail() {
                     {ioc.label}
                   </span>
                 )}
+                <EntityStatusBadge status={e.status ?? 'unreviewed'} compact />
                 {e.notes && <span style={{ color: '#8b949e', fontSize: '12px' }}>{e.notes}</span>}
                 <Link to={`/incidents/${id}/entities/${e.id}`} style={{ color: '#58a6ff', textDecoration: 'none', fontSize: '12px' }}>View →</Link>
               </div>

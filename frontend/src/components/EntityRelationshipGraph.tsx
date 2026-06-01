@@ -19,9 +19,10 @@ import {
 import { useFetch } from '../hooks/useFetch';
 import { apiClient } from '../api/client';
 import { Entity, EntityRelationship } from '../types';
+import EntityStatusBadge from './EntityStatusBadge';
 
-const ENTITY_TYPE_ICONS: Record<string, string> = { hostname: '🖥', ip: '🌐', email: '📧', domain: '🔗', account: '👤', file: '📄' };
-const ENTITY_TYPE_COLORS: Record<string, string> = { hostname: '#58a6ff', ip: '#3fb950', email: '#d29922', domain: '#a371f7', account: '#f0883e', file: '#79c0ff' };
+const ENTITY_TYPE_ICONS: Record<string, string> = { hostname: '🖥', ip: '🌐', email: '📧', domain: '🔗', account: '👤', file: '📄', process: '🔧', registry: '🗝', certificate: '🏅', url: '🌍', custom: '📌' };
+const ENTITY_TYPE_COLORS: Record<string, string> = { hostname: '#58a6ff', ip: '#3fb950', email: '#d29922', domain: '#a371f7', account: '#f0883e', file: '#79c0ff', process: '#79c0ff', registry: '#d2a8ff', certificate: '#56d364', url: '#ffa657', custom: '#8b949e' };
 const RELATIONSHIP_SUGGESTIONS = ['visited', 'downloaded', 'executed', 'communicated_with', 'owns', 'hosted_on', 'resolved_to', 'lateral_movement_to', 'authenticated_to', 'spawned'];
 
 interface EntityNodeData {
@@ -52,12 +53,42 @@ function EntityNode({ data, selected }: NodeProps) {
       <div style={{ fontFamily: 'monospace', fontSize: '12px', color: '#e6edf3', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {entity.value}
       </div>
+      {entity.status && entity.status !== 'unreviewed' && (
+        <div style={{ marginTop: '4px' }}>
+          <EntityStatusBadge status={entity.status} compact />
+        </div>
+      )}
       <Handle type="source" position={Position.Right} style={{ background: color, width: 8, height: 8 }} />
     </div>
   );
 }
 
 const nodeTypes = { entity: EntityNode };
+
+
+const LABEL_MAP: Record<string, string> = {
+  sha256: 'SHA-256', md5: 'MD5', sha1: 'SHA-1', file_size: 'File Size', file_type: 'File Type',
+  file_path: 'File Path', first_seen: 'First Seen', last_seen: 'Last Seen',
+  signature_status: 'Signature Status', asn: 'ASN', isp: 'ISP/Organization', open_ports: 'Open Ports',
+  reverse_dns: 'Reverse DNS', registrar: 'Registrar', registration_date: 'Registration Date',
+  expiry_date: 'Expiry Date', nameservers: 'Nameservers', a_records: 'A Records',
+  mx_records: 'MX Records', whois_data: 'WHOIS Data', full_url: 'Full URL',
+  http_status: 'HTTP Status', redirect_chain: 'Redirect Chain', page_title: 'Page Title',
+  hosting_ip: 'Hosting IP', username: 'Username', account_type: 'Account Type',
+  last_login: 'Last Login', mfa_enabled: 'MFA Enabled', created_date: 'Created Date',
+  ip_address: 'IP Address', operating_system: 'Operating System', os_version: 'OS Version',
+  mac_address: 'MAC Address', domain_joined: 'Domain Joined', sender_address: 'Sender Address',
+  recipients: 'Recipients', date_sent: 'Date Sent', sending_ip: 'Sending IP',
+  attachments: 'Attachments', process_name: 'Process Name', pid: 'PID',
+  parent_process: 'Parent Process', command_line: 'Command Line', executable_path: 'Executable Path',
+  user_context: 'User Context', key_path: 'Key Path', value_name: 'Value Name',
+  value_data: 'Value Data', last_modified: 'Last Modified', serial_number: 'Serial Number',
+  valid_from: 'Valid From', valid_to: 'Valid To', thumbprint: 'Thumbprint',
+};
+
+function humanLabel(key: string): string {
+  return LABEL_MAP[key] ?? key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 interface SidePanelProps {
   entity: Entity;
@@ -91,6 +122,11 @@ function SidePanel({ entity, onClose }: SidePanelProps) {
         <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#8b949e', fontSize: '18px', cursor: 'pointer', padding: '0 4px' }}>✕</button>
       </div>
 
+      {e.status && (
+        <div style={{ marginBottom: '12px' }}>
+          <EntityStatusBadge status={e.status} />
+        </div>
+      )}
       {e.notes && (
         <div style={{ marginBottom: '16px' }}>
           <div style={{ color: '#8b949e', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', marginBottom: '4px' }}>Notes</div>
@@ -100,10 +136,10 @@ function SidePanel({ entity, onClose }: SidePanelProps) {
 
       {e.entity_details && Object.keys(e.entity_details).length > 0 && (
         <div style={{ marginBottom: '16px' }}>
-          <div style={{ color: '#8b949e', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', marginBottom: '8px' }}>Details</div>
+          <div style={{ color: '#8b949e', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', marginBottom: '8px' }}>Metadata</div>
           {Object.entries(e.entity_details).map(([k, v]) => (
             <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #21262d' }}>
-              <span style={{ color: '#8b949e', fontSize: '12px' }}>{k}</span>
+              <span style={{ color: '#8b949e', fontSize: '12px' }}>{humanLabel(k)}</span>
               <span style={{ color: '#e6edf3', fontSize: '12px', fontFamily: 'monospace' }}>{String(v)}</span>
             </div>
           ))}
