@@ -304,19 +304,40 @@ function GraphInner({ incidentId }: GraphInnerProps) {
     return { nodes, edges };
   }, [entities, relationships]);
 
+  const storageKey = `relgraph-positions-${incidentId}`;
+
+  function loadSavedPositions(): Map<string, { x: number; y: number }> {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return new Map();
+      return new Map(Object.entries(JSON.parse(raw)));
+    } catch {
+      return new Map();
+    }
+  }
+
+  function savePositions(ns: Node[]) {
+    const obj: Record<string, { x: number; y: number }> = {};
+    ns.forEach((n) => { obj[n.id] = n.position; });
+    localStorage.setItem(storageKey, JSON.stringify(obj));
+  }
+
   const { nodes: initNodes, edges: initEdges } = buildGraph();
   const [nodes, setNodes, onNodesChange] = useNodesState(initNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initEdges);
 
   // Only reset node positions when the set of entity IDs changes (new/removed entities).
-  // Relationship changes only update edges so dragged positions are preserved.
+  // Prefer saved positions (localStorage) over default grid, then fall back to existing state.
   const entityIds = (entities ?? []).map((e) => e.id).join(',');
   useEffect(() => {
     const { nodes: n } = buildGraph();
-    // Preserve positions of nodes that already exist in state.
+    const saved = loadSavedPositions();
     setNodes((prev) => {
-      const posMap = new Map(prev.map((p) => [p.id, p.position]));
-      return n.map((node) => ({ ...node, position: posMap.get(node.id) ?? node.position }));
+      const stateMap = new Map(prev.map((p) => [p.id, p.position]));
+      return n.map((node) => ({
+        ...node,
+        position: saved.get(node.id) ?? stateMap.get(node.id) ?? node.position,
+      }));
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entityIds]);
@@ -327,16 +348,24 @@ function GraphInner({ incidentId }: GraphInnerProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [relationships]);
 
+  const handleNodeDragStop = useCallback((_: React.MouseEvent, _node: Node, allNodes: Node[]) => {
+    savePositions(allNodes);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storageKey]);
+
   const autoLayout = useCallback(() => {
     const ents = entities ?? [];
     const cols = 4;
-    setNodes(ents.map((e, i) => ({
+    const newNodes = ents.map((e, i) => ({
       id: e.id,
       type: 'entity',
       position: { x: (i % cols) * 220, y: Math.floor(i / cols) * 140 },
       data: { entity: e, color: ENTITY_TYPE_COLORS[e.type] ?? '#8b949e' } as EntityNodeData,
-    })));
-  }, [entities, setNodes]);
+    }));
+    setNodes(newNodes);
+    savePositions(newNodes);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entities, setNodes, storageKey]);
 
   const handleNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
     const d = node.data as EntityNodeData;
@@ -391,6 +420,7 @@ function GraphInner({ incidentId }: GraphInnerProps) {
               onEdgesChange={onEdgesChange}
               nodeTypes={nodeTypes}
               onNodeClick={handleNodeClick}
+              onNodeDragStop={handleNodeDragStop}
               fitView
               fitViewOptions={{ padding: 0.2 }}
               minZoom={0.2}

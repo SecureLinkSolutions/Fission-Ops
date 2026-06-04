@@ -48,11 +48,12 @@ interface StageNodeData {
   entities: MatrixRow[];
   stageId: string;
   onDrop: (mappingId: string, newStageId: string) => void;
+  onNewMapping: (entityId: string, stageId: string) => void;
   onEntityClick: (row: MatrixRow) => void;
   [key: string]: unknown;
 }
 
-const ENTITY_TYPE_ICONS: Record<string, string> = { hostname: '🖥', ip: '🌐', email: '📧', domain: '🔗', account: '👤' };
+const ENTITY_TYPE_ICONS: Record<string, string> = { hostname: '🖥', ip: '🌐', email: '📧', domain: '🔗', account: '👤', file: '📄', process: '🔧', registry: '🗝', certificate: '🏅', url: '🌍', custom: '📌' };
 const CONFIDENCE_COLORS: Record<string, string> = { low: '#d29922', medium: '#58a6ff', high: '#3fb950' };
 const FRAMEWORK_LABELS: Record<KillChainFramework, string> = {
   lockheed_martin: 'Lockheed Martin',
@@ -67,13 +68,19 @@ function StageNode({ data }: NodeProps) {
 
   return (
     <div
-      onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
-      onDragLeave={() => setIsDragOver(false)}
+      onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragOver(true); }}
+      onDragLeave={(e) => { e.stopPropagation(); setIsDragOver(false); }}
       onDrop={(e) => {
         e.preventDefault();
+        e.stopPropagation();
         setIsDragOver(false);
         const mappingId = e.dataTransfer.getData('mappingId');
-        if (mappingId) d.onDrop(mappingId, d.stageId);
+        const entityId = e.dataTransfer.getData('entityId');
+        if (mappingId) {
+          d.onDrop(mappingId, d.stageId);
+        } else if (entityId) {
+          d.onNewMapping(entityId, d.stageId);
+        }
       }}
       style={{
         background: isDragOver ? '#2d3f2d' : (hasEntities ? '#1a2f1a' : '#161b22'),
@@ -100,8 +107,9 @@ function StageNode({ data }: NodeProps) {
         {d.entities.map((ent) => (
           <div
             key={ent.mapping_id}
+            className="nodrag nopan"
             draggable
-            onDragStart={(e) => { e.dataTransfer.setData('mappingId', ent.mapping_id); e.stopPropagation(); }}
+            onDragStart={(e) => { e.dataTransfer.setData('mappingId', ent.mapping_id); e.dataTransfer.effectAllowed = 'move'; e.stopPropagation(); }}
             style={{
               background: '#21262d',
               border: '1px solid #30363d',
@@ -171,6 +179,11 @@ function KillChainFlowInner({ incidentId }: KillChainFlowInnerProps) {
     [incidentId],
   );
 
+  const { data: allEntities } = useFetch<{ id: string; type: string; value: string }[]>(
+    () => apiClient.get(`/incidents/${incidentId}/entities`).then((r) => r.data),
+    [incidentId],
+  );
+
   matrixRef.current = matrix ?? [];
 
   const handleEntityClick = useCallback((row: MatrixRow) => {
@@ -183,6 +196,16 @@ function KillChainFlowInner({ incidentId }: KillChainFlowInnerProps) {
     setUpdating(true);
     try {
       await apiClient.patch(`/entities/${mapping.entity_id}/kill-chain/${mappingId}`, { stage_id: newStageId });
+      refetchMatrix();
+    } finally {
+      setUpdating(false);
+    }
+  }, [refetchMatrix]);
+
+  const handleNewMapping = useCallback(async (entityId: string, stageId: string) => {
+    setUpdating(true);
+    try {
+      await apiClient.post(`/entities/${entityId}/kill-chain`, { stage_id: stageId, confidence: 'medium' });
       refetchMatrix();
     } finally {
       setUpdating(false);
@@ -205,12 +228,13 @@ function KillChainFlowInner({ incidentId }: KillChainFlowInnerProps) {
           entities: stageEntities,
           stageId: stage.id,
           onDrop: handleDrop,
+          onNewMapping: handleNewMapping,
           onEntityClick: handleEntityClick,
         } as StageNodeData,
         draggable: false,
       };
     });
-  }, [stages, matrix, handleDrop, handleEntityClick]);
+  }, [stages, matrix, handleDrop, handleNewMapping, handleEntityClick]);
 
   const buildEdges = useCallback((): Edge[] => {
     if (!stages || stages.length < 2) return [];
@@ -262,6 +286,33 @@ function KillChainFlowInner({ incidentId }: KillChainFlowInnerProps) {
         })}
         {updating && <span style={{ color: '#8b949e', fontSize: '12px' }}>Updating…</span>}
       </div>
+      {/* Unassigned entities — drag into stages */}
+      {(() => {
+        const mappedEntityIds = new Set((matrix ?? []).map((m) => m.entity_id));
+        const unassigned = (allEntities ?? []).filter((e) => !mappedEntityIds.has(e.id));
+        if (unassigned.length === 0) return null;
+        return (
+          <div style={{ marginBottom: '10px', padding: '10px 12px', background: '#161b22', border: '1px solid #30363d', borderRadius: '8px' }}>
+            <div style={{ color: '#8b949e', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', marginBottom: '8px' }}>
+              Unassigned Entities — drag into a stage
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              {unassigned.map((ent) => (
+                <div
+                  key={ent.id}
+                  className="nodrag nopan"
+                  draggable
+                  onDragStart={(e) => { e.dataTransfer.setData('entityId', ent.id); e.dataTransfer.effectAllowed = 'move'; }}
+                  style={{ background: '#21262d', border: '1px solid #30363d', borderRadius: '4px', padding: '3px 8px', fontSize: '11px', color: '#e6edf3', cursor: 'grab', display: 'flex', alignItems: 'center', gap: '4px' }}
+                >
+                  <span>{ENTITY_TYPE_ICONS[ent.type] ?? '•'}</span>
+                  <span style={{ fontFamily: 'monospace' }}>{ent.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
       <div style={{ height: '480px', background: '#0d1117', border: '1px solid #30363d', borderRadius: '8px', overflow: 'hidden' }}>
         <ReactFlow
           nodes={currentNodes}

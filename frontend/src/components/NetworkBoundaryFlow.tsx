@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useLicense } from '../context/LicenseContext';
 import UpgradePrompt from './UpgradePrompt';
 import {
@@ -288,11 +288,57 @@ function NetworkBoundaryFlowInner({ incidentId }: NetworkBoundaryFlowInnerProps)
     }));
   }, [traversals]);
 
-  const currentNodes = buildNodes();
+  const storageKey = `netmap-positions-${incidentId}`;
+
+  function loadSavedPositions(): Map<string, { x: number; y: number }> {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return new Map();
+      return new Map(Object.entries(JSON.parse(raw)));
+    } catch {
+      return new Map();
+    }
+  }
+
+  function saveNodePositions(ns: Node[]) {
+    const obj: Record<string, { x: number; y: number }> = {};
+    ns.forEach((n) => { obj[n.id] = n.position; });
+    localStorage.setItem(storageKey, JSON.stringify(obj));
+  }
+
+  // Apply saved positions to nodes and make them draggable
+  const baseNodes = buildNodes();
+  const savedPositions = loadSavedPositions();
+  const currentNodes = baseNodes.map((n) => ({
+    ...n,
+    draggable: true,
+    position: savedPositions.get(n.id) ?? n.position,
+  }));
   const currentEdges = buildEdges();
 
-  const [nodes, , onNodesChange] = useNodesState(currentNodes);
+  const [nodes, setNodes, onNodesChange] = useNodesState(currentNodes);
   const [edges, , onEdgesChange] = useEdgesState(currentEdges);
+
+  // Sync when boundary data changes, preserving dragged positions
+  const boundaryIds = (boundaries ?? []).map((b: NetworkBoundary) => b.id).join(',');
+  useEffect(() => {
+    const base = buildNodes();
+    const saved = loadSavedPositions();
+    setNodes((prev) => {
+      const stateMap = new Map(prev.map((p) => [p.id, p.position]));
+      return base.map((n) => ({
+        ...n,
+        draggable: true,
+        position: stateMap.get(n.id) ?? saved.get(n.id) ?? n.position,
+      }));
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [boundaryIds, zoneAssignments]);
+
+  const handleNodeDragStop = useCallback((_: React.MouseEvent, _node: Node, allNodes: Node[]) => {
+    saveNodePositions(allNodes);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storageKey]);
 
   const assignedEntityIds = new Set((zoneAssignments ?? []).map((za) => za.entity_id));
   const unassignedEntities = (entities ?? []).filter((e) => !assignedEntityIds.has(e.id));
@@ -362,10 +408,11 @@ function NetworkBoundaryFlowInner({ incidentId }: NetworkBoundaryFlowInnerProps)
         {/* React Flow canvas */}
         <div style={{ flex: 1, height: '600px', background: '#0d1117', border: '1px solid #30363d', borderRadius: '8px', overflow: 'hidden' }}>
           <ReactFlow
-            nodes={currentNodes.length > 0 ? currentNodes : nodes}
+            nodes={nodes}
             edges={currentEdges.length > 0 ? currentEdges : edges}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
+            onNodeDragStop={handleNodeDragStop}
             nodeTypes={nodeTypes}
             fitView
             fitViewOptions={{ padding: 0.2 }}
