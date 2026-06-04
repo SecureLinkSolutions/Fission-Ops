@@ -138,16 +138,17 @@ export default function NotificationBell() {
 
       {open && (
         <div style={{
-          position: 'absolute',
-          top: 'calc(100% + 8px)',
-          right: 0,
-          width: '340px',
+          position: 'fixed',
+          top: 'auto',
+          left: '220px',
+          bottom: '80px',
+          width: '360px',
           background: '#161b22',
           border: '1px solid #30363d',
           borderRadius: '8px',
-          zIndex: 200,
-          boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
-          maxHeight: '400px',
+          zIndex: 1000,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+          maxHeight: '480px',
           display: 'flex',
           flexDirection: 'column',
         }}>

@@ -97,7 +97,7 @@ export default function NavBar({ connectionState }: NavBarProps) {
       <div style={{ padding: '12px 8px', flex: 1 }}>
         <NavLink to="/incidents" icon="⚡" label="Incidents" active={location.pathname.startsWith('/incidents')} />
         <NavLink to="/tasks/mine" icon="✅" label="My Tasks" active={location.pathname.startsWith('/tasks')} />
-        <NotificationBell />
+        <div style={{ padding: '4px 16px' }}><NotificationBell /></div>
         {isAdmin && (
           <>
             <div style={{ padding: '12px 16px 4px', color: '#484f58', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: '8px' }}>Admin</div>

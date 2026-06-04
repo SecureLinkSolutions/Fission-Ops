@@ -56,7 +56,10 @@ function EntityNode({ data, selected }: NodeProps) {
         animation: 'nodeEntrance 0.3s ease-out',
       }}
     >
-      <Handle type="target" position={Position.Left} style={{ background: color, width: 8, height: 8 }} />
+      <Handle type="target" id="left"   position={Position.Left}   style={{ background: color, width: 9, height: 9, border: '2px solid #0d1117' }} />
+      <Handle type="target" id="top"    position={Position.Top}    style={{ background: color, width: 9, height: 9, border: '2px solid #0d1117' }} />
+      <Handle type="source" id="right"  position={Position.Right}  style={{ background: color, width: 9, height: 9, border: '2px solid #0d1117' }} />
+      <Handle type="source" id="bottom" position={Position.Bottom} style={{ background: color, width: 9, height: 9, border: '2px solid #0d1117' }} />
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
         <span style={{ fontSize: '16px' }}>{ENTITY_TYPE_ICONS[entity.type] ?? '•'}</span>
         <span style={{ background: `${color}22`, color, border: `1px solid ${color}44`, borderRadius: '4px', padding: '1px 6px', fontSize: '10px', fontWeight: 700 }}>{entity.type}</span>
@@ -69,7 +72,6 @@ function EntityNode({ data, selected }: NodeProps) {
           <EntityStatusBadge status={entity.status} compact />
         </div>
       )}
-      <Handle type="source" position={Position.Right} style={{ background: color, width: 8, height: 8 }} />
     </div>
   );
 }
@@ -262,11 +264,13 @@ interface AddRelationshipFormProps {
   incidentId: string;
   onCreated: () => void;
   onClose: () => void;
+  presetSource?: string;
+  presetTarget?: string;
 }
 
-function AddRelationshipForm({ entities, incidentId, onCreated, onClose }: AddRelationshipFormProps) {
-  const [source, setSource] = useState('');
-  const [target, setTarget] = useState('');
+function AddRelationshipForm({ entities, incidentId, onCreated, onClose, presetSource, presetTarget }: AddRelationshipFormProps) {
+  const [source, setSource] = useState(presetSource ?? '');
+  const [target, setTarget] = useState(presetTarget ?? '');
   const [relType, setRelType] = useState('');
   const [notes, setNotes] = useState('');
   const [bidirectional, setBidirectional] = useState(false);
@@ -354,6 +358,7 @@ interface GraphInnerProps {
 function GraphInner({ incidentId }: GraphInnerProps) {
   const [selectedEntity, setSelectedEntity] = useState<Entity | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [connectPreset, setConnectPreset] = useState<{ source: string; target: string } | null>(null);
 
   const { data: entities } = useFetch<Entity[]>(
     () => apiClient.get(`/incidents/${incidentId}/entities`).then((r) => r.data),
@@ -461,6 +466,13 @@ function GraphInner({ incidentId }: GraphInnerProps) {
     setShowAddForm(false);
   }, []);
 
+  const handleConnect = useCallback((connection: { source: string | null; target: string | null }) => {
+    if (!connection.source || !connection.target) return;
+    setConnectPreset({ source: connection.source, target: connection.target });
+    setShowAddForm(true);
+    setSelectedEntity(null);
+  }, []);
+
   const isEmpty = !entities?.length;
 
   return (
@@ -490,7 +502,9 @@ function GraphInner({ incidentId }: GraphInnerProps) {
             entities={entities ?? []}
             incidentId={incidentId}
             onCreated={refetchRels}
-            onClose={() => setShowAddForm(false)}
+            presetSource={connectPreset?.source}
+            presetTarget={connectPreset?.target}
+            onClose={() => { setShowAddForm(false); setConnectPreset(null); }}
           />
         )}
       </div>
@@ -513,6 +527,9 @@ function GraphInner({ incidentId }: GraphInnerProps) {
               edgeTypes={edgeTypes}
               onNodeClick={handleNodeClick}
               onNodeDragStop={handleNodeDragStop}
+              onConnect={handleConnect}
+              connectionLineStyle={{ stroke: '#58a6ff', strokeWidth: 2, strokeDasharray: '6 3' }}
+              connectionRadius={40}
               fitView
               fitViewOptions={{ padding: 0.2 }}
               minZoom={0.2}
@@ -531,6 +548,11 @@ function GraphInner({ incidentId }: GraphInnerProps) {
               />
             </ReactFlow>
           )}
+          <div style={{ padding: '6px 10px', borderTop: '1px solid #21262d', background: '#0d1117', borderRadius: '0 0 8px 8px' }}>
+            <span style={{ color: '#484f58', fontSize: '11px' }}>
+              Click a node to view details · Drag between connection points to link entities · Drag nodes to reposition
+            </span>
+          </div>
         </div>
 
         {selectedEntity && (
