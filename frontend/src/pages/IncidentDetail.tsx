@@ -12,6 +12,7 @@ import NetworkBoundaryFlow from '../components/NetworkBoundaryFlow';
 import CommentThread from '../components/CommentThread';
 import TaskBoard, { Task } from '../components/TaskBoard';
 import PresenceBar from '../components/PresenceBar';
+import SuggestedActions from '../components/SuggestedActions';
 import { useIncidentSocket } from '../hooks/useIncidentSocket';
 import { useAuth } from '../context/AuthContext';
 import { useLicense } from '../context/LicenseContext';
@@ -163,18 +164,19 @@ export default function IncidentDetail() {
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
             {badge(SEVERITY_COLORS[incident.severity], incident.severity)}
             {badge(STATUS_COLORS[incident.status], incident.status)}
-            {incident.incident_status && !showStatusDropdown && (
+            {!showStatusDropdown && (
               canChangeIncidentStatus ? (
                 <button
                   onClick={() => setShowStatusDropdown(true)}
                   disabled={incidentStatusChanging}
-                  style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }}
-                  title="Click to change operational status"
+                  style={{ background: 'transparent', border: '1px solid #30363d', borderRadius: '8px', padding: '2px 6px 2px 2px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  title="Change operational status"
                 >
-                  <IncidentStatusBadge status={incident.incident_status} />
+                  <IncidentStatusBadge status={incident.incident_status ?? 'active'} />
+                  <span style={{ color: '#484f58', fontSize: '10px' }}>▾</span>
                 </button>
               ) : (
-                <IncidentStatusBadge status={incident.incident_status} />
+                <IncidentStatusBadge status={incident.incident_status ?? 'active'} />
               )
             )}
             {showStatusDropdown && (
@@ -267,20 +269,36 @@ export default function IncidentDetail() {
         {(entities ?? []).map((e) => {
           const ext = e as Entity & { ioc_status?: string; enrichment_status?: string; enrichment_data?: { verdict?: string } };
           const ioc = ext.ioc_status ? IOC_STATUS_DISPLAY[ext.ioc_status] : null;
+          const isFlagged = ext.status === 'confirmed_malicious' || ext.status === 'under_investigation' || ext.ioc_status === 'confirmed';
+          const borderColor = isFlagged ? '#f0883e44' : '#30363d';
           return (
-            <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', background: '#161b22', border: '1px solid #30363d', borderRadius: '8px', marginBottom: '8px' }}>
-              <span style={{ background: `${ENTITY_TYPE_COLORS[e.type]}22`, color: ENTITY_TYPE_COLORS[e.type], border: `1px solid ${ENTITY_TYPE_COLORS[e.type]}44`, borderRadius: '6px', padding: '4px 10px', fontSize: '12px', fontWeight: 600 }}>
-                {ENTITY_TYPE_ICONS[e.type]} {e.type}
-              </span>
-              <span style={{ color: '#e6edf3', fontSize: '14px', flex: 1, fontFamily: 'monospace' }}>{e.value}</span>
-              {ioc && (
-                <span style={{ background: `${ioc.color}22`, color: ioc.color, border: `1px solid ${ioc.color}44`, borderRadius: '4px', padding: '2px 8px', fontSize: '11px', fontWeight: 700 }}>
-                  {ioc.label}
+            <div key={e.id} style={{ background: '#161b22', border: `1px solid ${borderColor}`, borderRadius: '8px', marginBottom: '8px', overflow: 'hidden' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px' }}>
+                <span style={{ background: `${ENTITY_TYPE_COLORS[e.type]}22`, color: ENTITY_TYPE_COLORS[e.type], border: `1px solid ${ENTITY_TYPE_COLORS[e.type]}44`, borderRadius: '6px', padding: '4px 10px', fontSize: '12px', fontWeight: 600 }}>
+                  {ENTITY_TYPE_ICONS[e.type]} {e.type}
                 </span>
+                <span style={{ color: '#e6edf3', fontSize: '14px', flex: 1, fontFamily: 'monospace' }}>{e.value}</span>
+                {ioc && (
+                  <span style={{ background: `${ioc.color}22`, color: ioc.color, border: `1px solid ${ioc.color}44`, borderRadius: '4px', padding: '2px 8px', fontSize: '11px', fontWeight: 700 }}>
+                    {ioc.label}
+                  </span>
+                )}
+                <EntityStatusBadge status={e.status ?? 'unreviewed'} compact />
+                {e.notes && <span style={{ color: '#8b949e', fontSize: '12px' }}>{e.notes}</span>}
+                <Link to={`/incidents/${id}/entities/${e.id}`} style={{ color: '#58a6ff', textDecoration: 'none', fontSize: '12px' }}>View →</Link>
+              </div>
+              {isFlagged && (
+                <div style={{ borderTop: '1px solid #f0883e22', padding: '12px 16px', background: '#f0883e05' }}>
+                  <SuggestedActions
+                    entity={{ id: e.id, type: e.type, value: e.value, status: e.status, ioc_status: ext.ioc_status }}
+                    incidentId={id!}
+                    onCreateTask={async (title) => {
+                      await apiClient.post(`/incidents/${id}/tasks`, { title, priority: 'high' }).catch(() => {});
+                      refetchTasks();
+                    }}
+                  />
+                </div>
               )}
-              <EntityStatusBadge status={e.status ?? 'unreviewed'} compact />
-              {e.notes && <span style={{ color: '#8b949e', fontSize: '12px' }}>{e.notes}</span>}
-              <Link to={`/incidents/${id}/entities/${e.id}`} style={{ color: '#58a6ff', textDecoration: 'none', fontSize: '12px' }}>View →</Link>
             </div>
           );
         })}
