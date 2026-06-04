@@ -9,12 +9,16 @@ import {
   Controls,
   MiniMap,
   NodeProps,
+  EdgeProps,
   Handle,
   Position,
   useNodesState,
   useEdgesState,
   MarkerType,
   ReactFlowProvider,
+  getBezierPath,
+  EdgeLabelRenderer,
+  BaseEdge,
 } from '@xyflow/react';
 import { useFetch } from '../hooks/useFetch';
 import { apiClient } from '../api/client';
@@ -71,6 +75,79 @@ function EntityNode({ data, selected }: NodeProps) {
 }
 
 const nodeTypes = { entity: EntityNode };
+
+function DirectionalEdge({
+  id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition,
+  data, label, markerEnd, markerStart,
+}: EdgeProps) {
+  const [edgePath, labelX, labelY] = getBezierPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition });
+  const bidirectional = (data as { bidirectional?: boolean } | undefined)?.bidirectional ?? false;
+  const edgeId = `flow-${id}`;
+
+  return (
+    <>
+      <defs>
+        <marker id={`arrow-end-${id}`} markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#58a6ff99" />
+        </marker>
+        {bidirectional && (
+          <marker id={`arrow-start-${id}`} markerWidth="8" markerHeight="8" refX="2" refY="3" orient="auto-start-reverse">
+            <path d="M0,0 L0,6 L8,3 z" fill="#a371f799" />
+          </marker>
+        )}
+      </defs>
+
+      {/* Base path */}
+      <BaseEdge id={id} path={edgePath} markerEnd={markerEnd} markerStart={bidirectional ? markerStart : undefined} style={{ stroke: bidirectional ? '#a371f755' : '#58a6ff55', strokeWidth: 2 }} />
+
+      {/* Animated flow particle — forward direction */}
+      <path id={edgeId} d={edgePath} fill="none" stroke="none" />
+      <circle r="4" fill={bidirectional ? '#a371f7' : '#58a6ff'} opacity="0.85">
+        <animateMotion dur={bidirectional ? '1.8s' : '2.2s'} repeatCount="indefinite" rotate="auto">
+          <mpath href={`#${edgeId}`} />
+        </animateMotion>
+      </circle>
+
+      {/* Bidirectional: second particle going backwards */}
+      {bidirectional && (
+        <circle r="4" fill="#58a6ff" opacity="0.85">
+          <animateMotion dur="1.8s" repeatCount="indefinite" rotate="auto" keyPoints="1;0" keyTimes="0;1" calcMode="linear">
+            <mpath href={`#${edgeId}`} />
+          </animateMotion>
+        </circle>
+      )}
+
+      {/* Edge label */}
+      {label && (
+        <EdgeLabelRenderer>
+          <div
+            style={{
+              position: 'absolute',
+              transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
+              pointerEvents: 'all',
+              background: '#161b22',
+              border: `1px solid ${bidirectional ? '#a371f744' : '#58a6ff44'}`,
+              borderRadius: '4px',
+              padding: '2px 7px',
+              fontSize: '10px',
+              color: bidirectional ? '#a371f7' : '#58a6ff',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              whiteSpace: 'nowrap',
+            }}
+            className="nodrag nopan"
+          >
+            {bidirectional ? '⇄' : '→'} {String(label)}
+          </div>
+        </EdgeLabelRenderer>
+      )}
+    </>
+  );
+}
+
+const edgeTypes = { directional: DirectionalEdge };
 
 
 const LABEL_MAP: Record<string, string> = {
@@ -192,6 +269,7 @@ function AddRelationshipForm({ entities, incidentId, onCreated, onClose }: AddRe
   const [target, setTarget] = useState('');
   const [relType, setRelType] = useState('');
   const [notes, setNotes] = useState('');
+  const [bidirectional, setBidirectional] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -206,7 +284,8 @@ function AddRelationshipForm({ entities, incidentId, onCreated, onClose }: AddRe
     setLoading(true); setError('');
     try {
       await apiClient.post(`/incidents/${incidentId}/relationships`, {
-        source_entity_id: source, target_entity_id: target, relationship_type: relType, notes: notes || undefined,
+        source_entity_id: source, target_entity_id: target, relationship_type: relType,
+        bidirectional, notes: notes || undefined,
       });
       onCreated();
       onClose();
@@ -251,6 +330,10 @@ function AddRelationshipForm({ entities, incidentId, onCreated, onClose }: AddRe
       </select>
       <div style={{ color: '#8b949e', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', marginBottom: '4px' }}>Notes (optional)</div>
       <input style={inputStyle} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Additional context…" />
+      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', cursor: 'pointer' }}>
+        <input type="checkbox" checked={bidirectional} onChange={(e) => setBidirectional(e.target.checked)} />
+        <span style={{ color: '#c9d1d9', fontSize: '13px' }}>Bidirectional relationship <span style={{ color: '#a371f7', fontSize: '11px' }}>⇄</span></span>
+      </label>
       {error && <div style={{ color: '#f85149', fontSize: '12px', marginBottom: '10px' }}>{error}</div>}
       <div style={{ display: 'flex', gap: '8px' }}>
         <button onClick={handleSubmit} disabled={loading} style={{ flex: 1, background: '#238636', border: 'none', borderRadius: '6px', padding: '9px', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
@@ -300,12 +383,10 @@ function GraphInner({ incidentId }: GraphInnerProps) {
       source: r.source_entity_id,
       target: r.target_entity_id,
       label: r.relationship_type,
-      labelStyle: { fill: '#8b949e', fontSize: 10 },
-      labelBgStyle: { fill: '#161b22', fillOpacity: 0.9 },
-      labelBgPadding: [4, 4] as [number, number],
-      style: { stroke: '#58a6ff66', strokeWidth: 1.5 },
-      animated: true,
-      markerEnd: { type: MarkerType.ArrowClosed, color: '#58a6ff66' },
+      type: 'directional',
+      data: { bidirectional: r.bidirectional },
+      markerEnd: { type: MarkerType.ArrowClosed, color: '#58a6ff99' },
+      markerStart: r.bidirectional ? { type: MarkerType.ArrowClosed, color: '#a371f799' } : undefined,
     }));
 
     return { nodes, edges };
@@ -386,8 +467,6 @@ function GraphInner({ incidentId }: GraphInnerProps) {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <style>{`
         @keyframes nodeEntrance { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: scale(1); } }
-        @keyframes edgePulse { 0%,100% { stroke-opacity: 0.6; } 50% { stroke-opacity: 1; } }
-        .react-flow__edge-path { animation: edgePulse 2.5s ease-in-out infinite; }
       `}</style>
       <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', alignItems: 'center', position: 'relative' }}>
         <button
@@ -431,6 +510,7 @@ function GraphInner({ incidentId }: GraphInnerProps) {
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
               nodeTypes={nodeTypes}
+              edgeTypes={edgeTypes}
               onNodeClick={handleNodeClick}
               onNodeDragStop={handleNodeDragStop}
               fitView

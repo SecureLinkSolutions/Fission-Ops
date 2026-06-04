@@ -68,6 +68,7 @@ export interface EntityRelationship {
   source_entity_id: string;
   target_entity_id: string;
   relationship_type: string;
+  bidirectional: boolean;
   notes?: string;
   created_by: string;
   created_at: string;

@@ -137,4 +137,16 @@ async function runMigrations(): Promise<void> {
     await pool.query(sql);
     console.log('✅ Migration 009 applied');
   }
+
+  const needsMigration010 = await pool.query(
+    `SELECT 1 FROM information_schema.columns
+     WHERE table_schema = 'public' AND table_name = 'entity_relationships' AND column_name = 'bidirectional'`,
+  );
+  if ((needsMigration010.rowCount ?? 0) === 0) {
+    console.log('⚙️  Running migration 010...');
+    const migrationPath = join(__dirname, '../../../../db/migrate_010.sql');
+    const sql = readFileSync(migrationPath, 'utf8');
+    await pool.query(sql);
+    console.log('✅ Migration 010 applied');
+  }
 }

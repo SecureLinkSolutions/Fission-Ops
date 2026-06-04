@@ -11,6 +11,7 @@ const createRelationshipSchema = z.object({
   source_entity_id: z.string().uuid(),
   target_entity_id: z.string().uuid(),
   relationship_type: z.string().min(1).max(100),
+  bidirectional: z.boolean().optional(),
   notes: z.string().optional(),
 });
 
@@ -23,6 +24,7 @@ router.post('/', authenticate, requireRole('analyst'), async (req: Request, res:
   const body = createRelationshipSchema.parse(req.body);
   const relationship = await repo.createRelationship({
     ...body,
+    bidirectional: body.bidirectional ?? false,
     incident_id: req.params.incidentId,
     created_by: req.user!.sub,
   });

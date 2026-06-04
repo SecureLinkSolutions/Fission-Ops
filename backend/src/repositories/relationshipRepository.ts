@@ -6,6 +6,7 @@ export interface EntityRelationship {
   source_entity_id: string;
   target_entity_id: string;
   relationship_type: string;
+  bidirectional: boolean;
   notes?: string;
   created_by: string;
   created_at: Date;
@@ -35,17 +36,18 @@ export async function createRelationship(data: {
   source_entity_id: string;
   target_entity_id: string;
   relationship_type: string;
+  bidirectional?: boolean;
   notes?: string;
   created_by: string;
 }): Promise<EntityRelationship> {
   const result = await pool.query(
     `INSERT INTO entity_relationships
-       (incident_id, source_entity_id, target_entity_id, relationship_type, notes, created_by)
-     VALUES ($1, $2, $3, $4, $5, $6)
+       (incident_id, source_entity_id, target_entity_id, relationship_type, bidirectional, notes, created_by)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
      ON CONFLICT (source_entity_id, target_entity_id, relationship_type) DO UPDATE
-       SET notes = EXCLUDED.notes, created_by = EXCLUDED.created_by
+       SET notes = EXCLUDED.notes, bidirectional = EXCLUDED.bidirectional, created_by = EXCLUDED.created_by
      RETURNING *`,
-    [data.incident_id, data.source_entity_id, data.target_entity_id, data.relationship_type, data.notes ?? null, data.created_by],
+    [data.incident_id, data.source_entity_id, data.target_entity_id, data.relationship_type, data.bidirectional ?? false, data.notes ?? null, data.created_by],
   );
   return result.rows[0];
 }
