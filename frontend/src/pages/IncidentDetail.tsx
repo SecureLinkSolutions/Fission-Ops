@@ -58,6 +58,12 @@ export default function IncidentDetail() {
   const { user } = useAuth();
   const { isFeatureEnabled } = useLicense();
   const [activeTab, setActiveTab] = useState<Tab>('entities');
+  const [visitedTabs, setVisitedTabs] = useState<Set<Tab>>(new Set<Tab>(['entities']));
+
+  function switchTab(tab: Tab) {
+    setActiveTab(tab);
+    setVisitedTabs((prev) => { const s = new Set(prev); s.add(tab); return s; });
+  }
   const [timelineActionType, setTimelineActionType] = useState('');
   const [incidentStatusChanging, setIncidentStatusChanging] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
@@ -239,7 +245,7 @@ export default function IncidentDetail() {
           <button
             key={key}
             style={tabStyle(activeTab === key, key)}
-            onClick={() => setActiveTab(key)}
+            onClick={() => switchTab(key)}
             onMouseEnter={() => setTabHover(key)}
             onMouseLeave={() => setTabHover(null)}
           >
@@ -281,11 +287,17 @@ export default function IncidentDetail() {
         {entities?.length === 0 && <div style={{ color: '#8b949e', fontSize: '14px' }}>No entities added yet.</div>}
       </div>
 
-      <div style={{ display: activeTab === 'killchain' ? undefined : 'none' }}><KillChainFlow incidentId={id!} /></div>
+      <div style={{ display: activeTab === 'killchain' ? undefined : 'none' }}>
+        {visitedTabs.has('killchain') && <KillChainFlow incidentId={id!} />}
+      </div>
 
-      <div style={{ display: activeTab === 'relationships' ? undefined : 'none' }}><EntityRelationshipGraph incidentId={id!} /></div>
+      <div style={{ display: activeTab === 'relationships' ? undefined : 'none' }}>
+        {visitedTabs.has('relationships') && <EntityRelationshipGraph incidentId={id!} />}
+      </div>
 
-      <div style={{ display: activeTab === 'network' ? undefined : 'none' }}><NetworkBoundaryFlow incidentId={id!} /></div>
+      <div style={{ display: activeTab === 'network' ? undefined : 'none' }}>
+        {visitedTabs.has('network') && <NetworkBoundaryFlow incidentId={id!} />}
+      </div>
 
       <div style={{ display: activeTab === 'timeline' ? undefined : 'none' }}>
         <div>
