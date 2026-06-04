@@ -34,17 +34,24 @@ interface EntityNodeData {
 function EntityNode({ data, selected }: NodeProps) {
   const d = data as EntityNodeData;
   const { entity, color } = d;
+  const [hovered, setHovered] = useState(false);
   return (
-    <div style={{
-      background: selected ? `${color}22` : '#161b22',
-      border: `2px solid ${selected ? color : color + '66'}`,
-      borderRadius: '10px',
-      padding: '10px 14px',
-      minWidth: '140px',
-      maxWidth: '200px',
-      transition: 'all 0.15s',
-      cursor: 'pointer',
-    }}>
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: selected ? `${color}22` : hovered ? `${color}11` : '#161b22',
+        border: `2px solid ${selected ? color : hovered ? color + 'aa' : color + '66'}`,
+        borderRadius: '10px',
+        padding: '10px 14px',
+        minWidth: '140px',
+        maxWidth: '200px',
+        transition: 'background 0.2s, border-color 0.2s, box-shadow 0.2s',
+        cursor: 'pointer',
+        boxShadow: hovered || selected ? `0 0 12px ${color}44` : '0 1px 4px rgba(0,0,0,0.4)',
+        animation: 'nodeEntrance 0.3s ease-out',
+      }}
+    >
       <Handle type="target" position={Position.Left} style={{ background: color, width: 8, height: 8 }} />
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
         <span style={{ fontSize: '16px' }}>{ENTITY_TYPE_ICONS[entity.type] ?? '•'}</span>
@@ -377,6 +384,11 @@ function GraphInner({ incidentId }: GraphInnerProps) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <style>{`
+        @keyframes nodeEntrance { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: scale(1); } }
+        @keyframes edgePulse { 0%,100% { stroke-opacity: 0.6; } 50% { stroke-opacity: 1; } }
+        .react-flow__edge-path { animation: edgePulse 2.5s ease-in-out infinite; }
+      `}</style>
       <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', alignItems: 'center', position: 'relative' }}>
         <button
           onClick={() => { setShowAddForm((v) => !v); setSelectedEntity(null); }}

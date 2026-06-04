@@ -77,7 +77,9 @@ function ZoneGroupNode({ data }: NodeProps) {
         borderRadius: '10px',
         width: '260px',
         minHeight: '160px',
-        transition: 'all 0.15s',
+        transition: 'background 0.2s, border-color 0.2s, box-shadow 0.2s',
+        boxShadow: isDragOver ? `0 0 18px ${color}55` : `0 0 8px ${color}18`,
+        animation: 'nodeEntrance 0.35s ease-out',
       }}
     >
       <Handle type="target" position={Position.Left} style={{ background: color, border: 'none', width: 10, height: 10 }} />
@@ -350,6 +352,9 @@ function NetworkBoundaryFlowInner({ incidentId }: NetworkBoundaryFlowInnerProps)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <style>{`
+        @keyframes nodeEntrance { from { opacity: 0; transform: scale(0.88); } to { opacity: 1; transform: scale(1); } }
+      `}</style>
       {/* Toolbar */}
       <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
         <input

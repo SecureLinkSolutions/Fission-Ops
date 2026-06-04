@@ -89,7 +89,9 @@ function StageNode({ data }: NodeProps) {
         padding: '12px',
         width: '180px',
         minHeight: '120px',
-        transition: 'all 0.15s',
+        transition: 'background 0.2s, border-color 0.2s, box-shadow 0.2s',
+        boxShadow: isDragOver ? '0 0 14px #3fb95055' : hasEntities ? '0 0 8px #3fb95022' : '0 1px 3px rgba(0,0,0,0.3)',
+        animation: 'nodeEntrance 0.35s ease-out',
       }}
     >
       <Handle type="target" position={Position.Left} style={{ opacity: 0 }} />
@@ -242,8 +244,8 @@ function KillChainFlowInner({ incidentId }: KillChainFlowInnerProps) {
       id: `e-${stage.id}-${stages[i + 1].id}`,
       source: stage.id,
       target: stages[i + 1].id,
-      style: { stroke: '#30363d', strokeWidth: 1 },
-      animated: false,
+      style: { stroke: '#58a6ff44', strokeWidth: 2, strokeDasharray: '6 3' },
+      animated: true,
     }));
   }, [stages]);
 
@@ -258,6 +260,9 @@ function KillChainFlowInner({ incidentId }: KillChainFlowInnerProps) {
 
   return (
     <div>
+      <style>{`
+        @keyframes nodeEntrance { from { opacity: 0; transform: scale(0.88); } to { opacity: 1; transform: scale(1); } }
+      `}</style>
       <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', alignItems: 'center' }}>
         <span style={{ color: '#8b949e', fontSize: '12px', fontWeight: 600 }}>Framework:</span>
         {(['lockheed_martin', 'mitre_attack', 'mitre_ics'] as KillChainFramework[]).map((fw) => {
