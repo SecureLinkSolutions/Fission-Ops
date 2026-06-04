@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { apiClient } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 
+export interface TaskEntity { id: string; type: string; value: string; }
+
 export interface Task {
   id: string;
   incident_id: string;
@@ -17,41 +19,70 @@ export interface Task {
   completed_at?: string;
   created_at: string;
   updated_at: string;
+  entities?: TaskEntity[];
 }
 
-interface TeamMember {
-  id: string;
-  email: string;
-  name: string;
-}
+interface TeamMember { id: string; email: string; name: string; }
 
 interface TaskBoardProps {
   incidentId: string;
   tasks: Task[];
   teamMembers?: TeamMember[];
+  availableEntities?: TaskEntity[];
   onRefresh: () => void;
 }
 
 const PRIORITY_COLORS: Record<string, string> = {
-  critical: '#f85149',
-  high: '#f0883e',
-  medium: '#d29922',
-  low: '#8b949e',
+  critical: '#f85149', high: '#f0883e', medium: '#d29922', low: '#8b949e',
 };
-
+const ENTITY_TYPE_ICONS: Record<string, string> = {
+  hostname: '🖥', ip: '🌐', email: '📧', domain: '🔗', account: '👤',
+  file: '📄', process: '🔧', registry: '🗝', certificate: '🏅', url: '🌍', custom: '📌',
+};
 const ROLE_RANK: Record<string, number> = { analyst: 1, senior_analyst: 2, incident_commander: 3, super_admin: 99 };
 
 interface TaskCardProps {
   task: Task;
   teamMembers: TeamMember[];
+  availableEntities: TaskEntity[];
   onRefresh: () => void;
   canManage: boolean;
 }
 
-function TaskCard({ task, teamMembers, onRefresh, canManage }: TaskCardProps) {
+function EntityPicker({ entities, selected, onChange }: {
+  entities: TaskEntity[];
+  selected: string[];
+  onChange: (ids: string[]) => void;
+}) {
+  return (
+    <div style={{ border: '1px solid #30363d', borderRadius: '4px', background: '#0d1117', maxHeight: '120px', overflowY: 'auto', padding: '4px' }}>
+      {entities.length === 0 && <div style={{ color: '#484f58', fontSize: '11px', padding: '4px' }}>No entities on this incident</div>}
+      {entities.map((e) => {
+        const checked = selected.includes(e.id);
+        return (
+          <label key={e.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '3px 4px', cursor: 'pointer', borderRadius: '3px', background: checked ? '#58a6ff11' : 'transparent' }}>
+            <input type="checkbox" checked={checked} onChange={() => onChange(checked ? selected.filter((id) => id !== e.id) : [...selected, e.id])} />
+            <span style={{ fontSize: '11px' }}>{ENTITY_TYPE_ICONS[e.type] ?? '•'}</span>
+            <span style={{ fontSize: '11px', fontFamily: 'monospace', color: '#e6edf3' }}>{e.value}</span>
+          </label>
+        );
+      })}
+    </div>
+  );
+}
+
+function TaskCard({ task, teamMembers, availableEntities, onRefresh, canManage }: TaskCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ title: task.title, description: task.description ?? '', assignee_id: task.assignee_id ?? '', priority: task.priority, status: task.status, due_date: task.due_date ?? '' });
+  const [form, setForm] = useState({
+    title: task.title,
+    description: task.description ?? '',
+    assignee_id: task.assignee_id ?? '',
+    priority: task.priority,
+    status: task.status,
+    due_date: task.due_date ?? '',
+  });
+  const [selectedEntityIds, setSelectedEntityIds] = useState<string[]>((task.entities ?? []).map((e) => e.id));
   const isOverdue = task.due_date && task.status !== 'complete' && new Date(task.due_date) < new Date();
 
   async function handleSave() {
@@ -59,6 +90,7 @@ function TaskCard({ task, teamMembers, onRefresh, canManage }: TaskCardProps) {
     if (form.description) payload.description = form.description;
     if (form.assignee_id) payload.assignee_id = form.assignee_id;
     if (form.due_date) payload.due_date = form.due_date;
+    payload.entity_ids = selectedEntityIds;
     await apiClient.patch(`/incidents/${task.incident_id}/tasks/${task.id}`, payload).catch(() => {});
     setEditing(false);
     onRefresh();
@@ -88,13 +120,25 @@ function TaskCard({ task, teamMembers, onRefresh, canManage }: TaskCardProps) {
       </div>
 
       {task.assignee_name && (
-        <div style={{ color: '#8b949e', fontSize: '11px', marginTop: '4px' }}>
-          👤 {task.assignee_name}
-        </div>
+        <div style={{ color: '#8b949e', fontSize: '11px', marginTop: '4px' }}>👤 {task.assignee_name}</div>
+      )}
+      {!task.assignee_name && task.assignee_email && (
+        <div style={{ color: '#8b949e', fontSize: '11px', marginTop: '4px' }}>👤 {task.assignee_email}</div>
       )}
       {task.due_date && (
         <div style={{ color: isOverdue ? '#f85149' : '#8b949e', fontSize: '11px' }}>
           📅 {new Date(task.due_date).toLocaleDateString()}{isOverdue ? ' OVERDUE' : ''}
+        </div>
+      )}
+
+      {/* Entity chips */}
+      {(task.entities ?? []).length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '6px' }}>
+          {(task.entities ?? []).map((e) => (
+            <span key={e.id} style={{ background: '#0d1117', border: '1px solid #30363d', borderRadius: '4px', padding: '2px 6px', fontSize: '10px', color: '#8b949e', fontFamily: 'monospace' }}>
+              {ENTITY_TYPE_ICONS[e.type] ?? '•'} {e.value}
+            </span>
+          ))}
         </div>
       )}
 
@@ -107,7 +151,7 @@ function TaskCard({ task, teamMembers, onRefresh, canManage }: TaskCardProps) {
                 {s.replace(/_/g, ' ')}
               </button>
             ))}
-            {canManage && <button onClick={() => setEditing(true)} style={{ background: 'transparent', border: '1px solid #30363d', borderRadius: '4px', padding: '3px 8px', color: '#8b949e', fontSize: '11px', cursor: 'pointer' }}>Edit</button>}
+            {canManage && <button onClick={() => { setSelectedEntityIds((task.entities ?? []).map((e) => e.id)); setEditing(true); }} style={{ background: 'transparent', border: '1px solid #30363d', borderRadius: '4px', padding: '3px 8px', color: '#8b949e', fontSize: '11px', cursor: 'pointer' }}>Edit</button>}
             {canManage && <button onClick={handleDelete} style={{ background: 'transparent', border: '1px solid #f8514944', borderRadius: '4px', padding: '3px 8px', color: '#f85149', fontSize: '11px', cursor: 'pointer' }}>Delete</button>}
           </div>
         </div>
@@ -125,6 +169,10 @@ function TaskCard({ task, teamMembers, onRefresh, canManage }: TaskCardProps) {
             {['critical', 'high', 'medium', 'low'].map((p) => <option key={p} value={p}>{p}</option>)}
           </select>
           <input style={inputStyle} type="date" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} />
+          <div>
+            <div style={{ color: '#8b949e', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', marginBottom: '4px' }}>Assign Entities to Investigate</div>
+            <EntityPicker entities={availableEntities} selected={selectedEntityIds} onChange={setSelectedEntityIds} />
+          </div>
           <div style={{ display: 'flex', gap: '6px' }}>
             <button onClick={handleSave} style={{ background: '#238636', border: 'none', borderRadius: '4px', padding: '4px 10px', color: '#fff', fontSize: '12px', cursor: 'pointer' }}>Save</button>
             <button onClick={() => setEditing(false)} style={{ background: 'transparent', border: '1px solid #30363d', borderRadius: '4px', padding: '4px 10px', color: '#8b949e', fontSize: '12px', cursor: 'pointer' }}>Cancel</button>
@@ -135,10 +183,11 @@ function TaskCard({ task, teamMembers, onRefresh, canManage }: TaskCardProps) {
   );
 }
 
-export default function TaskBoard({ incidentId, tasks, teamMembers = [], onRefresh }: TaskBoardProps) {
+export default function TaskBoard({ incidentId, tasks, teamMembers = [], availableEntities = [], onRefresh }: TaskBoardProps) {
   const { user } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ title: '', description: '', assignee_id: '', priority: 'medium', due_date: '' });
+  const [selectedEntityIds, setSelectedEntityIds] = useState<string[]>([]);
   const canManage = ROLE_RANK[user?.role ?? ''] >= ROLE_RANK['senior_analyst'];
 
   const columns: { key: Task['status']; label: string }[] = [
@@ -153,8 +202,10 @@ export default function TaskBoard({ incidentId, tasks, teamMembers = [], onRefre
     if (form.description) payload.description = form.description;
     if (form.assignee_id) payload.assignee_id = form.assignee_id;
     if (form.due_date) payload.due_date = form.due_date;
+    if (selectedEntityIds.length) payload.entity_ids = selectedEntityIds;
     await apiClient.post(`/incidents/${incidentId}/tasks`, payload).catch(() => {});
     setForm({ title: '', description: '', assignee_id: '', priority: 'medium', due_date: '' });
+    setSelectedEntityIds([]);
     setShowForm(false);
     onRefresh();
   }
@@ -166,10 +217,7 @@ export default function TaskBoard({ incidentId, tasks, teamMembers = [], onRefre
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <span style={{ color: '#8b949e', fontSize: '13px' }}>{tasks.filter((t) => t.status === 'complete').length}/{tasks.length} tasks complete</span>
         {canManage && (
-          <button
-            onClick={() => setShowForm(!showForm)}
-            style={{ background: '#238636', border: 'none', borderRadius: '6px', padding: '6px 14px', color: '#fff', fontSize: '13px', cursor: 'pointer' }}
-          >
+          <button onClick={() => setShowForm(!showForm)} style={{ background: '#238636', border: 'none', borderRadius: '6px', padding: '6px 14px', color: '#fff', fontSize: '13px', cursor: 'pointer' }}>
             + New Task
           </button>
         )}
@@ -187,11 +235,15 @@ export default function TaskBoard({ incidentId, tasks, teamMembers = [], onRefre
             <select style={inputStyle} value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })}>
               {['critical', 'high', 'medium', 'low'].map((p) => <option key={p} value={p}>{p}</option>)}
             </select>
-            <input style={inputStyle} type="date" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} placeholder="Due date" />
+            <input style={inputStyle} type="date" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} />
+          </div>
+          <div>
+            <div style={{ color: '#8b949e', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', marginBottom: '4px' }}>Entities to Investigate (optional)</div>
+            <EntityPicker entities={availableEntities} selected={selectedEntityIds} onChange={setSelectedEntityIds} />
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button onClick={handleCreate} style={{ background: '#238636', border: 'none', borderRadius: '6px', padding: '6px 14px', color: '#fff', fontSize: '13px', cursor: 'pointer' }}>Create</button>
-            <button onClick={() => setShowForm(false)} style={{ background: 'transparent', border: '1px solid #30363d', borderRadius: '6px', padding: '6px 14px', color: '#8b949e', fontSize: '13px', cursor: 'pointer' }}>Cancel</button>
+            <button onClick={() => { setShowForm(false); setSelectedEntityIds([]); }} style={{ background: 'transparent', border: '1px solid #30363d', borderRadius: '6px', padding: '6px 14px', color: '#8b949e', fontSize: '13px', cursor: 'pointer' }}>Cancel</button>
           </div>
         </div>
       )}
@@ -205,7 +257,7 @@ export default function TaskBoard({ incidentId, tasks, teamMembers = [], onRefre
                 {label} ({colTasks.length})
               </div>
               {colTasks.map((t) => (
-                <TaskCard key={t.id} task={t} teamMembers={teamMembers} onRefresh={onRefresh} canManage={canManage} />
+                <TaskCard key={t.id} task={t} teamMembers={teamMembers} availableEntities={availableEntities} onRefresh={onRefresh} canManage={canManage} />
               ))}
               {colTasks.length === 0 && <div style={{ color: '#484f58', fontSize: '12px', textAlign: 'center', paddingTop: '20px' }}>No tasks</div>}
             </div>

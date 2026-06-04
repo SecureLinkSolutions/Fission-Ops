@@ -126,4 +126,15 @@ async function runMigrations(): Promise<void> {
     await pool.query(`INSERT INTO deployment_config (key, value) VALUES ('migration_008_applied', 'true') ON CONFLICT (key) DO NOTHING`);
     console.log('✅ Migration 008 applied');
   }
+
+  const needsMigration009 = await pool.query(
+    `SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'task_entities'`,
+  );
+  if ((needsMigration009.rowCount ?? 0) === 0) {
+    console.log('⚙️  Running migration 009...');
+    const migrationPath = join(__dirname, '../../../../db/migrate_009.sql');
+    const sql = readFileSync(migrationPath, 'utf8');
+    await pool.query(sql);
+    console.log('✅ Migration 009 applied');
+  }
 }

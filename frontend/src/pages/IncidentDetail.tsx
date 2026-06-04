@@ -72,7 +72,7 @@ export default function IncidentDetail() {
   const { data: tasks, refetch: refetchTasks } = useFetch<Task[]>(
     () => apiClient.get(`/incidents/${id}/tasks`).then((r) => r.data), [id],
   );
-  const { data: assignments } = useFetch<{ user_id: string; email: string; name: string }[]>(
+  const { data: assignments } = useFetch<{ user_id: string; user_email: string; user_name: string }[]>(
     () => apiClient.get(`/incidents/${id}/assignments`).then((r) => r.data), [id],
   );
 
@@ -87,10 +87,8 @@ export default function IncidentDetail() {
   if (timelineActionType) timelineParams.set('action_type', timelineActionType);
   if (timelineUserId) timelineParams.set('user_id', timelineUserId);
   const { data: timeline } = useFetch<TimelineEntry[]>(
-    () => activeTab === 'timeline'
-      ? apiClient.get(`/incidents/${id}/timeline?${timelineParams.toString()}`).then((r) => r.data)
-      : Promise.resolve([]),
-    [activeTab, id, timelineActionType, timelineUserId],
+    () => apiClient.get(`/incidents/${id}/timeline?${timelineParams.toString()}`).then((r) => r.data),
+    [id, timelineActionType, timelineUserId],
   );
 
   // Real-time collaboration
@@ -136,7 +134,7 @@ export default function IncidentDetail() {
     new Map((timeline ?? []).map((e) => [e.user_id, e.user_email])).entries(),
   );
 
-  const teamMembers = (assignments ?? []).map((a) => ({ id: a.user_id, email: a.email, name: a.name }));
+  const teamMembers = (assignments ?? []).map((a) => ({ id: a.user_id, email: a.user_email, name: a.user_name }));
   const ROLE_RANK_INC: Record<string, number> = { analyst: 1, senior_analyst: 2, incident_commander: 3, super_admin: 99 };
   const canChangeIncidentStatus = ROLE_RANK_INC[user?.role ?? ''] >= ROLE_RANK_INC['senior_analyst'];
 
@@ -245,40 +243,38 @@ export default function IncidentDetail() {
         </Link>
       </div>
 
-      {activeTab === 'entities' && (
-        <>
-          <EntityForm incidentId={id!} onCreated={refetchEntities} />
-          {(entities ?? []).map((e) => {
-            const ext = e as Entity & { ioc_status?: string; enrichment_status?: string; enrichment_data?: { verdict?: string } };
-            const ioc = ext.ioc_status ? IOC_STATUS_DISPLAY[ext.ioc_status] : null;
-            return (
-              <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', background: '#161b22', border: '1px solid #30363d', borderRadius: '8px', marginBottom: '8px' }}>
-                <span style={{ background: `${ENTITY_TYPE_COLORS[e.type]}22`, color: ENTITY_TYPE_COLORS[e.type], border: `1px solid ${ENTITY_TYPE_COLORS[e.type]}44`, borderRadius: '6px', padding: '4px 10px', fontSize: '12px', fontWeight: 600 }}>
-                  {ENTITY_TYPE_ICONS[e.type]} {e.type}
+      <div style={{ display: activeTab === 'entities' ? undefined : 'none' }}>
+        <EntityForm incidentId={id!} onCreated={refetchEntities} />
+        {(entities ?? []).map((e) => {
+          const ext = e as Entity & { ioc_status?: string; enrichment_status?: string; enrichment_data?: { verdict?: string } };
+          const ioc = ext.ioc_status ? IOC_STATUS_DISPLAY[ext.ioc_status] : null;
+          return (
+            <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', background: '#161b22', border: '1px solid #30363d', borderRadius: '8px', marginBottom: '8px' }}>
+              <span style={{ background: `${ENTITY_TYPE_COLORS[e.type]}22`, color: ENTITY_TYPE_COLORS[e.type], border: `1px solid ${ENTITY_TYPE_COLORS[e.type]}44`, borderRadius: '6px', padding: '4px 10px', fontSize: '12px', fontWeight: 600 }}>
+                {ENTITY_TYPE_ICONS[e.type]} {e.type}
+              </span>
+              <span style={{ color: '#e6edf3', fontSize: '14px', flex: 1, fontFamily: 'monospace' }}>{e.value}</span>
+              {ioc && (
+                <span style={{ background: `${ioc.color}22`, color: ioc.color, border: `1px solid ${ioc.color}44`, borderRadius: '4px', padding: '2px 8px', fontSize: '11px', fontWeight: 700 }}>
+                  {ioc.label}
                 </span>
-                <span style={{ color: '#e6edf3', fontSize: '14px', flex: 1, fontFamily: 'monospace' }}>{e.value}</span>
-                {ioc && (
-                  <span style={{ background: `${ioc.color}22`, color: ioc.color, border: `1px solid ${ioc.color}44`, borderRadius: '4px', padding: '2px 8px', fontSize: '11px', fontWeight: 700 }}>
-                    {ioc.label}
-                  </span>
-                )}
-                <EntityStatusBadge status={e.status ?? 'unreviewed'} compact />
-                {e.notes && <span style={{ color: '#8b949e', fontSize: '12px' }}>{e.notes}</span>}
-                <Link to={`/incidents/${id}/entities/${e.id}`} style={{ color: '#58a6ff', textDecoration: 'none', fontSize: '12px' }}>View →</Link>
-              </div>
-            );
-          })}
-          {entities?.length === 0 && <div style={{ color: '#8b949e', fontSize: '14px' }}>No entities added yet.</div>}
-        </>
-      )}
+              )}
+              <EntityStatusBadge status={e.status ?? 'unreviewed'} compact />
+              {e.notes && <span style={{ color: '#8b949e', fontSize: '12px' }}>{e.notes}</span>}
+              <Link to={`/incidents/${id}/entities/${e.id}`} style={{ color: '#58a6ff', textDecoration: 'none', fontSize: '12px' }}>View →</Link>
+            </div>
+          );
+        })}
+        {entities?.length === 0 && <div style={{ color: '#8b949e', fontSize: '14px' }}>No entities added yet.</div>}
+      </div>
 
-      {activeTab === 'killchain' && <KillChainFlow incidentId={id!} />}
+      <div style={{ display: activeTab === 'killchain' ? undefined : 'none' }}><KillChainFlow incidentId={id!} /></div>
 
-      {activeTab === 'relationships' && <EntityRelationshipGraph incidentId={id!} />}
+      <div style={{ display: activeTab === 'relationships' ? undefined : 'none' }}><EntityRelationshipGraph incidentId={id!} /></div>
 
-      {activeTab === 'network' && <NetworkBoundaryFlow incidentId={id!} />}
+      <div style={{ display: activeTab === 'network' ? undefined : 'none' }}><NetworkBoundaryFlow incidentId={id!} /></div>
 
-      {activeTab === 'timeline' && (
+      <div style={{ display: activeTab === 'timeline' ? undefined : 'none' }}>
         <div>
           {/* Filters */}
           <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
@@ -340,16 +336,17 @@ export default function IncidentDetail() {
             )}
           </div>
         </div>
-      )}
+      </div>
 
-      {activeTab === 'tasks' && (
+      <div style={{ display: activeTab === 'tasks' ? undefined : 'none' }}>
         <TaskBoard
           incidentId={id!}
           tasks={tasks ?? []}
           teamMembers={teamMembers}
+          availableEntities={(entities ?? []).map((e) => ({ id: e.id, type: e.type, value: e.value }))}
           onRefresh={refetchTasks}
         />
-      )}
+      </div>
 
       {/* IOC Summary panel — always visible */}
       {iocEntities.length > 0 && (
