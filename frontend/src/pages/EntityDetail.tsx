@@ -8,6 +8,7 @@ import BoundaryMappingPanel from '../components/BoundaryMappingPanel';
 import CommentThread from '../components/CommentThread';
 import { useAuth } from '../context/AuthContext';
 import EntityStatusBadge, { ENTITY_STATUS_CONFIG } from '../components/EntityStatusBadge';
+import SuggestedActions from '../components/SuggestedActions';
 
 const ENTITY_TYPE_ICONS: Record<string, string> = { hostname: '🖥', ip: '🌐', email: '📧', domain: '🔗', account: '👤', file: '📄', process: '🔧', registry: '🗝', certificate: '🏅', url: '🌍', custom: '📌' };
 const ENTITY_TYPE_COLORS: Record<string, string> = { hostname: '#58a6ff', ip: '#3fb950', email: '#d29922', domain: '#a371f7', account: '#f0883e', file: '#79c0ff', process: '#79c0ff', registry: '#d2a8ff', certificate: '#56d364', url: '#ffa657', custom: '#8b949e' };
@@ -139,12 +140,26 @@ export default function EntityDetail() {
           <div style={{ marginTop: '16px' }}>
             <div style={{ color: '#8b949e', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', marginBottom: '8px' }}>Metadata</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
-              {Object.entries(entity.entity_details).map(([k, v]) => (
-                <div key={k} style={{ background: '#0d1117', borderRadius: '6px', padding: '8px 12px' }}>
-                  <div style={{ color: '#8b949e', fontSize: '11px', fontWeight: 600 }}>{humanLabel(k)}</div>
-                  <div style={{ color: '#e6edf3', fontSize: '13px', marginTop: '2px', fontFamily: 'monospace', wordBreak: 'break-all' }}>{String(v)}</div>
-                </div>
-              ))}
+              {Object.entries(entity.entity_details).map(([k, v]) => {
+                const isTi = k.startsWith('ti_');
+                if (isTi && (v === null || v === undefined || v === '')) return null;
+                const label = isTi
+                  ? k.slice(3).replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+                  : humanLabel(k);
+                return (
+                  <div key={k} style={{ background: '#0d1117', borderRadius: '6px', padding: '8px 12px', border: isTi ? '1px solid #58a6ff22' : 'none' }}>
+                    <div style={{ color: '#8b949e', fontSize: '11px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {label}
+                      {isTi && (
+                        <span style={{ background: '#58a6ff22', color: '#58a6ff', border: '1px solid #58a6ff44', borderRadius: '4px', padding: '1px 5px', fontSize: '10px', fontWeight: 700 }}>
+                          🔍 TI
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ color: '#e6edf3', fontSize: '13px', marginTop: '2px', fontFamily: 'monospace', wordBreak: 'break-all' }}>{String(v)}</div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -220,6 +235,14 @@ export default function EntityDetail() {
           )}
         </div>
       </div>
+
+      <SuggestedActions
+        entity={{ id: entity.id, type: entity.type, value: entity.value, status: entity.status, ioc_status: entity.ioc_status }}
+        incidentId={id!}
+        onCreateTask={async (title) => {
+          await apiClient.post(`/incidents/${entity.incident_id}/tasks`, { title, priority: 'high' }).catch(() => {});
+        }}
+      />
 
       {/* Enrichment Panel */}
       <div style={{ background: '#161b22', border: '1px solid #30363d', borderRadius: '8px', padding: '20px', marginBottom: '24px' }}>

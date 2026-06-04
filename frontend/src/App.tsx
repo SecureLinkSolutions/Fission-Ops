@@ -24,6 +24,7 @@ export default function App() {
   return (
     <>
       {user && <NavBar />}
+      <div style={user ? { marginLeft: '220px', minHeight: '100vh' } : undefined}>
       <Routes>
         <Route path="/activate" element={<LicenseActivation />} />
         <Route path="/login" element={<Login />} />
@@ -43,6 +44,7 @@ export default function App() {
         <Route path="/tasks/mine" element={<ProtectedRoute><MyTasks /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to={user ? '/incidents' : '/login'} replace />} />
       </Routes>
+      </div>
     </>
   );
 }

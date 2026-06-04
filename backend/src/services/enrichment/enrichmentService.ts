@@ -69,11 +69,45 @@ export async function runEnrichment(entityId: string, orgId: string): Promise<vo
 
   enrichmentData.verdict = verdict;
 
+  // --- Auto-populate entity_details from enrichment results ---
+  const currentDetailsResult = await pool.query('SELECT entity_details FROM entities WHERE id = $1', [entityId]);
+  const currentDetails: Record<string, unknown> = currentDetailsResult.rows[0]?.entity_details ?? {};
+  const tiFields: Record<string, unknown> = {};
+
+  const vtTyped = enrichmentData.virustotal as { malicious?: number; suspicious?: number; engines_total?: number } | undefined;
+  const abuseTyped = enrichmentData.abuseipdb as { country?: string; isp?: string; asn?: string } | undefined;
+  const shodanTyped = enrichmentData.shodan as { ports?: number[]; org?: string } | undefined;
+
+  if (entity.type === 'ip') {
+    if (abuseTyped?.country != null) tiFields['ti_country'] = abuseTyped.country;
+    if (abuseTyped?.isp != null) tiFields['ti_isp'] = abuseTyped.isp;
+    if (abuseTyped?.asn != null) tiFields['ti_asn'] = abuseTyped.asn;
+    if (shodanTyped?.ports != null) tiFields['ti_ports'] = shodanTyped.ports.join(', ');
+    if (shodanTyped?.org != null) tiFields['ti_org'] = shodanTyped.org;
+    if (vtTyped?.malicious != null) tiFields['ti_vt_malicious'] = vtTyped.malicious;
+    if (vtTyped?.suspicious != null) tiFields['ti_vt_suspicious'] = vtTyped.suspicious;
+  } else if (entity.type === 'domain') {
+    if (vtTyped?.malicious != null) tiFields['ti_vt_malicious'] = vtTyped.malicious;
+    if (vtTyped?.suspicious != null) tiFields['ti_vt_suspicious'] = vtTyped.suspicious;
+  } else if (entity.type === 'url') {
+    if (vtTyped?.malicious != null) tiFields['ti_vt_malicious'] = vtTyped.malicious;
+    if (vtTyped?.suspicious != null) tiFields['ti_vt_suspicious'] = vtTyped.suspicious;
+  } else if (entity.type === 'file') {
+    if (vtTyped?.malicious != null) tiFields['ti_vt_malicious'] = vtTyped.malicious;
+    if (vtTyped?.suspicious != null) tiFields['ti_vt_suspicious'] = vtTyped.suspicious;
+    if (vtTyped?.engines_total != null) tiFields['ti_vt_total_engines'] = vtTyped.engines_total;
+  } else if (entity.type === 'hostname') {
+    if (shodanTyped?.ports != null) tiFields['ti_ports'] = shodanTyped.ports.join(', ');
+    if (shodanTyped?.org != null) tiFields['ti_org'] = shodanTyped.org;
+  }
+
+  const mergedDetails = { ...currentDetails, ...tiFields };
+
   await pool.query(
     `UPDATE entities
-     SET enrichment_status = 'complete', enrichment_data = $1, enrichment_updated_at = NOW()
+     SET enrichment_status = 'complete', enrichment_data = $1, enrichment_updated_at = NOW(), entity_details = $3
      WHERE id = $2`,
-    [JSON.stringify(enrichmentData), entityId],
+    [JSON.stringify(enrichmentData), entityId, JSON.stringify(mergedDetails)],
   );
 
   // Emit to incident room
