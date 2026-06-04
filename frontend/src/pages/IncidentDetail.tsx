@@ -119,11 +119,14 @@ export default function IncidentDetail() {
   // IOC summary: entities with ioc_status
   const iocEntities = (entities ?? []).filter((e) => (e as Entity & { ioc_status?: string }).ioc_status);
 
-  const tabStyle = (active: boolean): React.CSSProperties => ({
-    padding: '10px 20px', cursor: 'pointer', border: 'none', background: 'transparent',
-    color: active ? '#e6edf3' : '#8b949e',
+  const [tabHover, setTabHover] = useState<string | null>(null);
+  const tabStyle = (active: boolean, key: string): React.CSSProperties => ({
+    padding: '10px 20px', cursor: 'pointer', border: 'none',
+    background: active ? '#58a6ff11' : tabHover === key ? '#21262d' : 'transparent',
+    color: active ? '#e6edf3' : tabHover === key ? '#c9d1d9' : '#8b949e',
     borderBottom: active ? '2px solid #58a6ff' : '2px solid transparent',
     fontSize: '14px', fontWeight: active ? 600 : 400,
+    borderRadius: '4px 4px 0 0',
   });
 
   if (incLoading) return <div style={{ padding: '32px', color: '#8b949e' }}>Loading incident…</div>;
@@ -142,7 +145,15 @@ export default function IncidentDetail() {
     <div style={{ padding: '32px', maxWidth: '1400px', margin: '0 auto' }}>
       <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
+          <div style={{ color: '#8b949e', fontSize: '12px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Link to="/incidents" style={{ color: '#58a6ff', textDecoration: 'none', fontSize: '12px' }}>Incidents</Link>
+            <span style={{ color: '#30363d' }}>/</span>
+            <span style={{ color: '#8b949e' }}>{incident.title}</span>
+          </div>
           <div style={{ fontSize: '28px', fontWeight: 700, color: '#e6edf3', marginBottom: '8px' }}>{incident.title}</div>
+          <div style={{ color: '#8b949e', fontSize: '12px', marginBottom: '8px' }}>
+            Created {relativeTime(incident.created_at)} · Updated {relativeTime(incident.updated_at)}
+          </div>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
             {badge(SEVERITY_COLORS[incident.severity], incident.severity)}
             {badge(STATUS_COLORS[incident.status], incident.status)}
@@ -216,28 +227,30 @@ export default function IncidentDetail() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', borderBottom: '1px solid #30363d', marginBottom: '24px', flexWrap: 'wrap' }}>
-        <button style={tabStyle(activeTab === 'entities')} onClick={() => setActiveTab('entities')}>
-          Entities ({entities?.length ?? 0})
-        </button>
-        <button style={tabStyle(activeTab === 'killchain')} onClick={() => setActiveTab('killchain')}>
-          Kill Chain
-        </button>
-        <button style={tabStyle(activeTab === 'relationships')} onClick={() => setActiveTab('relationships')}>
-          Relationships
-        </button>
-        <button style={tabStyle(activeTab === 'network')} onClick={() => setActiveTab('network')}>
-          Network Map
-        </button>
-        <button style={tabStyle(activeTab === 'timeline')} onClick={() => setActiveTab('timeline')}>
-          Timeline
-        </button>
-        <button style={tabStyle(activeTab === 'tasks')} onClick={() => setActiveTab('tasks')}>
-          Tasks ({tasks?.length ?? 0})
-        </button>
+      <div style={{ display: 'flex', borderBottom: '2px solid #30363d', marginBottom: '24px', flexWrap: 'wrap' }}>
+        {([
+          ['entities', `Entities (${entities?.length ?? 0})`],
+          ['killchain', 'Kill Chain'],
+          ['relationships', 'Relationships'],
+          ['network', 'Network Map'],
+          ['timeline', 'Timeline'],
+          ['tasks', `Tasks (${tasks?.length ?? 0})`],
+        ] as [Tab, string][]).map(([key, label]) => (
+          <button
+            key={key}
+            style={tabStyle(activeTab === key, key)}
+            onClick={() => setActiveTab(key)}
+            onMouseEnter={() => setTabHover(key)}
+            onMouseLeave={() => setTabHover(null)}
+          >
+            {label}
+          </button>
+        ))}
         <Link
           to={`/incidents/${id}/executive-summary`}
-          style={{ ...tabStyle(activeTab === 'summary'), textDecoration: 'none', display: 'inline-block' }}
+          style={{ ...tabStyle(activeTab === 'summary', 'summary'), textDecoration: 'none', display: 'inline-block' }}
+          onMouseEnter={() => setTabHover('summary')}
+          onMouseLeave={() => setTabHover(null)}
         >
           Executive Summary
         </Link>

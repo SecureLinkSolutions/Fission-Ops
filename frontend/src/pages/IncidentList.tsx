@@ -7,9 +7,80 @@ import IncidentStatusBadge from '../components/IncidentStatusBadge';
 
 const SEVERITY_COLORS: Record<string, string> = { low: '#3fb950', medium: '#d29922', high: '#f85149', critical: '#ff7b72' };
 const STATUS_COLORS: Record<string, string> = { open: '#58a6ff', contained: '#d29922', closed: '#8b949e' };
+const STATUS_DOT_COLORS: Record<string, string> = { open: '#3fb950', contained: '#d29922', closed: '#8b949e' };
 
-function badge(color: string, text: string) {
-  return <span style={{ background: `${color}22`, color, border: `1px solid ${color}44`, borderRadius: '12px', padding: '3px 10px', fontSize: '11px', fontWeight: 600 }}>{text}</span>;
+function relativeTime(ts: string): string {
+  const diff = Date.now() - new Date(ts).getTime();
+  const secs = Math.floor(diff / 1000);
+  if (secs < 60) return `${secs}s ago`;
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  return new Date(ts).toLocaleDateString();
+}
+
+function IncidentCard({ inc, onClick }: { inc: Incident & { task_total?: number; task_complete?: number }; onClick: () => void }) {
+  const [hover, setHover] = useState(false);
+  const sevColor = SEVERITY_COLORS[inc.severity] ?? '#8b949e';
+  const statColor = STATUS_COLORS[inc.status] ?? '#8b949e';
+  const dotColor = STATUS_DOT_COLORS[inc.status] ?? '#8b949e';
+  const taskTotal = inc.task_total ?? 0;
+  const taskComplete = inc.task_complete ?? 0;
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        display: 'flex',
+        alignItems: 'stretch',
+        background: hover ? '#1c2128' : '#161b22',
+        border: `1px solid ${hover ? '#444c56' : '#30363d'}`,
+        borderRadius: '8px',
+        marginBottom: '8px',
+        cursor: 'pointer',
+        overflow: 'hidden',
+        boxShadow: hover ? '0 2px 8px rgba(0,0,0,0.4)' : '0 1px 3px rgba(0,0,0,0.3)',
+        transition: 'none',
+      }}
+    >
+      {/* Severity color bar */}
+      <div style={{ width: '4px', background: sevColor, flexShrink: 0 }} />
+      <div style={{ flex: 1, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+        {/* Title */}
+        <div style={{ flex: 1, minWidth: '200px' }}>
+          <div style={{ color: '#e6edf3', fontWeight: 600, fontSize: '14px', marginBottom: '4px' }}>{inc.title}</div>
+          {inc.description && <div style={{ color: '#8b949e', fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '400px' }}>{inc.description}</div>}
+        </div>
+        {/* Severity pill */}
+        <span style={{ background: `${sevColor}22`, color: sevColor, border: `1px solid ${sevColor}44`, borderRadius: '12px', padding: '3px 10px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+          {inc.severity}
+        </span>
+        {/* Status pill with dot */}
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: `${statColor}18`, color: statColor, border: `1px solid ${statColor}44`, borderRadius: '12px', padding: '3px 10px', fontSize: '11px', fontWeight: 600, whiteSpace: 'nowrap' }}>
+          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: dotColor, display: 'inline-block' }} />
+          {inc.status}
+        </span>
+        {/* Op status */}
+        {inc.incident_status && <IncidentStatusBadge status={inc.incident_status} />}
+        {/* Entities */}
+        <span style={{ color: '#8b949e', fontSize: '12px', whiteSpace: 'nowrap' }}>
+          <span style={{ color: '#e6edf3', fontWeight: 600 }}>{inc.entity_count ?? 0}</span> entities
+        </span>
+        {/* Task progress */}
+        {taskTotal > 0 && (
+          <span style={{ color: '#8b949e', fontSize: '12px', whiteSpace: 'nowrap' }}>
+            <span style={{ color: taskComplete === taskTotal ? '#3fb950' : '#e6edf3', fontWeight: 600 }}>{taskComplete}/{taskTotal}</span> tasks
+          </span>
+        )}
+        {/* Time ago */}
+        <span style={{ color: '#8b949e', fontSize: '12px', whiteSpace: 'nowrap' }}>{relativeTime(inc.created_at)}</span>
+      </div>
+    </div>
+  );
 }
 
 export default function IncidentList() {
@@ -59,29 +130,11 @@ export default function IncidentList() {
       ) : data?.incidents.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px', color: '#8b949e' }}>No incidents found. <Link to="/incidents/new" style={{ color: '#58a6ff' }}>Create one</Link>.</div>
       ) : (
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>
-              {['Title', 'Severity', 'Status', 'Op. Status', 'Entities', 'Created'].map((h) => (
-                <th key={h} style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid #30363d', color: '#8b949e', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase' }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {data?.incidents.map((inc) => (
-              <tr key={inc.id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/incidents/${inc.id}`)}>
-                <td style={{ padding: '14px 16px', borderBottom: '1px solid #21262d', color: '#58a6ff', fontWeight: 600 }}>{inc.title}</td>
-                <td style={{ padding: '14px 16px', borderBottom: '1px solid #21262d' }}>{badge(SEVERITY_COLORS[inc.severity], inc.severity)}</td>
-                <td style={{ padding: '14px 16px', borderBottom: '1px solid #21262d' }}>{badge(STATUS_COLORS[inc.status], inc.status)}</td>
-                <td style={{ padding: '14px 16px', borderBottom: '1px solid #21262d' }}>
-                  {inc.incident_status && <IncidentStatusBadge status={inc.incident_status} />}
-                </td>
-                <td style={{ padding: '14px 16px', borderBottom: '1px solid #21262d', color: '#e6edf3' }}>{inc.entity_count ?? 0}</td>
-                <td style={{ padding: '14px 16px', borderBottom: '1px solid #21262d', color: '#8b949e', fontSize: '13px' }}>{new Date(inc.created_at).toLocaleDateString()}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div>
+          {data?.incidents.map((inc) => (
+            <IncidentCard key={inc.id} inc={inc} onClick={() => navigate(`/incidents/${inc.id}`)} />
+          ))}
+        </div>
       )}
     </div>
   );

@@ -68,6 +68,7 @@ export default function EntityDetail() {
   const [iocNotes, setIocNotes] = useState('');
   const [statusChanging, setStatusChanging] = useState(false);
   const [settingIOC, setSettingIOC] = useState(false);
+  const [reenrichHover, setReenrichHover] = useState(false);
 
   const { data: entity, loading, error, refetch } = useFetch<ExtendedEntity>(
     () => apiClient.get(`/entities/${entityId}`).then((r) => r.data), [entityId],
@@ -122,7 +123,7 @@ export default function EntityDetail() {
         <span style={{ color: '#8b949e' }}>Entity</span>
       </div>
 
-      <div style={{ background: '#161b22', border: '1px solid #30363d', borderRadius: '8px', padding: '20px', marginBottom: '24px' }}>
+      <div style={{ background: '#161b22', border: '1px solid #30363d', borderRadius: '8px', padding: '20px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
           <div style={{ background: `${color}22`, color, border: `1px solid ${color}44`, borderRadius: '6px', padding: '6px 14px', fontSize: '14px', fontWeight: 600 }}>
             {ENTITY_TYPE_ICONS[entity.type]} {entity.type}
@@ -166,8 +167,8 @@ export default function EntityDetail() {
       </div>
 
       {/* Entity Status Section */}
-      <div style={{ background: '#161b22', border: '1px solid #30363d', borderRadius: '8px', padding: '20px', marginBottom: '24px' }}>
-        <div style={{ fontWeight: 600, fontSize: '14px', color: '#e6edf3', marginBottom: '12px' }}>Entity Status</div>
+      <div style={{ background: '#161b22', border: '1px solid #30363d', borderRadius: '8px', padding: '20px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }}>
+        <div style={{ fontWeight: 600, fontSize: '11px', color: '#8b949e', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>Entity Status</div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           {Object.entries(ENTITY_STATUS_CONFIG).map(([s, cfg]) => (
             <button
@@ -189,8 +190,8 @@ export default function EntityDetail() {
       </div>
 
       {/* IOC Section */}
-      <div style={{ background: '#161b22', border: '1px solid #30363d', borderRadius: '8px', padding: '20px', marginBottom: '24px' }}>
-        <div style={{ fontWeight: 600, fontSize: '14px', color: '#e6edf3', marginBottom: '12px' }}>IOC Status</div>
+      <div style={{ background: '#161b22', border: '1px solid #30363d', borderRadius: '8px', padding: '20px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }}>
+        <div style={{ fontWeight: 600, fontSize: '11px', color: '#8b949e', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>IOC Status</div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '12px' }}>
           {ioc ? (
             <span style={{ background: `${ioc.color}22`, color: ioc.color, border: `1px solid ${ioc.color}44`, borderRadius: '6px', padding: '4px 12px', fontSize: '13px', fontWeight: 700 }}>
@@ -245,16 +246,21 @@ export default function EntityDetail() {
       />
 
       {/* Enrichment Panel */}
-      <div style={{ background: '#161b22', border: '1px solid #30363d', borderRadius: '8px', padding: '20px', marginBottom: '24px' }}>
+      <div style={{ background: '#161b22', border: '1px solid #30363d', borderRadius: '8px', padding: '20px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-          <div style={{ fontWeight: 600, fontSize: '14px', color: '#e6edf3' }}>Threat Intelligence</div>
+          <div style={{ fontWeight: 600, fontSize: '11px', color: '#8b949e', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Threat Intelligence</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             {entity.enrichment_status && (
               <span style={{ fontSize: '12px', fontWeight: 600, color: ENRICHMENT_STATUS_COLORS[entity.enrichment_status] ?? '#8b949e', textTransform: 'uppercase' }}>
                 {entity.enrichment_status}
               </span>
             )}
-            <button onClick={handleReenrich} style={{ background: '#21262d', border: '1px solid #30363d', borderRadius: '4px', padding: '4px 10px', color: '#8b949e', fontSize: '12px', cursor: 'pointer' }}>
+            <button
+              onClick={handleReenrich}
+              onMouseEnter={() => setReenrichHover(true)}
+              onMouseLeave={() => setReenrichHover(false)}
+              style={{ background: reenrichHover ? '#30363d' : '#21262d', border: '1px solid #30363d', borderRadius: '4px', padding: '4px 10px', color: reenrichHover ? '#e6edf3' : '#8b949e', fontSize: '12px', cursor: 'pointer' }}
+            >
               Re-enrich
             </button>
           </div>

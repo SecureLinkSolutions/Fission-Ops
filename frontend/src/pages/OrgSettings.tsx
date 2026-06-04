@@ -182,6 +182,11 @@ export default function OrgSettings() {
   return (
     <div style={s.page}>
       <div style={s.container}>
+        <div style={{ color: '#8b949e', fontSize: '12px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ color: '#58a6ff', fontSize: '12px' }}>Admin</span>
+          <span style={{ color: '#30363d' }}>/</span>
+          <span style={{ color: '#8b949e' }}>Org Settings</span>
+        </div>
         <div style={s.title}>Organization Settings</div>
         <div style={s.sub}>Manage your organization configuration and view usage statistics.</div>
 
