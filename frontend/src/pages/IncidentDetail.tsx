@@ -19,14 +19,14 @@ import { useLicense } from '../context/LicenseContext';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
 
-const ENTITY_TYPE_ICONS: Record<string, string> = { hostname: '🖥', ip: '🌐', email: '📧', domain: '🔗', account: '👤' };
+const ENTITY_TYPE_ICONS: Record<string, string> = { hostname: 'HOST', ip: 'IP', email: 'EMAIL', domain: 'DOMAIN', account: 'ACCT' };
 const ENTITY_TYPE_COLORS: Record<string, string> = { hostname: '#58a6ff', ip: '#3fb950', email: '#d29922', domain: '#a371f7', account: '#f0883e' };
 const SEVERITY_COLORS: Record<string, string> = { low: '#3fb950', medium: '#d29922', high: '#f85149', critical: '#ff7b72' };
 const STATUS_COLORS: Record<string, string> = { open: '#58a6ff', contained: '#d29922', closed: '#8b949e' };
 const IOC_STATUS_DISPLAY: Record<string, { label: string; color: string }> = {
-  confirmed: { label: '💀 CONFIRMED', color: '#f85149' },
-  suspected: { label: '⚠ SUSPECTED', color: '#d29922' },
-  cleared: { label: '✓ CLEARED', color: '#3fb950' },
+  confirmed: { label: 'CONFIRMED', color: '#f85149' },
+  suspected: { label: 'SUSPECTED', color: '#d29922' },
+  cleared: { label: 'CLEARED', color: '#3fb950' },
 };
 
 const ACTION_TYPE_COLORS: Record<string, string> = {
@@ -38,7 +38,7 @@ const ACTION_TYPE_COLORS: Record<string, string> = {
 };
 
 function badge(color: string, text: string): React.ReactElement {
-  return <span style={{ background: `${color}22`, color, border: `1px solid ${color}44`, borderRadius: '12px', padding: '4px 12px', fontSize: '12px', fontWeight: 600 }}>{text}</span>;
+  return <span style={{ background: `${color}22`, color, border: `1px solid ${color}44`, borderRadius: '20px', padding: '3px 10px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' as const }}>{text}</span>;
 }
 
 function relativeTime(ts: string): string {
@@ -128,16 +128,20 @@ export default function IncidentDetail() {
 
   const [tabHover, setTabHover] = useState<string | null>(null);
   const tabStyle = (active: boolean, key: string): React.CSSProperties => ({
-    padding: '10px 20px', cursor: 'pointer', border: 'none',
-    background: active ? '#58a6ff11' : tabHover === key ? '#21262d' : 'transparent',
-    color: active ? '#e6edf3' : tabHover === key ? '#c9d1d9' : '#8b949e',
+    padding: '10px 16px', cursor: 'pointer', border: 'none',
+    background: 'transparent',
+    color: active ? '#e6edf3' : tabHover === key ? '#c9d1d9' : '#6e7681',
     borderBottom: active ? '2px solid #58a6ff' : '2px solid transparent',
-    fontSize: '14px', fontWeight: active ? 600 : 400,
-    borderRadius: '4px 4px 0 0',
+    fontSize: '13px', fontWeight: active ? 600 : 400,
+    borderRadius: 0,
   });
 
-  if (incLoading) return <div style={{ padding: '32px', color: '#8b949e' }}>Loading incident…</div>;
-  if (incError || !incident) return <div style={{ padding: '32px', color: '#f85149' }}>Failed to load incident.</div>;
+  if (incLoading) return (
+    <div style={{ padding: '48px 32px', color: '#6e7681', fontSize: '13px' }}>Loading…</div>
+  );
+  if (incError || !incident) return (
+    <div style={{ padding: '48px 32px', color: '#f85149', fontSize: '13px' }}>Failed to load incident.</div>
+  );
 
   // Unique users from timeline for filter dropdown
   const timelineUsers = Array.from(
@@ -158,11 +162,14 @@ export default function IncidentDetail() {
             <span style={{ color: '#30363d' }}>/</span>
             <span style={{ color: '#8b949e' }}>{incident.title}</span>
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 700, color: '#e6edf3', marginBottom: '8px' }}>{incident.title}</div>
-          <div style={{ color: '#8b949e', fontSize: '12px', marginBottom: '8px' }}>
+          <div style={{ fontSize: '22px', fontWeight: 700, color: '#e6edf3', marginBottom: '4px' }}>{incident.title}</div>
+          {incident.description && (
+            <div style={{ color: '#6e7681', fontSize: '13px', marginBottom: '8px' }}>{incident.description}</div>
+          )}
+          <div style={{ color: '#6e7681', fontSize: '12px', marginBottom: '10px' }}>
             Created {relativeTime(incident.created_at)} · Updated {relativeTime(incident.updated_at)}
           </div>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
             {badge(SEVERITY_COLORS[incident.severity], incident.severity)}
             {badge(STATUS_COLORS[incident.status], incident.status)}
             {!showStatusDropdown && (
@@ -217,7 +224,6 @@ export default function IncidentDetail() {
                 {incident.status === 'closed' ? '↩ Reopen' : '✕ Close Incident'}
               </button>
             )}
-            {incident.description && <span style={{ color: '#8b949e', fontSize: '13px' }}>{incident.description}</span>}
             {taskStats && taskStats.total > 0 && (
               <span style={{ color: '#8b949e', fontSize: '13px', background: '#21262d', padding: '2px 8px', borderRadius: '4px' }}>
                 {taskStats.complete}/{taskStats.total} tasks
@@ -236,7 +242,7 @@ export default function IncidentDetail() {
                 display: 'flex', alignItems: 'center', gap: '6px',
               }}
             >
-              📄 Export Report
+              Export Report
             </button>
           ) : (
             <button
@@ -248,7 +254,7 @@ export default function IncidentDetail() {
                 display: 'flex', alignItems: 'center', gap: '6px', opacity: 0.5,
               }}
             >
-              🔒 Export Report
+              Export Report
             </button>
           )}
         </div>
@@ -293,8 +299,8 @@ export default function IncidentDetail() {
           return (
             <div key={e.id} style={{ background: '#161b22', border: `1px solid ${borderColor}`, borderRadius: '8px', marginBottom: '8px', overflow: 'hidden' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px' }}>
-                <span style={{ background: `${ENTITY_TYPE_COLORS[e.type]}22`, color: ENTITY_TYPE_COLORS[e.type], border: `1px solid ${ENTITY_TYPE_COLORS[e.type]}44`, borderRadius: '6px', padding: '4px 10px', fontSize: '12px', fontWeight: 600 }}>
-                  {ENTITY_TYPE_ICONS[e.type]} {e.type}
+                <span style={{ background: `${ENTITY_TYPE_COLORS[e.type]}22`, color: ENTITY_TYPE_COLORS[e.type], border: `1px solid ${ENTITY_TYPE_COLORS[e.type]}44`, borderRadius: '4px', padding: '3px 8px', fontSize: '10px', fontWeight: 700, letterSpacing: '0.05em', fontFamily: 'monospace' }}>
+                  {ENTITY_TYPE_ICONS[e.type]}
                 </span>
                 <span style={{ color: '#e6edf3', fontSize: '14px', flex: 1, fontFamily: 'monospace' }}>{e.value}</span>
                 {ioc && (

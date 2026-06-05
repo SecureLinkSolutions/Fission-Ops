@@ -49,36 +49,35 @@ function IncidentCard({ inc, onClick }: { inc: Incident & { task_total?: number;
       }}
     >
       {/* Severity color bar */}
-      <div style={{ width: '4px', background: sevColor, flexShrink: 0 }} />
-      <div style={{ flex: 1, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-        {/* Title */}
-        <div style={{ flex: 1, minWidth: '200px' }}>
-          <div style={{ color: '#e6edf3', fontWeight: 600, fontSize: '14px', marginBottom: '4px' }}>{inc.title}</div>
-          {inc.description && <div style={{ color: '#8b949e', fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '400px' }}>{inc.description}</div>}
+      <div style={{ width: '3px', background: sevColor, flexShrink: 0 }} />
+      <div style={{ flex: 1, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+        {/* Title + description */}
+        <div style={{ flex: 1, minWidth: '200px', overflow: 'hidden' }}>
+          <div style={{ color: '#e6edf3', fontWeight: 600, fontSize: '14px', marginBottom: '2px' }}>{inc.title}</div>
+          {inc.description && (
+            <div style={{ color: '#6e7681', fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{inc.description}</div>
+          )}
+          <div style={{ color: '#6e7681', fontSize: '11px', marginTop: '4px' }}>
+            {inc.entity_count ?? 0} {inc.entity_count === 1 ? 'entity' : 'entities'}
+            {taskTotal > 0 && <> · <span style={{ color: taskComplete === taskTotal ? '#3fb950' : '#6e7681' }}>{taskComplete}/{taskTotal} tasks</span></>}
+          </div>
         </div>
-        {/* Severity pill */}
-        <span style={{ background: `${sevColor}22`, color: sevColor, border: `1px solid ${sevColor}44`, borderRadius: '12px', padding: '3px 10px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
-          {inc.severity}
-        </span>
-        {/* Status pill with dot */}
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: `${statColor}18`, color: statColor, border: `1px solid ${statColor}44`, borderRadius: '12px', padding: '3px 10px', fontSize: '11px', fontWeight: 600, whiteSpace: 'nowrap' }}>
-          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: dotColor, display: 'inline-block' }} />
-          {inc.status}
-        </span>
-        {/* Op status */}
-        {inc.incident_status && <IncidentStatusBadge status={inc.incident_status} />}
-        {/* Entities */}
-        <span style={{ color: '#8b949e', fontSize: '12px', whiteSpace: 'nowrap' }}>
-          <span style={{ color: '#e6edf3', fontWeight: 600 }}>{inc.entity_count ?? 0}</span> entities
-        </span>
-        {/* Task progress */}
-        {taskTotal > 0 && (
-          <span style={{ color: '#8b949e', fontSize: '12px', whiteSpace: 'nowrap' }}>
-            <span style={{ color: taskComplete === taskTotal ? '#3fb950' : '#e6edf3', fontWeight: 600 }}>{taskComplete}/{taskTotal}</span> tasks
+        {/* Right-aligned chips */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+          {/* Severity */}
+          <span style={{ background: `${sevColor}22`, color: sevColor, border: `1px solid ${sevColor}44`, borderRadius: '20px', padding: '3px 10px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+            {inc.severity}
           </span>
-        )}
-        {/* Time ago */}
-        <span style={{ color: '#8b949e', fontSize: '12px', whiteSpace: 'nowrap' }}>{relativeTime(inc.created_at)}</span>
+          {/* Status */}
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: `${statColor}18`, color: statColor, border: `1px solid ${statColor}44`, borderRadius: '20px', padding: '3px 10px', fontSize: '11px', fontWeight: 600, whiteSpace: 'nowrap' }}>
+            <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: dotColor, display: 'inline-block' }} />
+            {inc.status}
+          </span>
+          {/* Op status */}
+          {inc.incident_status && <IncidentStatusBadge status={inc.incident_status} />}
+          {/* Time */}
+          <span style={{ color: '#6e7681', fontSize: '11px', whiteSpace: 'nowrap' }}>{relativeTime(inc.created_at)}</span>
+        </div>
       </div>
     </div>
   );
@@ -104,18 +103,21 @@ export default function IncidentList() {
   );
 
   const filterBtn = (active: boolean): React.CSSProperties => ({
-    background: active ? '#21262d' : 'transparent', border: '1px solid #30363d', borderRadius: '6px',
-    padding: '6px 14px', color: active ? '#e6edf3' : '#8b949e', cursor: 'pointer', fontSize: '13px',
+    background: 'transparent',
+    border: active ? '1px solid #58a6ff' : '1px solid #30363d',
+    borderRadius: '20px',
+    padding: '4px 12px',
+    color: active ? '#58a6ff' : '#6e7681',
+    cursor: 'pointer',
+    fontSize: '12px',
   });
 
   return (
     <div style={{ padding: '32px', maxWidth: '1200px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: '#e6edf3' }}>Incidents</div>
-          {data && <div style={{ color: '#8b949e', fontSize: '13px', marginTop: '4px' }}>{data.total} total</div>}
-        </div>
-        {canCreate && <Link to="/incidents/new" style={{ background: '#238636', border: 'none', borderRadius: '6px', padding: '10px 20px', color: '#fff', fontSize: '14px', fontWeight: 600, cursor: 'pointer', textDecoration: 'none' }}>+ New Incident</Link>}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        {data && <div style={{ color: '#6e7681', fontSize: '12px' }}>{data.total} incidents</div>}
+        {!data && <div />}
+        {canCreate && <Link to="/incidents/new" style={{ background: '#238636', border: '1px solid #2ea043', borderRadius: '6px', padding: '7px 16px', color: '#fff', fontSize: '13px', fontWeight: 500, cursor: 'pointer', textDecoration: 'none' }}>New Incident</Link>}
       </div>
 
       <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>

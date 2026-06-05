@@ -1,12 +1,12 @@
 import { EntityStatus } from '../types';
 
-export const ENTITY_STATUS_CONFIG: Record<EntityStatus, { color: string; icon: string; label: string }> = {
-  unreviewed: { color: '#8b949e', icon: '○', label: 'Unreviewed' },
-  under_investigation: { color: '#58a6ff', icon: '🔍', label: 'Under Investigation' },
-  isolated: { color: '#f0883e', icon: '🛡', label: 'Isolated' },
-  contained: { color: '#e3b341', icon: '🔒', label: 'Contained' },
-  cleared: { color: '#3fb950', icon: '✓', label: 'Cleared' },
-  confirmed_malicious: { color: '#f85149', icon: '☠', label: 'Confirmed Malicious' },
+export const ENTITY_STATUS_CONFIG: Record<EntityStatus, { color: string; label: string; shortLabel: string }> = {
+  unreviewed: { color: '#8b949e', label: 'Unreviewed', shortLabel: 'Unreviewed' },
+  under_investigation: { color: '#58a6ff', label: 'Under Investigation', shortLabel: 'Investigating' },
+  isolated: { color: '#f0883e', label: 'Isolated', shortLabel: 'Isolated' },
+  contained: { color: '#e3b341', label: 'Contained', shortLabel: 'Contained' },
+  cleared: { color: '#3fb950', label: 'Cleared', shortLabel: 'Cleared' },
+  confirmed_malicious: { color: '#f85149', label: 'Confirmed Malicious', shortLabel: 'Malicious' },
 };
 
 interface Props {
@@ -15,24 +15,52 @@ interface Props {
 }
 
 export default function EntityStatusBadge({ status, compact }: Props) {
-  const cfg = ENTITY_STATUS_CONFIG[status as EntityStatus] ?? { color: '#8b949e', icon: '○', label: status };
+  const cfg = ENTITY_STATUS_CONFIG[status as EntityStatus] ?? { color: '#8b949e', label: status, shortLabel: status };
+
+  if (compact) {
+    return (
+      <span style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '5px',
+        whiteSpace: 'nowrap',
+      }}>
+        <span style={{
+          width: '7px',
+          height: '7px',
+          borderRadius: '50%',
+          background: cfg.color,
+          flexShrink: 0,
+          display: 'inline-block',
+        }} />
+        <span style={{
+          color: cfg.color,
+          fontSize: '11px',
+          fontWeight: 600,
+          letterSpacing: '0.01em',
+        }}>
+          {cfg.shortLabel}
+        </span>
+      </span>
+    );
+  }
+
   return (
     <span style={{
       background: `${cfg.color}18`,
       color: cfg.color,
       border: `1px solid ${cfg.color}55`,
-      borderRadius: '20px',
-      padding: compact ? '2px 8px' : '4px 12px',
-      fontSize: compact ? '10px' : '11px',
-      fontWeight: 700,
+      borderRadius: '4px',
+      padding: '3px 8px',
+      fontSize: '11px',
+      fontWeight: 600,
       whiteSpace: 'nowrap',
       letterSpacing: '0.02em',
       display: 'inline-flex',
       alignItems: 'center',
-      gap: '4px',
-      boxShadow: `0 0 0 1px ${cfg.color}11`,
+      gap: '5px',
     }}>
-      <span style={{ fontSize: compact ? '9px' : '10px' }}>{cfg.icon}</span>
+      <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: cfg.color, display: 'inline-block', flexShrink: 0 }} />
       {cfg.label}
     </span>
   );

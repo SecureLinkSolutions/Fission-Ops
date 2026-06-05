@@ -17,6 +17,7 @@ import LicenseActivation from './pages/LicenseActivation';
 import LicenseAdmin from './pages/LicenseAdmin';
 import ProtectedRoute from './components/ProtectedRoute';
 import NavBar from './components/NavBar';
+import TopBar from './components/TopBar';
 import ErrorBoundary from './components/ErrorBoundary';
 import { useAuth } from './context/AuthContext';
 
@@ -37,7 +38,8 @@ export default function App() {
   return (
     <>
       {user && <NavBar />}
-      <div style={user ? { marginLeft: '220px', minHeight: '100vh' } : undefined}>
+      {user && <TopBar />}
+      <div style={user ? { marginLeft: '220px', paddingTop: '48px', minHeight: '100vh' } : undefined}>
         <ErrorBoundary>
           <Routes>
             <Route path="/activate" element={<LicenseActivation />} />

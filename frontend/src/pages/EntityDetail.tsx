@@ -183,7 +183,7 @@ export default function EntityDetail() {
                 outline: entity.status === s ? `2px solid ${cfg.color}` : 'none',
               }}
             >
-              {cfg.icon} {cfg.label}
+              {cfg.label}
             </button>
           ))}
         </div>

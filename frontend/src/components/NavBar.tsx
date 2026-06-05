@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useMatch, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import NotificationBell from './NotificationBell';
 
 interface ConnectionDotProps {
   state: 'connected' | 'reconnecting' | 'disconnected';
@@ -32,8 +31,8 @@ function NavLink({ to, icon, label, active }: NavLinkProps) {
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '10px',
-        padding: '9px 16px',
+        gap: '8px',
+        padding: '8px 12px',
         textDecoration: 'none',
         borderRadius: '6px',
         marginBottom: '2px',
@@ -41,11 +40,10 @@ function NavLink({ to, icon, label, active }: NavLinkProps) {
         background: active ? '#58a6ff11' : hover ? '#21262d' : 'transparent',
         borderLeft: active ? '3px solid #58a6ff' : '3px solid transparent',
         fontWeight: active ? 600 : 400,
-        fontSize: '14px',
-        transition: 'none',
+        fontSize: '13px',
       }}
     >
-      <span style={{ fontSize: '16px', lineHeight: 1 }}>{icon}</span>
+      <span style={{ fontSize: '14px', lineHeight: 1 }}>{icon}</span>
       {label}
     </Link>
   );
@@ -77,15 +75,16 @@ export default function NavBar({ connectionState }: NavBarProps) {
       zIndex: 100,
     }}>
       {/* Brand */}
-      <div style={{ padding: '20px 16px 16px', borderBottom: '1px solid #30363d' }}>
-        <Link to="/incidents" style={{ color: '#58a6ff', fontWeight: 700, fontSize: '17px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span>⚡</span> Fission Ops
+      <div style={{ padding: '16px 16px 14px', borderBottom: '1px solid #30363d', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#58a6ff', display: 'inline-block', flexShrink: 0 }} />
+        <Link to="/incidents" style={{ color: '#e6edf3', fontWeight: 700, fontSize: '13px', textDecoration: 'none', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+          Fission Ops
         </Link>
       </div>
 
       {/* Connection dot for incident pages */}
       {onIncidentPage && connectionState && (
-        <div style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div style={{ padding: '6px 16px', display: 'flex', alignItems: 'center', gap: '6px' }}>
           <ConnectionDot state={connectionState} />
           <span style={{ fontSize: '11px', color: '#8b949e' }}>
             {connectionState === 'connected' ? 'Live' : connectionState === 'reconnecting' ? 'Reconnecting…' : 'Offline'}
@@ -95,42 +94,38 @@ export default function NavBar({ connectionState }: NavBarProps) {
 
       {/* Nav links */}
       <div style={{ padding: '12px 8px', flex: 1 }}>
-        <NavLink to="/incidents" icon="⚡" label="Incidents" active={location.pathname.startsWith('/incidents')} />
-        <NavLink to="/tasks/mine" icon="✅" label="My Tasks" active={location.pathname.startsWith('/tasks')} />
-        <div style={{ padding: '4px 16px' }}><NotificationBell /></div>
+        <NavLink to="/incidents" icon="◈" label="Incidents" active={location.pathname.startsWith('/incidents')} />
+        <NavLink to="/tasks/mine" icon="✓" label="My Tasks" active={location.pathname.startsWith('/tasks')} />
         {isAdmin && (
           <>
-            <div style={{ padding: '12px 16px 4px', color: '#484f58', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: '8px' }}>Admin</div>
-            <NavLink to="/admin/audit" icon="📋" label="Audit Log" active={location.pathname === '/admin/audit'} />
-            <NavLink to="/admin/users" icon="👥" label="Users" active={location.pathname === '/admin/users'} />
-            <NavLink to="/settings/org" icon="🔐" label="Org Settings" active={location.pathname === '/settings/org'} />
+            <div style={{ padding: '12px 12px 4px', color: '#484f58', fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '8px' }}>Admin</div>
+            <NavLink to="/admin/audit" icon="≡" label="Audit Log" active={location.pathname === '/admin/audit'} />
+            <NavLink to="/admin/users" icon="◯" label="Users" active={location.pathname === '/admin/users'} />
+            <NavLink to="/settings/org" icon="⊙" label="Org Settings" active={location.pathname === '/settings/org'} />
             {user?.role === 'super_admin' && (
-              <NavLink to="/superadmin" icon="🛡" label="Super Admin" active={location.pathname === '/superadmin'} />
+              <NavLink to="/superadmin" icon="◆" label="Super Admin" active={location.pathname === '/superadmin'} />
             )}
           </>
         )}
       </div>
 
-      {/* Footer - user info + sign out */}
+      {/* Footer - sign out only */}
       <div style={{ padding: '12px 16px', borderTop: '1px solid #30363d' }}>
-        <div style={{ marginBottom: '8px' }}>
-          <div style={{ color: '#e6edf3', fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</div>
-          <div style={{ background: '#21262d', color: '#8b949e', fontSize: '10px', fontWeight: 600, borderRadius: '4px', padding: '2px 6px', display: 'inline-block', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            {user?.role?.replace(/_/g, ' ')}
-          </div>
-        </div>
         <button
           onClick={() => { logout(); navigate('/login'); }}
           style={{
             background: 'transparent',
             border: '1px solid #30363d',
-            color: '#8b949e',
-            padding: '5px 12px',
+            color: '#6e7681',
+            padding: '6px 12px',
             borderRadius: '6px',
             cursor: 'pointer',
             fontSize: '12px',
             width: '100%',
+            textAlign: 'left',
           }}
+          onMouseOver={e => { e.currentTarget.style.borderColor = '#f85149'; e.currentTarget.style.color = '#f85149'; }}
+          onMouseOut={e => { e.currentTarget.style.borderColor = '#30363d'; e.currentTarget.style.color = '#6e7681'; }}
         >
           Sign out
         </button>
