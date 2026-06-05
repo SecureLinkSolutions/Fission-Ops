@@ -6,6 +6,7 @@ import { Entity, NetworkBoundary } from '../types';
 import KillChainPanel from '../components/KillChainPanel';
 import BoundaryMappingPanel from '../components/BoundaryMappingPanel';
 import CommentThread from '../components/CommentThread';
+import EnrichmentHistory from '../components/EnrichmentHistory';
 import { useAuth } from '../context/AuthContext';
 import EntityStatusBadge, { ENTITY_STATUS_CONFIG } from '../components/EntityStatusBadge';
 import SuggestedActions from '../components/SuggestedActions';
@@ -61,6 +62,7 @@ interface ExtendedEntity extends Entity {
 export default function EntityDetail() {
   const { id, entityId } = useParams<{ id: string; entityId: string }>();
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState<'overview' | 'enrichment'>('overview');
   const [iocNotes, setIocNotes] = useState('');
   const [statusChanging, setStatusChanging] = useState(false);
   const [settingIOC, setSettingIOC] = useState(false);
@@ -162,6 +164,34 @@ export default function EntityDetail() {
         )}
       </div>
 
+      {/* Tab Bar */}
+      <div style={{ display: 'flex', gap: '0', borderBottom: '1px solid #30363d', marginBottom: '24px' }}>
+        {(['overview', 'enrichment'] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            style={{
+              background: 'none',
+              border: 'none',
+              borderBottom: activeTab === tab ? '2px solid #58a6ff' : '2px solid transparent',
+              color: activeTab === tab ? '#e6edf3' : '#8b949e',
+              fontWeight: activeTab === tab ? 600 : 400,
+              fontSize: '14px',
+              padding: '8px 16px',
+              cursor: 'pointer',
+              marginBottom: '-1px',
+            }}
+          >
+            {tab === 'enrichment' ? 'Enrichment' : 'Overview'}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'enrichment' && entityId && (
+        <EnrichmentHistory entityId={entityId} />
+      )}
+
+      {activeTab === 'overview' && (<>
       {/* Entity Status Section */}
       <div style={{ background: '#161b22', border: '1px solid #30363d', borderRadius: '8px', padding: '20px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }}>
         <div style={{ fontWeight: 600, fontSize: '11px', color: '#8b949e', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>Entity Status</div>
@@ -322,6 +352,7 @@ export default function EntityDetail() {
       <div style={{ marginTop: '24px' }}>
         <CommentThread entityId={entityId} />
       </div>
+      </>)}
     </div>
   );
 }
