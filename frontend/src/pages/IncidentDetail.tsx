@@ -86,6 +86,10 @@ export default function IncidentDetail() {
     () => apiClient.get(`/incidents/${id}/assignments`).then((r) => r.data), [id],
   );
 
+  const { data: checklistSummary } = useFetch<{ entity_id: string; total: number; checked: number }[]>(
+    () => apiClient.get(`/incidents/${id}/checklist-summary`).then((r) => r.data), [id],
+  );
+
   const { data: taskStats } = useFetch<{ total: number; complete: number }>(
     () => apiClient.get(`/incidents/${id}/tasks`).then((r) => {
       const tl = r.data as Task[];
@@ -300,6 +304,7 @@ export default function IncidentDetail() {
           const ioc = ext.ioc_status ? IOC_STATUS_DISPLAY[ext.ioc_status] : null;
           const isFlagged = ext.status === 'confirmed_malicious' || ext.ioc_status === 'confirmed';
           const borderColor = isFlagged ? '#f0883e44' : '#30363d';
+          const clSummary = (checklistSummary ?? []).find((s) => s.entity_id === e.id);
           return (
             <div key={e.id} style={{ background: '#161b22', border: `1px solid ${borderColor}`, borderRadius: '8px', marginBottom: '8px', overflow: 'hidden' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px' }}>
@@ -314,6 +319,16 @@ export default function IncidentDetail() {
                   </span>
                 )}
                 <EntityStatusBadge status={e.status ?? 'unreviewed'} compact />
+                {clSummary && clSummary.total > 0 && (
+                  <span style={{
+                    fontSize: '11px', fontWeight: 600, padding: '2px 7px', borderRadius: '10px',
+                    background: clSummary.checked === clSummary.total ? '#3fb95022' : clSummary.checked > 0 ? '#d2992222' : '#8b949e22',
+                    color: clSummary.checked === clSummary.total ? '#3fb950' : clSummary.checked > 0 ? '#d29922' : '#8b949e',
+                    border: `1px solid ${clSummary.checked === clSummary.total ? '#3fb95044' : clSummary.checked > 0 ? '#d2992244' : '#8b949e44'}`,
+                  }} title="Containment checklist progress">
+                    {clSummary.checked}/{clSummary.total}
+                  </span>
+                )}
                 {e.notes && <span style={{ color: '#8b949e', fontSize: '12px' }}>{e.notes}</span>}
                 <Link to={`/incidents/${id}/entities/${e.id}`} style={{ color: '#58a6ff', textDecoration: 'none', fontSize: '12px' }}>View →</Link>
               </div>

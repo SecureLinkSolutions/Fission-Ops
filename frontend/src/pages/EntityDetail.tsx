@@ -10,6 +10,7 @@ import EnrichmentHistory from '../components/EnrichmentHistory';
 import { useAuth } from '../context/AuthContext';
 import EntityStatusBadge, { ENTITY_STATUS_CONFIG } from '../components/EntityStatusBadge';
 import SuggestedActions from '../components/SuggestedActions';
+import ContainmentChecklist from '../components/ContainmentChecklist';
 import { ROLE_RANK, ENTITY_TYPE_ICONS, ENTITY_TYPE_COLORS } from '../utils/constants';
 
 const IOC_STATUS_DISPLAY: Record<string, { label: string; color: string }> = {
@@ -62,7 +63,7 @@ interface ExtendedEntity extends Entity {
 export default function EntityDetail() {
   const { id, entityId } = useParams<{ id: string; entityId: string }>();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'overview' | 'enrichment'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'enrichment' | 'checklist'>('overview');
   const [iocNotes, setIocNotes] = useState('');
   const [statusChanging, setStatusChanging] = useState(false);
   const [settingIOC, setSettingIOC] = useState(false);
@@ -166,7 +167,7 @@ export default function EntityDetail() {
 
       {/* Tab Bar */}
       <div style={{ display: 'flex', gap: '0', borderBottom: '1px solid #30363d', marginBottom: '24px' }}>
-        {(['overview', 'enrichment'] as const).map((tab) => (
+        {(['overview', 'enrichment', 'checklist'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -182,13 +183,17 @@ export default function EntityDetail() {
               marginBottom: '-1px',
             }}
           >
-            {tab === 'enrichment' ? 'Enrichment' : 'Overview'}
+            {tab === 'enrichment' ? 'Enrichment' : tab === 'checklist' ? 'Checklist' : 'Overview'}
           </button>
         ))}
       </div>
 
       {activeTab === 'enrichment' && entityId && (
         <EnrichmentHistory entityId={entityId} />
+      )}
+
+      {activeTab === 'checklist' && entityId && entity && (
+        <ContainmentChecklist entityId={entityId} entityType={entity.type} />
       )}
 
       {activeTab === 'overview' && (<>

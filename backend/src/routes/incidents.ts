@@ -161,3 +161,22 @@ router.delete(
 );
 
 export default router;
+
+// Checklist summary for all entities in an incident
+router.get('/:id/checklist-summary', authenticate, async (req: Request, res: Response) => {
+  const result = await (await import('../db/pool')).pool.query(
+    `SELECT ec.entity_id,
+            COUNT(*) AS total,
+            SUM(CASE WHEN ec.checked THEN 1 ELSE 0 END) AS checked
+     FROM entity_checklists ec
+     JOIN entities e ON e.id = ec.entity_id
+     WHERE e.incident_id = $1
+     GROUP BY ec.entity_id`,
+    [req.params.id],
+  );
+  res.json(result.rows.map((r) => ({
+    entity_id: r.entity_id,
+    total: Number(r.total),
+    checked: Number(r.checked),
+  })));
+});

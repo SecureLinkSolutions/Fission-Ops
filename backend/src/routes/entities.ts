@@ -7,8 +7,10 @@ import * as repo from '../repositories/entityRepository';
 import * as incidentRepo from '../repositories/incidentRepository';
 import { runEnrichment } from '../services/enrichment/enrichmentService';
 import { getEnrichmentHistory, recordEnrichment } from '../repositories/enrichmentHistoryRepository';
+import * as checklistRepo from '../repositories/checklistRepository';
 import { emitToIncident } from '../socket';
 import { z } from 'zod';
+import { pool } from '../db/pool';
 
 const router = Router({ mergeParams: true });
 
@@ -57,3 +59,61 @@ router.get('/:id/enrichment-history', authenticate, async (req: Request, res: Re
 });
 
 export default router;
+
+// Checklist routes
+router.get('/:id/checklist', authenticate, async (req: Request, res: Response) => {
+  const entityId = req.params.id;
+  let items = await checklistRepo.getChecklist(entityId);
+  if (items.length === 0) {
+    // Auto-init from entity type defaults
+    const entityResult = await pool.query('SELECT type FROM entities WHERE id = $1', [entityId]);
+    if (entityResult.rowCount === 0) {
+      res.status(404).json({ error: 'Entity not found', code: 'NOT_FOUND' });
+      return;
+    }
+    const entityType = entityResult.rows[0].type as string;
+    const defaults = checklistRepo.DEFAULT_CHECKLIST_ITEMS[entityType] ?? [];
+    items = await checklistRepo.initChecklist(
+      entityId,
+      defaults,
+      req.user!.sub,
+      req.user!.email,
+    );
+  }
+  res.json(items);
+});
+
+router.post('/:id/checklist', authenticate, requireRole('senior_analyst'), async (req: Request, res: Response) => {
+  const { item_text } = z.object({ item_text: z.string().min(1) }).parse(req.body);
+  const item = await checklistRepo.addCustomItem(
+    req.params.id,
+    item_text,
+    req.user!.sub,
+    req.user!.email,
+  );
+  res.status(201).json(item);
+});
+
+router.patch('/:id/checklist/:itemId', authenticate, requireRole('analyst'), async (req: Request, res: Response) => {
+  const { checked } = z.object({ checked: z.boolean() }).parse(req.body);
+  const item = await checklistRepo.checkItem(
+    req.params.itemId,
+    req.user!.sub,
+    req.user!.email,
+    checked,
+  );
+  if (!item) {
+    res.status(404).json({ error: 'Item not found', code: 'NOT_FOUND' });
+    return;
+  }
+  res.json(item);
+});
+
+router.delete('/:id/checklist/:itemId', authenticate, requireRole('senior_analyst'), async (req: Request, res: Response) => {
+  const deleted = await checklistRepo.deleteCustomItem(req.params.itemId);
+  if (!deleted) {
+    res.status(404).json({ error: 'Item not found or not a custom item', code: 'NOT_FOUND' });
+    return;
+  }
+  res.status(204).send();
+});
