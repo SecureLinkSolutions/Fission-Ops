@@ -14,78 +14,183 @@ interface Props {
   onCreateTask: (title: string) => void;
 }
 
-const ACTION_TEMPLATES: Record<string, string[]> = {
+// Investigation actions: shown when suspected / under investigation
+const INVESTIGATE_TEMPLATES: Record<string, string[]> = {
   ip: [
-    'Block {value} at perimeter firewall',
-    'Add {value} to SIEM threat feed blocklist',
-    'Search SIEM for all connections to/from {value}',
-    'Null-route {value} on core router',
-    'Check for lateral movement from {value}',
-    'Capture network traffic from {value}',
+    'Look up {value} in VirusTotal / threat intel platforms',
+    'Search SIEM for all traffic to/from {value} in last 30 days',
+    'Check ASN and geolocation of {value} for anomalies',
+    'Review firewall logs for connection frequency to {value}',
+    'Determine which internal hosts contacted {value}',
+    'Check if {value} appears in any known threat feeds',
+    'Perform reverse DNS lookup and WHOIS on {value}',
+    'Correlate {value} with open-source threat intelligence (AbuseIPDB, Shodan)',
   ],
   hostname: [
-    'Isolate {value} from network immediately',
-    'Pull memory dump from {value}',
-    'Acquire forensic disk image of {value}',
-    'Force logoff all sessions on {value}',
-    'Review process list and running services on {value}',
-    'Check {value} for persistence mechanisms (scheduled tasks, services, run keys)',
-  ],
-  account: [
-    'Disable account {value} in Active Directory',
-    'Force password reset for {value}',
-    'Revoke all active sessions for {value}',
-    'Enable enhanced logging on {value}',
-    'Review recent login history for {value}',
-    'Check for privilege escalation by {value}',
-  ],
-  email: [
-    'Quarantine all emails from sender of {value}',
-    'Block sender domain at mail gateway',
-    'Search mail logs for other recipients of {value}',
-    'Report {value} to anti-phishing feed',
-    'Notify recipients of {value} to not click links',
+    'Pull process list and review running services on {value}',
+    'Check recent login history and active sessions on {value}',
+    'Review Windows Event Logs (4624, 4625, 4688) on {value}',
+    'Scan {value} with EDR for known IOC signatures',
+    'Check {value} for unusual scheduled tasks or startup entries',
+    'Review network connections currently established from {value}',
+    'Determine if {value} is domain-joined and check for anomalous GPO changes',
   ],
   domain: [
-    'Block {value} at DNS resolver / firewall',
-    'Check for DNS resolution logs of {value} across endpoints',
-    'Submit {value} to domain blocklist feed',
-    'Investigate registrar and hosting of {value}',
-    'Check for typosquatting variants of {value}',
+    'Perform WHOIS lookup on {value} — check registration date and registrar',
+    'Check {value} in VirusTotal, URLhaus, and OpenPhish',
+    'Review DNS resolution history for {value} (passive DNS)',
+    'Identify all internal hosts that resolved {value}',
+    'Check certificate transparency logs for {value}',
+    'Look for typosquatting or lookalike variants of {value}',
+    'Enumerate subdomains of {value} for infrastructure scope',
   ],
-  url: [
-    'Block {value} at web proxy',
-    'Search proxy logs for requests to {value}',
-    'Notify users who visited {value}',
-    'Submit {value} to URL threat feed',
+  email: [
+    'Analyse full email headers of {value} for spoofing indicators',
+    'Check sending IP reputation and SPF/DKIM/DMARC alignment for {value}',
+    'Search mail gateway logs for other recipients of {value}',
+    'Review link and attachment contents of {value} in sandbox',
+    'Check sender domain registration date and MX records',
+    'Look for similar phishing campaigns targeting the organisation',
+    'Verify if {value} is a known phishing kit or campaign',
+  ],
+  account: [
+    'Review login history for {value} — look for unusual times or locations',
+    'Check for MFA bypass or anomalous auth events for {value}',
+    'Enumerate resources accessed by {value} in last 7 days',
+    'Review group membership and permissions assigned to {value}',
+    'Check if {value} has performed any privilege escalation',
+    'Search for credential usage of {value} across other systems',
+    'Verify if {value} should have the access observed',
   ],
   file: [
-    'Quarantine file {value} on all endpoints',
-    'Add {value} hash to EDR blocklist',
-    'Search EDR for execution of {value} across environment',
-    'Submit {value} to sandbox for analysis',
-    'Review parent process that dropped {value}',
+    'Submit hash of {value} to VirusTotal and sandbox analysis',
+    'Check {value} for code-signing certificate validity',
+    'Review execution chain — what process dropped or launched {value}',
+    'Search EDR telemetry for execution of {value} across all endpoints',
+    'Extract strings from {value} for C2 indicators',
+    'Check {value} PE header and compilation timestamp',
+    'Compare {value} against known malware family signatures',
   ],
   process: [
-    'Kill process {value} on affected hosts',
-    'Quarantine executable for {value}',
-    'Review process tree for {value}',
-    'Search EDR for execution of {value} across environment',
+    'Review parent process and command-line arguments of {value}',
+    'Check executable path of {value} against known-good baseline',
+    'Verify digital signature of {value} binary',
+    'Look for similar {value} instances running on other hosts',
+    'Review network connections established by {value}',
+    'Check if {value} has loaded any suspicious DLLs',
+  ],
+  url: [
+    'Submit {value} to URL sandbox (URLscan.io, Any.run)',
+    'Check {value} in Google Safe Browsing and VirusTotal',
+    'Search proxy logs for internal users who visited {value}',
+    'Review hosting IP and infrastructure behind {value}',
+    'Check redirect chain of {value} for final destination',
   ],
   registry: [
-    'Delete registry key {value}',
-    'Monitor {value} for re-creation',
-    'Review all hosts for presence of {value}',
-    'Check {value} for persistence or credential harvesting',
+    'Check {value} against known persistence registry keys',
+    'Review who or what created/modified {value}',
+    'Search all endpoints for presence of {value}',
+    'Determine what executable is referenced by {value}',
   ],
   certificate: [
-    'Revoke certificate {value}',
-    'Check all services using {value}',
-    'Monitor for re-issuance of {value}',
+    'Verify issuer CA and chain of trust for {value}',
+    'Check {value} in certificate transparency logs',
+    'Look up {value} in Shodan for services using it',
+    'Check if {value} was issued to a known threat actor domain',
   ],
   custom: [
-    'Investigate {value} further',
-    'Document findings for {value}',
+    'Investigate {value} in threat intelligence platforms',
+    'Search SIEM for activity related to {value}',
+    'Document all observations about {value}',
+    'Correlate {value} with other IOCs in the incident',
+  ],
+};
+
+// Response actions: shown when confirmed malicious
+const RESPOND_TEMPLATES: Record<string, string[]> = {
+  ip: [
+    'Block {value} at perimeter firewall — inbound and outbound',
+    'Add {value} to SIEM threat feed and SOAR blocklist',
+    'Null-route {value} on core router to prevent any connectivity',
+    'Search for and terminate all active connections to {value}',
+    'Check for lateral movement originating from hosts that contacted {value}',
+    'Add {value} to EDR network isolation rules',
+    'Notify upstream ISP to block/null-route {value} if possible',
+  ],
+  hostname: [
+    'Isolate {value} from the network immediately via EDR or switch port',
+    'Acquire forensic memory dump from {value} before shutdown',
+    'Acquire forensic disk image of {value} for investigation',
+    'Force logoff all active sessions on {value}',
+    'Revoke all Kerberos tickets (krbtgt reset if domain controller involved)',
+    'Check {value} for persistence mechanisms — scheduled tasks, services, run keys, WMI',
+    'Reset local admin credentials on {value}',
+  ],
+  domain: [
+    'Block {value} at DNS resolver and web proxy',
+    'Add {value} to all endpoint DNS sinkholes',
+    'Submit {value} to domain takedown services if company-owned or lookalike',
+    'Search mail gateway logs and block any email from {value}',
+    'Alert all internal users who have visited or emailed {value}',
+    'Monitor for re-registration of {value} or variants',
+  ],
+  email: [
+    'Quarantine all emails associated with {value} across all mailboxes',
+    'Block sending domain and IP at mail gateway',
+    'Retract delivered copies of {value} from user mailboxes',
+    'Notify all recipients of {value} — instruct not to click links or open attachments',
+    'Report {value} to anti-phishing feeds (Google, Microsoft, APWG)',
+    'Enable enhanced logging for the affected email accounts',
+  ],
+  account: [
+    'Disable account {value} in Active Directory / IdP immediately',
+    'Revoke all active sessions and OAuth tokens for {value}',
+    'Force password reset for {value} via secure out-of-band channel',
+    'Audit and revoke any API keys or service credentials for {value}',
+    'Review and remove any new permissions or group memberships added to {value}',
+    'Enable enhanced audit logging on {value} if re-enabled later',
+    'Check if attacker created any backdoor accounts using {value} privileges',
+  ],
+  file: [
+    'Quarantine {value} on all endpoints via EDR',
+    'Add hash of {value} to EDR and AV blocklist across all endpoints',
+    'Search for and remove all copies of {value} from the environment',
+    'Submit {value} to AV vendors for signature updates',
+    'Review and remove any persistence installed by {value}',
+    'Check for other files dropped by {value} or its parent process',
+  ],
+  process: [
+    'Kill process {value} on all affected hosts via EDR',
+    'Quarantine the executable backing {value}',
+    'Add {value} hash to application allowlist deny list',
+    'Review and remediate all files created or modified by {value}',
+    'Check for child processes spawned by {value}',
+    'Search EDR for execution of {value} across the environment',
+  ],
+  url: [
+    'Block {value} at web proxy and DNS',
+    'Search proxy logs and identify all users who visited {value}',
+    'Notify users who visited {value} to check for malware infection',
+    'Submit {value} to Google Safe Browsing and Microsoft SmartScreen',
+    'Review any files downloaded from {value}',
+  ],
+  registry: [
+    'Delete registry key {value} from all affected hosts',
+    'Monitor {value} for automatic re-creation (indicates active malware)',
+    'Review all hosts in the environment for presence of {value}',
+    'Identify and remediate the process responsible for creating {value}',
+  ],
+  certificate: [
+    'Revoke certificate {value} immediately via issuing CA',
+    'Replace {value} with a new certificate across all services',
+    'Audit all services that were using {value}',
+    'Check if private key for {value} has been exfiltrated',
+  ],
+  custom: [
+    'Contain and isolate systems affected by {value}',
+    'Remove or disable {value} from the environment',
+    'Document full scope and impact of {value}',
+    'Escalate {value} to incident commander for response decision',
   ],
 };
 
@@ -118,10 +223,9 @@ function ActionItem({ text, onCreateTask }: { text: string; onCreateTask: (title
             fontSize: '11px',
             cursor: 'pointer',
             fontWeight: 600,
-            transition: 'none',
           }}
         >
-          ＋ Add as Task
+          ＋ Task
         </button>
         <button
           onClick={handleCopy}
@@ -139,50 +243,104 @@ function ActionItem({ text, onCreateTask }: { text: string; onCreateTask: (title
             fontWeight: 600,
           }}
         >
-          {copied ? '✓ Copied' : '📋 Copy'}
+          {copied ? '✓' : '📋'}
         </button>
       </div>
     </div>
   );
 }
 
+function ActionSection({
+  title, color, icon, actions, onCreateTask,
+}: {
+  title: string;
+  color: string;
+  icon: string;
+  actions: string[];
+  onCreateTask: (title: string) => void;
+}) {
+  const [collapsed, setCollapsed] = useState(false);
+  return (
+    <div style={{ marginBottom: '12px' }}>
+      <button
+        onClick={() => setCollapsed(c => !c)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: '8px', width: '100%',
+          background: 'transparent', border: 'none', cursor: 'pointer',
+          padding: '0 0 10px 0', textAlign: 'left',
+        }}
+      >
+        <span style={{ fontSize: '13px' }}>{icon}</span>
+        <span style={{ fontWeight: 700, fontSize: '13px', color }}>{title}</span>
+        <span style={{
+          background: `${color}22`, color, border: `1px solid ${color}44`,
+          borderRadius: '10px', padding: '1px 8px', fontSize: '11px', fontWeight: 700, marginLeft: '2px',
+        }}>{actions.length}</span>
+        <span style={{ marginLeft: 'auto', color: '#484f58', fontSize: '11px' }}>{collapsed ? '▸ Show' : '▾ Hide'}</span>
+      </button>
+      {!collapsed && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          {actions.map((action, i) => (
+            <ActionItem key={i} text={action} onCreateTask={onCreateTask} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function SuggestedActions({ entity, onCreateTask }: Props) {
-  const shouldShow =
-    entity.status === 'confirmed_malicious' ||
-    entity.ioc_status === 'confirmed';
+  const isConfirmed = entity.status === 'confirmed_malicious' || entity.ioc_status === 'confirmed';
+  const isSuspected = entity.ioc_status === 'suspected' || entity.status === 'under_investigation';
 
-  if (!shouldShow) return null;
+  if (!isConfirmed && !isSuspected) return null;
 
-  const templates = ACTION_TEMPLATES[entity.type] ?? ACTION_TEMPLATES['custom'];
-  const actions = templates.map((t) => t.replace(/\{value\}/g, entity.value));
+  const type = entity.type in INVESTIGATE_TEMPLATES ? entity.type : 'custom';
+  const fill = (t: string) => t.replace(/\{value\}/g, entity.value);
+  const investigateActions = INVESTIGATE_TEMPLATES[type].map(fill);
+  const respondActions = RESPOND_TEMPLATES[type].map(fill);
 
   return (
     <div style={{
-      background: '#f0883e08',
-      border: '1px solid #f0883e44',
+      background: isConfirmed ? '#f8514908' : '#58a6ff08',
+      border: `1px solid ${isConfirmed ? '#f8514944' : '#58a6ff44'}`,
       borderRadius: '8px',
-      padding: '20px',
+      padding: '16px 20px',
       marginBottom: '24px',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-        <span style={{ fontWeight: 700, fontSize: '14px', color: '#f0883e' }}>⚡ Suggested Actions</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+        <span style={{ fontWeight: 700, fontSize: '14px', color: isConfirmed ? '#f85149' : '#58a6ff' }}>
+          {isConfirmed ? '⚡ Response & Remediation Actions' : '🔍 Investigation Actions'}
+        </span>
         <span style={{
-          background: '#f0883e22',
-          color: '#f0883e',
-          border: '1px solid #f0883e44',
-          borderRadius: '10px',
-          padding: '1px 8px',
-          fontSize: '11px',
-          fontWeight: 700,
+          background: isConfirmed ? '#f8514922' : '#58a6ff22',
+          color: isConfirmed ? '#f85149' : '#58a6ff',
+          border: `1px solid ${isConfirmed ? '#f8514944' : '#58a6ff44'}`,
+          borderRadius: '4px', padding: '1px 7px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase',
         }}>
-          {actions.length}
+          {isConfirmed ? 'Confirmed Malicious' : 'Under Investigation'}
         </span>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        {actions.map((action, i) => (
-          <ActionItem key={i} text={action} onCreateTask={onCreateTask} />
-        ))}
-      </div>
+
+      {/* Always show investigation actions — they remain relevant even after confirmation */}
+      <ActionSection
+        title="Investigation & Triage"
+        color="#58a6ff"
+        icon="🔍"
+        actions={investigateActions}
+        onCreateTask={onCreateTask}
+      />
+
+      {/* Response actions only shown once confirmed */}
+      {isConfirmed && (
+        <ActionSection
+          title="Containment & Response"
+          color="#f85149"
+          icon="🛡"
+          actions={respondActions}
+          onCreateTask={onCreateTask}
+        />
+      )}
     </div>
   );
 }
