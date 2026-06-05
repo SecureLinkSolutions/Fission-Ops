@@ -160,4 +160,16 @@ async function runMigrations(): Promise<void> {
     await pool.query(sql);
     console.log('✅ Migration 011 applied');
   }
+
+  const needsMigration012 = await pool.query(
+    `SELECT 1 FROM information_schema.columns
+     WHERE table_schema = 'public' AND table_name = 'notifications' AND column_name = 'task_id'`,
+  );
+  if ((needsMigration012.rowCount ?? 0) === 0) {
+    console.log('⚙️  Running migration 012...');
+    const migrationPath = join(__dirname, '../../../../db/migrate_012.sql');
+    const sql = readFileSync(migrationPath, 'utf8');
+    await pool.query(sql);
+    console.log('✅ Migration 012 applied');
+  }
 }

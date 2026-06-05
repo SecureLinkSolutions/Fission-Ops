@@ -86,6 +86,7 @@ export async function createTask(data: {
       title: `Task assigned: ${data.title}`,
       body: data.description?.slice(0, 200),
       incident_id: data.incident_id,
+      task_id: task.id,
     }).catch(() => {});
   }
 
@@ -134,6 +135,7 @@ export async function updateTask(id: string, data: Partial<{
       type: 'task_assigned',
       title: `Task assigned: ${task.title}`,
       incident_id: task.incident_id,
+      task_id: task.id,
     }).catch(() => {});
   }
 

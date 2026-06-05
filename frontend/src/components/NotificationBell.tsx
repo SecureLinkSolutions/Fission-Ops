@@ -10,6 +10,7 @@ interface Notification {
   body?: string;
   incident_id?: string;
   entity_id?: string;
+  task_id?: string;
   read: boolean;
   created_at: string;
 }
@@ -85,7 +86,10 @@ export default function NotificationBell() {
     await apiClient.patch(`/notifications/${id}/read`).catch(() => {});
     setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
     setUnreadCount((c) => Math.max(0, c - 1));
-    if (notif.incident_id && notif.entity_id) {
+    if (notif.incident_id && notif.task_id) {
+      navigate(`/incidents/${notif.incident_id}?tab=tasks&task=${notif.task_id}`);
+      setOpen(false);
+    } else if (notif.incident_id && notif.entity_id) {
       navigate(`/incidents/${notif.incident_id}/entities/${notif.entity_id}`);
       setOpen(false);
     } else if (notif.incident_id) {

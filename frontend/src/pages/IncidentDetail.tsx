@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { useFetch } from '../hooks/useFetch';
 import { apiClient } from '../api/client';
 import { Incident, Entity, TimelineEntry } from '../types';
@@ -57,10 +57,25 @@ type Tab = 'entities' | 'killchain' | 'relationships' | 'network' | 'timeline' |
 
 export default function IncidentDetail() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { isFeatureEnabled } = useLicense();
-  const [activeTab, setActiveTab] = useState<Tab>('entities');
-  const [visitedTabs, setVisitedTabs] = useState<Set<Tab>>(new Set<Tab>(['entities']));
+  const initialTab = (searchParams.get('tab') as Tab) ?? 'entities';
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
+  const [visitedTabs, setVisitedTabs] = useState<Set<Tab>>(new Set<Tab>([initialTab]));
+  const [highlightTaskId, setHighlightTaskId] = useState<string | undefined>(searchParams.get('task') ?? undefined);
+
+  useEffect(() => {
+    const tab = searchParams.get('tab') as Tab | null;
+    const taskParam = searchParams.get('task');
+    if (tab) {
+      setActiveTab(tab);
+      setVisitedTabs((prev) => { const s = new Set(prev); s.add(tab); return s; });
+    }
+    if (taskParam) {
+      setHighlightTaskId(taskParam);
+    }
+  }, [searchParams]);
 
   function switchTab(tab: Tab) {
     setActiveTab(tab);
@@ -415,6 +430,7 @@ export default function IncidentDetail() {
           teamMembers={teamMembers}
           availableEntities={(entities ?? []).map((e) => ({ id: e.id, type: e.type, value: e.value }))}
           onRefresh={refetchTasks}
+          highlightTaskId={highlightTaskId}
         />
       </div>
 

@@ -9,6 +9,7 @@ export interface Notification {
   body?: string;
   incident_id?: string;
   entity_id?: string;
+  task_id?: string;
   read: boolean;
   created_at: string;
 }
@@ -21,12 +22,13 @@ export async function createNotification(data: {
   body?: string;
   incident_id?: string;
   entity_id?: string;
+  task_id?: string;
 }): Promise<Notification> {
   const result = await pool.query(
-    `INSERT INTO notifications (user_id, org_id, type, title, body, incident_id, entity_id)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `INSERT INTO notifications (user_id, org_id, type, title, body, incident_id, entity_id, task_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
      RETURNING *`,
-    [data.user_id, data.org_id ?? null, data.type, data.title, data.body ?? null, data.incident_id ?? null, data.entity_id ?? null],
+    [data.user_id, data.org_id ?? null, data.type, data.title, data.body ?? null, data.incident_id ?? null, data.entity_id ?? null, data.task_id ?? null],
   );
   return result.rows[0];
 }
