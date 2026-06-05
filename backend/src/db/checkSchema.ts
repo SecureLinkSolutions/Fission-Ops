@@ -15,6 +15,17 @@ export async function checkSchema(): Promise<void> {
   console.log('✅ Database schema verified');
   await runMigrations();
   await seedMitre();
+  const needsMigration013 = await pool.query(
+    `SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'entity_enrichment_history'`,
+  );
+  if ((needsMigration013.rowCount ?? 0) === 0) {
+    console.log('⚙️  Running migration 013...');
+    const migrationPath = join(__dirname, '../../../../db/migrate_013.sql');
+    const sql = readFileSync(migrationPath, 'utf8');
+    await pool.query(sql);
+    console.log('✅ Migration 013 applied');
+  }
+
 }
 
 async function runMigrations(): Promise<void> {

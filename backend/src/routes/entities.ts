@@ -6,6 +6,7 @@ import { createEntitySchema } from '../schemas/entity';
 import * as repo from '../repositories/entityRepository';
 import * as incidentRepo from '../repositories/incidentRepository';
 import { runEnrichment } from '../services/enrichment/enrichmentService';
+import { getEnrichmentHistory, recordEnrichment } from '../repositories/enrichmentHistoryRepository';
 import { emitToIncident } from '../socket';
 import { z } from 'zod';
 
@@ -30,6 +31,29 @@ router.post('/', authenticate, requireRole('analyst'), auditLog('entity', 'CREAT
     runEnrichment(entity.id, req.user!.org_id).catch(() => {});
   }
   emitToIncident(req.params.incidentId, 'entity:created', entity);
+});
+
+
+router.post('/:id/enrich', authenticate, requireRole('analyst'), async (req: Request, res: Response) => {
+  const entity = await repo.getEntityById(req.params.id);
+  if (!entity) {
+    res.status(404).json({ error: 'Entity not found', code: 'NOT_FOUND' });
+    return;
+  }
+  if (!req.user!.org_id) {
+    res.status(400).json({ error: 'No org context', code: 'NO_ORG' });
+    return;
+  }
+  // Run enrichment with triggered_by context via wrapping
+  const triggeredBy = req.user!.sub;
+  const triggeredByName = req.user!.email;
+  runEnrichment(entity.id, req.user!.org_id, triggeredBy, triggeredByName).catch(() => {});
+  res.json({ success: true });
+});
+
+router.get('/:id/enrichment-history', authenticate, async (req: Request, res: Response) => {
+  const history = await getEnrichmentHistory(req.params.id);
+  res.json(history);
 });
 
 export default router;

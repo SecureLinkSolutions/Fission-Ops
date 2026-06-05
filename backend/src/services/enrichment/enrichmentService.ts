@@ -1,3 +1,4 @@
+import { recordEnrichment } from '../../repositories/enrichmentHistoryRepository';
 import { pool } from '../../db/pool';
 import { queryVirusTotal } from './virustotal';
 import { queryAbuseIPDB } from './abuseipdb';
@@ -18,7 +19,7 @@ function isPrivateIP(ip: string): boolean {
   );
 }
 
-export async function runEnrichment(entityId: string, orgId: string): Promise<void> {
+export async function runEnrichment(entityId: string, orgId: string, triggeredBy?: string, triggeredByName?: string): Promise<void> {
   // Mark as running
   await pool.query(
     `UPDATE entities SET enrichment_status = 'running' WHERE id = $1`,
@@ -52,6 +53,9 @@ export async function runEnrichment(entityId: string, orgId: string): Promise<vo
       `UPDATE entities SET enrichment_status = 'skipped', enrichment_updated_at = NOW() WHERE id = $1`,
       [entityId],
     );
+    await recordEnrichment({ entity_id: entityId, source: 'virustotal', summary: 'Skipped: no API key configured', triggered_by: triggeredBy, triggered_by_name: triggeredByName });
+    await recordEnrichment({ entity_id: entityId, source: 'abuseipdb', summary: 'Skipped: no API key configured', triggered_by: triggeredBy, triggered_by_name: triggeredByName });
+    await recordEnrichment({ entity_id: entityId, source: 'shodan', summary: 'Skipped: no API key configured', triggered_by: triggeredBy, triggered_by_name: triggeredByName });
     return;
   }
 
@@ -59,20 +63,77 @@ export async function runEnrichment(entityId: string, orgId: string): Promise<vo
 
   // VirusTotal — ip, domain, hostname
   if (keys['virustotal'] && ['ip', 'domain', 'hostname'].includes(entity.type)) {
-    const vtResult = await queryVirusTotal(keys['virustotal'], entity.type, entity.value);
-    if (vtResult) enrichmentData.virustotal = vtResult;
+    try {
+      const vtResult = await queryVirusTotal(keys['virustotal'], entity.type, entity.value);
+      if (vtResult) {
+        enrichmentData.virustotal = vtResult;
+        const vtVerdict = vtResult.malicious > 2 ? 'malicious' : vtResult.suspicious > 0 ? 'suspicious' : 'clean';
+        await recordEnrichment({
+          entity_id: entityId,
+          source: 'virustotal',
+          verdict: vtVerdict,
+          raw_result: vtResult as unknown as Record<string, unknown>,
+          summary: `VT: ${vtResult.malicious}/${vtResult.engines_total} engines flagged, verdict: ${vtVerdict}`,
+        });
+      } else {
+        await recordEnrichment({ entity_id: entityId, source: 'virustotal', summary: 'Skipped: no result returned', triggered_by: triggeredBy, triggered_by_name: triggeredByName });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      await recordEnrichment({ entity_id: entityId, source: 'virustotal', summary: `Failed: ${msg}` });
+    }
+  } else if (!keys['virustotal'] && ['ip', 'domain', 'hostname'].includes(entity.type)) {
+    await recordEnrichment({ entity_id: entityId, source: 'virustotal', summary: 'Skipped: no API key configured', triggered_by: triggeredBy, triggered_by_name: triggeredByName });
   }
 
   // AbuseIPDB — ip only
   if (keys['abuseipdb'] && entity.type === 'ip') {
-    const abuseResult = await queryAbuseIPDB(keys['abuseipdb'], entity.value);
-    if (abuseResult) enrichmentData.abuseipdb = abuseResult;
+    try {
+      const abuseResult = await queryAbuseIPDB(keys['abuseipdb'], entity.value);
+      if (abuseResult) {
+        enrichmentData.abuseipdb = abuseResult;
+        const abuseVerdict = (abuseResult.abuse_confidence_score ?? 0) > 25 ? 'suspicious' : 'clean';
+        await recordEnrichment({
+          entity_id: entityId,
+          source: 'abuseipdb',
+          verdict: abuseVerdict,
+          raw_result: abuseResult as unknown as Record<string, unknown>,
+          summary: `AbuseIPDB: confidence ${abuseResult.abuse_confidence_score}%, verdict: ${abuseVerdict}`,
+        });
+      } else {
+        await recordEnrichment({ entity_id: entityId, source: 'abuseipdb', summary: 'Skipped: no result returned', triggered_by: triggeredBy, triggered_by_name: triggeredByName });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      await recordEnrichment({ entity_id: entityId, source: 'abuseipdb', summary: `Failed: ${msg}` });
+    }
+  } else if (!keys['abuseipdb'] && entity.type === 'ip') {
+    await recordEnrichment({ entity_id: entityId, source: 'abuseipdb', summary: 'Skipped: no API key configured', triggered_by: triggeredBy, triggered_by_name: triggeredByName });
   }
 
   // Shodan — ip only
   if (keys['shodan'] && entity.type === 'ip') {
-    const shodanResult = await queryShodan(keys['shodan'], entity.value);
-    if (shodanResult) enrichmentData.shodan = shodanResult;
+    try {
+      const shodanResult = await queryShodan(keys['shodan'], entity.value);
+      if (shodanResult) {
+        enrichmentData.shodan = shodanResult;
+        const openPorts = (shodanResult.ports ?? []).length;
+        const isp = shodanResult.org ?? 'unknown';
+        await recordEnrichment({
+          entity_id: entityId,
+          source: 'shodan',
+          raw_result: shodanResult as unknown as Record<string, unknown>,
+          summary: `Shodan: ${openPorts} open ports, ISP: ${isp}`,
+        });
+      } else {
+        await recordEnrichment({ entity_id: entityId, source: 'shodan', summary: 'Skipped: no result returned', triggered_by: triggeredBy, triggered_by_name: triggeredByName });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      await recordEnrichment({ entity_id: entityId, source: 'shodan', summary: `Failed: ${msg}` });
+    }
+  } else if (!keys['shodan'] && entity.type === 'ip') {
+    await recordEnrichment({ entity_id: entityId, source: 'shodan', summary: 'Skipped: no API key configured', triggered_by: triggeredBy, triggered_by_name: triggeredByName });
   }
 
   // Determine verdict
