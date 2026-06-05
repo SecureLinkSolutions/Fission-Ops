@@ -1,6 +1,7 @@
 import { pool } from '../db/pool';
 import { createNotification } from './notificationRepository';
 import { emitToIncident, emitToUser } from '../socket';
+import { ROLE_RANK } from '../middleware/rbac';
 
 export interface Comment {
   id: string;
@@ -115,9 +116,8 @@ export async function updateComment(id: string, body: string, authorId: string):
 }
 
 export async function deleteComment(id: string, userId: string, role: string): Promise<boolean> {
-  const ROLE_RANK: Record<string, number> = { analyst: 1, senior_analyst: 2, incident_commander: 3, super_admin: 99 };
   let result;
-  if ((ROLE_RANK[role] ?? 0) >= ROLE_RANK['incident_commander']) {
+  if ((ROLE_RANK[role as keyof typeof ROLE_RANK] ?? 0) >= ROLE_RANK['incident_commander']) {
     result = await pool.query('DELETE FROM comments WHERE id = $1', [id]);
   } else {
     result = await pool.query('DELETE FROM comments WHERE id = $1 AND author_id = $2', [id, userId]);

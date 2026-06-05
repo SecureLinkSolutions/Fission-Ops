@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { apiClient } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { relativeTime } from '../utils/time';
+import { ROLE_RANK } from '../utils/constants';
 
 interface Comment {
   id: string;
@@ -21,8 +23,6 @@ interface TeamMember {
   name: string;
 }
 
-const ROLE_RANK: Record<string, number> = { analyst: 1, senior_analyst: 2, incident_commander: 3, super_admin: 99 };
-
 function renderMarkdown(text: string): string {
   // Strip dangerous tags
   let safe = text.replace(/<script[^>]*>.*?<\/script>/gi, '').replace(/<iframe[^>]*>.*?<\/iframe>/gi, '');
@@ -33,17 +33,6 @@ function renderMarkdown(text: string): string {
     .replace(/`(.+?)`/g, '<code style="background:#21262d;padding:1px 4px;border-radius:3px;font-family:monospace;font-size:0.9em">$1</code>')
     .replace(/\n/g, '<br/>');
   return safe;
-}
-
-function relativeTime(ts: string): string {
-  const diff = Date.now() - new Date(ts).getTime();
-  const secs = Math.floor(diff / 1000);
-  if (secs < 60) return `${secs}s ago`;
-  const mins = Math.floor(secs / 60);
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
 }
 
 const ROLE_COLORS: Record<string, string> = {

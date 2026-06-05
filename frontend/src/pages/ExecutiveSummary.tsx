@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { apiClient } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { Incident } from '../types';
+import { ROLE_RANK } from '../utils/constants';
 
 async function buildAutoPopulate(incidentId: string, incident: Incident): Promise<Partial<Summary>> {
   const [entitiesRes, matrixRes, timelineRes, relationshipsRes] = await Promise.allSettled([
@@ -178,8 +179,6 @@ const RISK_COLORS: Record<string, string> = {
   high: '#f0883e',
   critical: '#f85149',
 };
-
-const ROLE_RANK: Record<string, number> = { analyst: 1, senior_analyst: 2, incident_commander: 3, super_admin: 99 };
 
 const s: Record<string, React.CSSProperties> = {
   page: { minHeight: '100vh', background: '#0d1117', padding: '32px 24px', color: '#e6edf3' },

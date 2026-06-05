@@ -16,14 +16,11 @@ import SuggestedActions from '../components/SuggestedActions';
 import { useIncidentSocket } from '../hooks/useIncidentSocket';
 import { useAuth } from '../context/AuthContext';
 import { useLicense } from '../context/LicenseContext';
+import { relativeTime } from '../utils/time';
+import { ROLE_RANK, SEVERITY_COLORS, INCIDENT_STATUS_COLORS, ENTITY_TYPE_ICONS, ENTITY_TYPE_COLORS, ENTITY_TYPE_LABELS } from '../utils/constants';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
-
-const ENTITY_TYPE_ICONS: Record<string, string> = { hostname: '🖥', ip: '🌐', email: '📧', domain: '🔗', account: '👤', file: '📄', process: '🔧', registry: '🗝', certificate: '🏅', url: '🌍', custom: '📌' };
-const ENTITY_TYPE_LABELS: Record<string, string> = { hostname: 'HOST', ip: 'IP', email: 'EMAIL', domain: 'DOMAIN', account: 'ACCT', file: 'FILE', process: 'PROC', registry: 'REG', certificate: 'CERT', url: 'URL', custom: 'CUSTOM' };
-const ENTITY_TYPE_COLORS: Record<string, string> = { hostname: '#58a6ff', ip: '#3fb950', email: '#d29922', domain: '#a371f7', account: '#f0883e', file: '#79c0ff', process: '#79c0ff', registry: '#d2a8ff', certificate: '#56d364', url: '#ffa657', custom: '#8b949e' };
-const SEVERITY_COLORS: Record<string, string> = { low: '#3fb950', medium: '#d29922', high: '#f85149', critical: '#ff7b72' };
-const STATUS_COLORS: Record<string, string> = { open: '#58a6ff', contained: '#d29922', closed: '#8b949e' };
+const STATUS_COLORS = INCIDENT_STATUS_COLORS;
 const IOC_STATUS_DISPLAY: Record<string, { label: string; color: string }> = {
   confirmed: { label: 'CONFIRMED', color: '#f85149' },
   suspected: { label: 'SUSPECTED', color: '#d29922' },
@@ -40,17 +37,6 @@ const ACTION_TYPE_COLORS: Record<string, string> = {
 
 function badge(color: string, text: string): React.ReactElement {
   return <span style={{ background: `${color}22`, color, border: `1px solid ${color}44`, borderRadius: '20px', padding: '3px 10px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' as const }}>{text}</span>;
-}
-
-function relativeTime(ts: string): string {
-  const diff = Date.now() - new Date(ts).getTime();
-  const secs = Math.floor(diff / 1000);
-  if (secs < 60) return `${secs}s ago`;
-  const mins = Math.floor(secs / 60);
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
 }
 
 type Tab = 'entities' | 'killchain' | 'relationships' | 'network' | 'timeline' | 'tasks' | 'summary';
@@ -166,9 +152,8 @@ export default function IncidentDetail() {
   );
 
   const teamMembers = (assignments ?? []).map((a) => ({ id: a.user_id, email: a.user_email, name: a.user_name }));
-  const ROLE_RANK_INC: Record<string, number> = { analyst: 1, senior_analyst: 2, incident_commander: 3, super_admin: 99 };
-  const canChangeIncidentStatus = ROLE_RANK_INC[user?.role ?? ''] >= ROLE_RANK_INC['senior_analyst'];
-  const canChangeStatusField = ROLE_RANK_INC[user?.role ?? ''] >= ROLE_RANK_INC['incident_commander'];
+  const canChangeIncidentStatus = ROLE_RANK[user?.role ?? ''] >= ROLE_RANK['senior_analyst'];
+  const canChangeStatusField = ROLE_RANK[user?.role ?? ''] >= ROLE_RANK['incident_commander'];
 
   return (
     <div style={{ padding: '32px', maxWidth: '1400px', margin: '0 auto' }}>

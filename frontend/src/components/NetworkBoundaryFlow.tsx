@@ -17,14 +17,10 @@ import {
 import { useFetch } from '../hooks/useFetch';
 import { apiClient } from '../api/client';
 import { NetworkBoundary, Entity } from '../types';
+import { ENTITY_TYPE_ICONS } from '../utils/constants';
 
 const ZONE_COLORS: Record<string, string> = {
   IT: '#58a6ff', OT: '#d29922', trusted: '#3fb950', untrusted: '#f85149', dmz: '#a371f7',
-};
-
-const ENTITY_TYPE_ICONS: Record<string, string> = {
-  hostname: '🖥', ip: '🌐', email: '📧', domain: '🔗', account: '👤', file: '📄',
-  process: '🔧', registry: '🗝', certificate: '🏅', url: '🌍', custom: '📌',
 };
 
 interface EntityZoneAssignment {

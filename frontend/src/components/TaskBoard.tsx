@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { apiClient } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { ROLE_RANK, ENTITY_TYPE_ICONS } from '../utils/constants';
 
 export interface TaskEntity { id: string; type: string; value: string; }
 
@@ -36,11 +37,6 @@ interface TaskBoardProps {
 const PRIORITY_COLORS: Record<string, string> = {
   critical: '#f85149', high: '#f0883e', medium: '#d29922', low: '#8b949e',
 };
-const ENTITY_TYPE_ICONS: Record<string, string> = {
-  hostname: '🖥', ip: '🌐', email: '📧', domain: '🔗', account: '👤',
-  file: '📄', process: '🔧', registry: '🗝', certificate: '🏅', url: '🌍', custom: '📌',
-};
-const ROLE_RANK: Record<string, number> = { analyst: 1, senior_analyst: 2, incident_commander: 3, super_admin: 99 };
 
 interface TaskCardProps {
   task: Task;

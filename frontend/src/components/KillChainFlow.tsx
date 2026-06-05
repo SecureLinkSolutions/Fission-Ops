@@ -4,6 +4,7 @@ import { useFetch } from '../hooks/useFetch';
 import { apiClient } from '../api/client';
 import { KillChainStage, KillChainFramework } from '../types';
 import TTPSearch from './TTPSearch';
+import { ENTITY_TYPE_ICONS } from '../utils/constants';
 
 interface TTPInfo {
   id: string;
@@ -47,20 +48,6 @@ interface MatrixRow {
   entity_status?: string;
   entity_details?: EntityDetails;
 }
-
-const ENTITY_TYPE_ICONS: Record<string, string> = {
-  hostname: '🖥',
-  ip: '🌐',
-  email: '📧',
-  domain: '🔗',
-  account: '👤',
-  file: '📄',
-  process: '🔧',
-  registry: '🗝',
-  certificate: '🏅',
-  url: '🌍',
-  custom: '📌',
-};
 
 const CONFIDENCE_COLORS: Record<string, string> = {
   low: '#d29922',

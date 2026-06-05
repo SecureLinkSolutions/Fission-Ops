@@ -5,23 +5,11 @@ import { apiClient } from '../api/client';
 import { Incident } from '../types';
 import IncidentStatusBadge from '../components/IncidentStatusBadge';
 import { useAuth } from '../context/AuthContext';
+import { relativeTime } from '../utils/time';
+import { ROLE_RANK, SEVERITY_COLORS, INCIDENT_STATUS_COLORS } from '../utils/constants';
 
-const SEVERITY_COLORS: Record<string, string> = { low: '#3fb950', medium: '#d29922', high: '#f85149', critical: '#ff7b72' };
-const STATUS_COLORS: Record<string, string> = { open: '#58a6ff', contained: '#d29922', closed: '#8b949e' };
+const STATUS_COLORS = INCIDENT_STATUS_COLORS;
 const STATUS_DOT_COLORS: Record<string, string> = { open: '#3fb950', contained: '#d29922', closed: '#8b949e' };
-
-function relativeTime(ts: string): string {
-  const diff = Date.now() - new Date(ts).getTime();
-  const secs = Math.floor(diff / 1000);
-  if (secs < 60) return `${secs}s ago`;
-  const mins = Math.floor(secs / 60);
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
-  return new Date(ts).toLocaleDateString();
-}
 
 function IncidentCard({ inc, onClick }: { inc: Incident & { task_total?: number; task_complete?: number }; onClick: () => void }) {
   const [hover, setHover] = useState(false);
@@ -82,8 +70,6 @@ function IncidentCard({ inc, onClick }: { inc: Incident & { task_total?: number;
     </div>
   );
 }
-
-const ROLE_RANK: Record<string, number> = { analyst: 1, senior_analyst: 2, incident_commander: 3, super_admin: 99 };
 
 export default function IncidentList() {
   const navigate = useNavigate();

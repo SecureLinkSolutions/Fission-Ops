@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
+import { relativeTime } from '../utils/time';
 
 export interface ToastNotification {
   id: string;
@@ -24,17 +25,6 @@ const toastListeners: ToastListener[] = [];
 
 export function addToast(notif: ToastNotification): void {
   toastListeners.forEach((fn) => fn(notif));
-}
-
-function relativeTime(ts: string): string {
-  const diff = Date.now() - new Date(ts).getTime();
-  const secs = Math.floor(diff / 1000);
-  if (secs < 60) return `${secs}s ago`;
-  const mins = Math.floor(secs / 60);
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
 }
 
 function accentColor(type: string): string {

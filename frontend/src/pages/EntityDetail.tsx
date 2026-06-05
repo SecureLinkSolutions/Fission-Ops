@@ -9,9 +9,7 @@ import CommentThread from '../components/CommentThread';
 import { useAuth } from '../context/AuthContext';
 import EntityStatusBadge, { ENTITY_STATUS_CONFIG } from '../components/EntityStatusBadge';
 import SuggestedActions from '../components/SuggestedActions';
-
-const ENTITY_TYPE_ICONS: Record<string, string> = { hostname: '🖥', ip: '🌐', email: '📧', domain: '🔗', account: '👤', file: '📄', process: '🔧', registry: '🗝', certificate: '🏅', url: '🌍', custom: '📌' };
-const ENTITY_TYPE_COLORS: Record<string, string> = { hostname: '#58a6ff', ip: '#3fb950', email: '#d29922', domain: '#a371f7', account: '#f0883e', file: '#79c0ff', process: '#79c0ff', registry: '#d2a8ff', certificate: '#56d364', url: '#ffa657', custom: '#8b949e' };
+import { ROLE_RANK, ENTITY_TYPE_ICONS, ENTITY_TYPE_COLORS } from '../utils/constants';
 
 const IOC_STATUS_DISPLAY: Record<string, { label: string; color: string }> = {
   confirmed: { label: '💀 CONFIRMED', color: '#f85149' },
@@ -26,8 +24,6 @@ const ENRICHMENT_STATUS_COLORS: Record<string, string> = {
   failed: '#f85149',
   skipped: '#8b949e',
 };
-
-const ROLE_RANK: Record<string, number> = { analyst: 1, senior_analyst: 2, incident_commander: 3, super_admin: 99 };
 
 const LABEL_MAP: Record<string, string> = {
   sha256: 'SHA-256', md5: 'MD5', sha1: 'SHA-1', file_size: 'File Size', file_type: 'File Type',

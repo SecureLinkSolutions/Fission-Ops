@@ -1,19 +1,13 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { authenticate } from '../middleware/auth';
+import { ROLE_RANK } from '../middleware/rbac';
 import { pool } from '../db/pool';
 import { createNotification } from '../repositories/notificationRepository';
 import { sendEmail } from '../services/emailService';
 import { emitToIncident } from '../socket';
 
 const router = Router();
-
-const ROLE_RANK: Record<string, number> = {
-  analyst: 1,
-  senior_analyst: 2,
-  incident_commander: 3,
-  super_admin: 99,
-};
 
 router.patch('/entities/:entityId/ioc-status', authenticate, async (req: Request, res: Response) => {
   const schema = z.object({

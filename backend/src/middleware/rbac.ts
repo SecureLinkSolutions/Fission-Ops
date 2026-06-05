@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { UserRole } from '../types';
 
-const ROLE_RANK: Record<UserRole, number> = {
+export const ROLE_RANK: Record<UserRole, number> = {
   analyst: 1,
   senior_analyst: 2,
   incident_commander: 3,

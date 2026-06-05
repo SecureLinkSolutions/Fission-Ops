@@ -25,9 +25,7 @@ import { useFetch } from '../hooks/useFetch';
 import { apiClient } from '../api/client';
 import { Entity, EntityRelationship } from '../types';
 import EntityStatusBadge from './EntityStatusBadge';
-
-const ENTITY_TYPE_ICONS: Record<string, string> = { hostname: '🖥', ip: '🌐', email: '📧', domain: '🔗', account: '👤', file: '📄', process: '🔧', registry: '🗝', certificate: '🏅', url: '🌍', custom: '📌' };
-const ENTITY_TYPE_COLORS: Record<string, string> = { hostname: '#58a6ff', ip: '#3fb950', email: '#d29922', domain: '#a371f7', account: '#f0883e', file: '#79c0ff', process: '#79c0ff', registry: '#d2a8ff', certificate: '#56d364', url: '#ffa657', custom: '#8b949e' };
+import { ENTITY_TYPE_ICONS, ENTITY_TYPE_COLORS } from '../utils/constants';
 const RELATIONSHIP_SUGGESTIONS = ['visited', 'downloaded', 'executed', 'communicated_with', 'owns', 'hosted_on', 'resolved_to', 'lateral_movement_to', 'authenticated_to', 'spawned'];
 
 interface EntityNodeData {
