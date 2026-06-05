@@ -11,6 +11,7 @@ import EntityRelationshipGraph from '../components/EntityRelationshipGraph';
 import NetworkBoundaryFlow from '../components/NetworkBoundaryFlow';
 import CommentThread from '../components/CommentThread';
 import TaskBoard, { Task } from '../components/TaskBoard';
+import AffectedAssets from '../components/AffectedAssets';
 import PresenceBar from '../components/PresenceBar';
 import SuggestedActions from '../components/SuggestedActions';
 import { useIncidentSocket } from '../hooks/useIncidentSocket';
@@ -39,7 +40,7 @@ function badge(color: string, text: string): React.ReactElement {
   return <span style={{ background: `${color}22`, color, border: `1px solid ${color}44`, borderRadius: '20px', padding: '3px 10px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' as const }}>{text}</span>;
 }
 
-type Tab = 'entities' | 'killchain' | 'relationships' | 'network' | 'timeline' | 'tasks' | 'summary';
+type Tab = 'entities' | 'killchain' | 'relationships' | 'network' | 'timeline' | 'tasks' | 'assets' | 'summary';
 
 export default function IncidentDetail() {
   const { id } = useParams<{ id: string }>();
@@ -270,6 +271,7 @@ export default function IncidentDetail() {
           ['network', 'Network Map'],
           ['timeline', 'Timeline'],
           ['tasks', `Tasks (${tasks?.length ?? 0})`],
+          ['assets', `Assets (${entities?.length ?? 0})`],
         ] as [Tab, string][]).map(([key, label]) => (
           <button
             key={key}
@@ -418,6 +420,16 @@ export default function IncidentDetail() {
           onRefresh={refetchTasks}
           highlightTaskId={highlightTaskId}
         />
+      </div>
+
+      <div style={{ display: activeTab === 'assets' ? undefined : 'none' }}>
+        {visitedTabs.has('assets') && (
+          <AffectedAssets
+            incidentId={id!}
+            incidentTitle={incident.title}
+            entities={entities ?? []}
+          />
+        )}
       </div>
 
       {/* IOC Summary panel — always visible */}
