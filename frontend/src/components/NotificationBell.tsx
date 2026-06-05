@@ -85,10 +85,14 @@ export default function NotificationBell() {
     await apiClient.patch(`/notifications/${id}/read`).catch(() => {});
     setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
     setUnreadCount((c) => Math.max(0, c - 1));
-    if (notif.incident_id) {
+    if (notif.incident_id && notif.entity_id) {
+      navigate(`/incidents/${notif.incident_id}/entities/${notif.entity_id}`);
+      setOpen(false);
+    } else if (notif.incident_id) {
       navigate(`/incidents/${notif.incident_id}`);
       setOpen(false);
     }
+    // For informational notifications with no navigation target, just mark read and keep dropdown open
   }
 
   async function handleMarkAllRead() {

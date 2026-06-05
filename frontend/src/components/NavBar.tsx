@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import logoUrl from '../assets/logo.svg';
 
 interface ConnectionDotProps {
   state: 'connected' | 'reconnecting' | 'disconnected';
@@ -76,7 +77,7 @@ export default function NavBar({ connectionState }: NavBarProps) {
     }}>
       {/* Brand */}
       <div style={{ padding: '16px 16px 14px', borderBottom: '1px solid #30363d', display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#58a6ff', display: 'inline-block', flexShrink: 0 }} />
+        <img src={logoUrl} alt="Fission Ops" style={{ width: '22px', height: '22px', flexShrink: 0 }} />
         <Link to="/incidents" style={{ color: '#e6edf3', fontWeight: 700, fontSize: '13px', textDecoration: 'none', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
           Fission Ops
         </Link>

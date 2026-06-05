@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { User } from '../types';
 import { apiClient } from '../api/client';
+import { initGlobalSocket } from '../hooks/useIncidentSocket';
 
 interface AuthContextValue {
   user: User | null;
@@ -21,7 +22,11 @@ function parseToken(token: string): User | null {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'));
+  const [token, setToken] = useState<string | null>(() => {
+    const t = localStorage.getItem('token');
+    if (t) initGlobalSocket(t);
+    return t;
+  });
   const [user, setUser] = useState<User | null>(() => {
     const t = localStorage.getItem('token');
     return t ? parseToken(t) : null;
@@ -32,6 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('token', res.data.token);
     setToken(res.data.token);
     setUser(res.data.user);
+    initGlobalSocket(res.data.token);
   }, []);
 
   const logout = useCallback(() => {

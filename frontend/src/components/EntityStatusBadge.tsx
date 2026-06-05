@@ -1,12 +1,12 @@
 import { EntityStatus } from '../types';
 
-export const ENTITY_STATUS_CONFIG: Record<EntityStatus, { color: string; label: string; shortLabel: string }> = {
-  unreviewed: { color: '#8b949e', label: 'Unreviewed', shortLabel: 'Unreviewed' },
-  under_investigation: { color: '#58a6ff', label: 'Under Investigation', shortLabel: 'Investigating' },
-  isolated: { color: '#f0883e', label: 'Isolated', shortLabel: 'Isolated' },
-  contained: { color: '#e3b341', label: 'Contained', shortLabel: 'Contained' },
-  cleared: { color: '#3fb950', label: 'Cleared', shortLabel: 'Cleared' },
-  confirmed_malicious: { color: '#f85149', label: 'Confirmed Malicious', shortLabel: 'Malicious' },
+export const ENTITY_STATUS_CONFIG: Record<EntityStatus, { color: string; label: string; shortLabel: string; icon: string }> = {
+  unreviewed: { color: '#8b949e', label: 'Unreviewed', shortLabel: 'Unreviewed', icon: '○' },
+  under_investigation: { color: '#58a6ff', label: 'Under Investigation', shortLabel: 'Investigating', icon: '⬡' },
+  isolated: { color: '#f0883e', label: 'Isolated', shortLabel: 'Isolated', icon: '⊘' },
+  contained: { color: '#e3b341', label: 'Contained', shortLabel: 'Contained', icon: '⬟' },
+  cleared: { color: '#3fb950', label: 'Cleared', shortLabel: 'Cleared', icon: '✓' },
+  confirmed_malicious: { color: '#f85149', label: 'Confirmed Malicious', shortLabel: 'Malicious', icon: '✕' },
 };
 
 interface Props {
@@ -22,17 +22,17 @@ export default function EntityStatusBadge({ status, compact }: Props) {
       <span style={{
         display: 'inline-flex',
         alignItems: 'center',
-        gap: '5px',
+        gap: '4px',
         whiteSpace: 'nowrap',
       }}>
         <span style={{
-          width: '7px',
-          height: '7px',
-          borderRadius: '50%',
-          background: cfg.color,
-          flexShrink: 0,
-          display: 'inline-block',
-        }} />
+          color: cfg.color,
+          fontSize: '10px',
+          lineHeight: 1,
+          fontWeight: 700,
+        }}>
+          {cfg.icon}
+        </span>
         <span style={{
           color: cfg.color,
           fontSize: '11px',
@@ -60,7 +60,7 @@ export default function EntityStatusBadge({ status, compact }: Props) {
       alignItems: 'center',
       gap: '5px',
     }}>
-      <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: cfg.color, display: 'inline-block', flexShrink: 0 }} />
+      <span style={{ fontSize: '11px', lineHeight: 1 }}>{cfg.icon}</span>
       {cfg.label}
     </span>
   );

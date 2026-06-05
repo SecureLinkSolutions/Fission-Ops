@@ -84,14 +84,15 @@ function StageNode({ data }: NodeProps) {
       }}
       style={{
         background: isDragOver ? '#2d3f2d' : (hasEntities ? '#1a2f1a' : '#161b22'),
-        border: `1px solid ${isDragOver ? '#4fb960' : (hasEntities ? '#3fb950' : '#30363d')}`,
+        border: `2px solid ${isDragOver ? '#3fb950' : (hasEntities ? '#3fb95066' : '#30363d')}`,
         borderRadius: '8px',
         padding: '12px',
         width: '180px',
-        minHeight: '120px',
-        transition: 'background 0.2s, border-color 0.2s, box-shadow 0.2s',
-        boxShadow: isDragOver ? '0 0 14px #3fb95055' : hasEntities ? '0 0 8px #3fb95022' : '0 1px 3px rgba(0,0,0,0.3)',
+        minHeight: '140px',
+        transition: 'background 0.15s, border-color 0.15s, box-shadow 0.15s',
+        boxShadow: isDragOver ? '0 0 18px #3fb95066, inset 0 0 12px #3fb95011' : hasEntities ? '0 0 8px #3fb95022' : '0 1px 3px rgba(0,0,0,0.3)',
         animation: 'nodeEntrance 0.35s ease-out',
+        cursor: isDragOver ? 'copy' : 'default',
       }}
     >
       <Handle type="target" position={Position.Left} style={{ opacity: 0 }} />
@@ -120,12 +121,14 @@ function StageNode({ data }: NodeProps) {
               fontSize: '11px',
               color: '#e6edf3',
               cursor: 'grab',
+              userSelect: 'none',
             }}
           >
             <div
               style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
               onClick={(e) => { e.stopPropagation(); d.onEntityClick(ent); }}
             >
+              <span style={{ color: '#484f58', fontSize: '9px', lineHeight: 1 }}>⠿</span>
               <span>{ENTITY_TYPE_ICONS[ent.type] ?? '•'}</span>
               <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'monospace' }}>{ent.value}</span>
               {ent.ioc_status === 'confirmed' && <span style={{ fontSize: '8px', color: '#f85149' }}>💀</span>}

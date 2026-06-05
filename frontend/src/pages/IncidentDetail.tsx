@@ -19,8 +19,9 @@ import { useLicense } from '../context/LicenseContext';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
 
-const ENTITY_TYPE_ICONS: Record<string, string> = { hostname: 'HOST', ip: 'IP', email: 'EMAIL', domain: 'DOMAIN', account: 'ACCT' };
-const ENTITY_TYPE_COLORS: Record<string, string> = { hostname: '#58a6ff', ip: '#3fb950', email: '#d29922', domain: '#a371f7', account: '#f0883e' };
+const ENTITY_TYPE_ICONS: Record<string, string> = { hostname: '🖥', ip: '🌐', email: '📧', domain: '🔗', account: '👤', file: '📄', process: '🔧', registry: '🗝', certificate: '🏅', url: '🌍', custom: '📌' };
+const ENTITY_TYPE_LABELS: Record<string, string> = { hostname: 'HOST', ip: 'IP', email: 'EMAIL', domain: 'DOMAIN', account: 'ACCT', file: 'FILE', process: 'PROC', registry: 'REG', certificate: 'CERT', url: 'URL', custom: 'CUSTOM' };
+const ENTITY_TYPE_COLORS: Record<string, string> = { hostname: '#58a6ff', ip: '#3fb950', email: '#d29922', domain: '#a371f7', account: '#f0883e', file: '#79c0ff', process: '#79c0ff', registry: '#d2a8ff', certificate: '#56d364', url: '#ffa657', custom: '#8b949e' };
 const SEVERITY_COLORS: Record<string, string> = { low: '#3fb950', medium: '#d29922', high: '#f85149', critical: '#ff7b72' };
 const STATUS_COLORS: Record<string, string> = { open: '#58a6ff', contained: '#d29922', closed: '#8b949e' };
 const IOC_STATUS_DISPLAY: Record<string, { label: string; color: string }> = {
@@ -299,8 +300,9 @@ export default function IncidentDetail() {
           return (
             <div key={e.id} style={{ background: '#161b22', border: `1px solid ${borderColor}`, borderRadius: '8px', marginBottom: '8px', overflow: 'hidden' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px' }}>
-                <span style={{ background: `${ENTITY_TYPE_COLORS[e.type]}22`, color: ENTITY_TYPE_COLORS[e.type], border: `1px solid ${ENTITY_TYPE_COLORS[e.type]}44`, borderRadius: '4px', padding: '3px 8px', fontSize: '10px', fontWeight: 700, letterSpacing: '0.05em', fontFamily: 'monospace' }}>
-                  {ENTITY_TYPE_ICONS[e.type]}
+                <span style={{ background: `${ENTITY_TYPE_COLORS[e.type]}22`, color: ENTITY_TYPE_COLORS[e.type], border: `1px solid ${ENTITY_TYPE_COLORS[e.type]}44`, borderRadius: '4px', padding: '3px 8px', fontSize: '10px', fontWeight: 700, letterSpacing: '0.05em', fontFamily: 'monospace', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <span>{ENTITY_TYPE_ICONS[e.type] ?? '•'}</span>
+                  <span>{ENTITY_TYPE_LABELS[e.type] ?? e.type.toUpperCase()}</span>
                 </span>
                 <span style={{ color: '#e6edf3', fontSize: '14px', flex: 1, fontFamily: 'monospace' }}>{e.value}</span>
                 {ioc && (
