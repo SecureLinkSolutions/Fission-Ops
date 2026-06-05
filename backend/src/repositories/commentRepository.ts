@@ -1,6 +1,6 @@
 import { pool } from '../db/pool';
 import { createNotification } from './notificationRepository';
-import { emitToIncident } from '../socket';
+import { emitToIncident, emitToUser } from '../socket';
 
 export interface Comment {
   id: string;
@@ -63,7 +63,7 @@ async function parseMentions(body: string, incidentId: string, authorId: string,
       [email],
     );
     if (userResult.rows[0] && userResult.rows[0].id !== authorId) {
-      await createNotification({
+      const notif = await createNotification({
         user_id: userResult.rows[0].id,
         org_id: userResult.rows[0].org_id,
         type: 'mention',
@@ -72,6 +72,7 @@ async function parseMentions(body: string, incidentId: string, authorId: string,
         incident_id: incidentId,
         entity_id: undefined,
       });
+      emitToUser(userResult.rows[0].id, 'notification:new', notif);
     }
   }
 }

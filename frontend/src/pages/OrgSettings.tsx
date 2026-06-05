@@ -179,12 +179,6 @@ export default function OrgSettings() {
   const canEdit = user?.role === 'incident_commander' || user?.role === 'super_admin';
 
   const SERVICE_LABELS: Record<string, string> = { virustotal: 'VirusTotal', abuseipdb: 'AbuseIPDB', shodan: 'Shodan', anthropic: 'Anthropic (AI Narrative)' };
-  const SERVICE_DESCRIPTIONS: Record<string, string> = {
-    virustotal: 'Threat intelligence enrichment for IPs, domains, and files',
-    abuseipdb: 'IP reputation and abuse reports',
-    shodan: 'Internet-facing device and service discovery',
-    anthropic: 'Powers AI-generated attack narratives in the Kill Chain view (uses claude-haiku-4-5)',
-  };
 
   return (
     <div style={s.page}>

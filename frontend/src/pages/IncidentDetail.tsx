@@ -142,6 +142,7 @@ export default function IncidentDetail() {
   // IOC summary: entities with ioc_status
   const iocEntities = (entities ?? []).filter((e) => (e as Entity & { ioc_status?: string }).ioc_status);
 
+  const [commentPanelOpen, setCommentPanelOpen] = useState(false);
   const [tabHover, setTabHover] = useState<string | null>(null);
   const tabStyle = (active: boolean, key: string): React.CSSProperties => ({
     padding: '10px 16px', cursor: 'pointer', border: 'none',
@@ -458,9 +459,77 @@ export default function IncidentDetail() {
         </div>
       )}
 
-      {/* Comments panel — always visible */}
-      <div style={{ marginTop: '32px' }}>
-        <CommentThread incidentId={id} teamMembers={teamMembers} />
+      {/* Floating comment toggle button */}
+      <button
+        onClick={() => setCommentPanelOpen((v) => !v)}
+        title={commentPanelOpen ? 'Close discussion' : 'Open discussion'}
+        style={{
+          position: 'fixed',
+          right: commentPanelOpen ? '404px' : '0px',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          zIndex: 400,
+          background: '#161b22',
+          border: '1px solid #30363d',
+          borderRight: commentPanelOpen ? '1px solid #30363d' : 'none',
+          borderRadius: commentPanelOpen ? '8px 0 0 8px' : '8px 0 0 8px',
+          padding: '14px 10px',
+          cursor: 'pointer',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '6px',
+          transition: 'right 0.25s ease',
+          boxShadow: '-2px 0 12px rgba(0,0,0,0.4)',
+        }}
+      >
+        <span style={{ fontSize: '16px' }}>💬</span>
+        <span style={{
+          writingMode: 'vertical-rl',
+          textOrientation: 'mixed',
+          fontSize: '10px',
+          fontWeight: 600,
+          color: commentPanelOpen ? '#58a6ff' : '#8b949e',
+          letterSpacing: '0.05em',
+          textTransform: 'uppercase',
+        }}>
+          {commentPanelOpen ? 'Close' : 'Discussion'}
+        </span>
+      </button>
+
+      {/* Slide-out comment drawer */}
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        right: commentPanelOpen ? 0 : '-400px',
+        width: '400px',
+        height: '100vh',
+        background: '#161b22',
+        borderLeft: '1px solid #30363d',
+        zIndex: 399,
+        display: 'flex',
+        flexDirection: 'column',
+        transition: 'right 0.25s ease',
+        boxShadow: commentPanelOpen ? '-4px 0 24px rgba(0,0,0,0.5)' : 'none',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #30363d', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '15px' }}>💬</span>
+            <span style={{ fontWeight: 600, fontSize: '14px', color: '#e6edf3' }}>Discussion</span>
+          </div>
+          <button
+            onClick={() => setCommentPanelOpen(false)}
+            style={{ background: 'transparent', border: 'none', color: '#8b949e', fontSize: '16px', cursor: 'pointer', padding: '2px 6px', borderRadius: '4px' }}
+            title="Close"
+          >
+            ✕
+          </button>
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
+          {commentPanelOpen && (
+            <CommentThread incidentId={id} teamMembers={teamMembers} />
+          )}
+        </div>
       </div>
     </div>
   );
