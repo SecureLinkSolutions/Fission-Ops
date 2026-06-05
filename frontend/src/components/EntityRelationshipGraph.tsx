@@ -57,8 +57,8 @@ function EntityNode({ data, selected }: NodeProps) {
         animation: 'nodeEntrance 0.3s ease-out',
       }}
     >
-      <Handle type="target" id="left"   position={Position.Left}   style={{ background: color, width: 9, height: 9, border: '2px solid #0d1117' }} />
-      <Handle type="target" id="top"    position={Position.Top}    style={{ background: color, width: 9, height: 9, border: '2px solid #0d1117' }} />
+      <Handle type="source" id="left"   position={Position.Left}   style={{ background: color, width: 9, height: 9, border: '2px solid #0d1117' }} />
+      <Handle type="source" id="top"    position={Position.Top}    style={{ background: color, width: 9, height: 9, border: '2px solid #0d1117' }} />
       <Handle type="source" id="right"  position={Position.Right}  style={{ background: color, width: 9, height: 9, border: '2px solid #0d1117' }} />
       <Handle type="source" id="bottom" position={Position.Bottom} style={{ background: color, width: 9, height: 9, border: '2px solid #0d1117' }} />
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
@@ -79,10 +79,13 @@ function EntityNode({ data, selected }: NodeProps) {
 
 const nodeTypes = { entity: EntityNode };
 
+// Module-level callback so DirectionalEdge can call it without prop drilling
+let _onDeleteEdge: ((id: string) => void) | null = null;
+
 function DirectionalEdge({
   id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition,
-  data, label, markerEnd, markerStart,
-}: EdgeProps) {
+  data, label, markerEnd, markerStart, selected,
+}: EdgeProps & { selected?: boolean }) {
   const [edgePath, labelX, labelY] = getBezierPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition });
   const bidirectional = (data as { bidirectional?: boolean } | undefined)?.bidirectional ?? false;
   const edgeId = `flow-${id}`;
@@ -120,14 +123,21 @@ function DirectionalEdge({
         </circle>
       )}
 
-      {/* Edge label */}
-      {label && (
-        <EdgeLabelRenderer>
-          <div
-            style={{
-              position: 'absolute',
-              transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
-              pointerEvents: 'all',
+      {/* Edge label + delete button */}
+      <EdgeLabelRenderer>
+        <div
+          style={{
+            position: 'absolute',
+            transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
+            pointerEvents: 'all',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+          }}
+          className="nodrag nopan"
+        >
+          {label && (
+            <div style={{
               background: '#161b22',
               border: `1px solid ${bidirectional ? '#a371f744' : '#58a6ff44'}`,
               borderRadius: '4px',
@@ -135,17 +145,37 @@ function DirectionalEdge({
               fontSize: '10px',
               color: bidirectional ? '#a371f7' : '#58a6ff',
               fontWeight: 600,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
               whiteSpace: 'nowrap',
-            }}
-            className="nodrag nopan"
-          >
-            {bidirectional ? '⇄' : '→'} {String(label)}
-          </div>
-        </EdgeLabelRenderer>
-      )}
+            }}>
+              {bidirectional ? '⇄' : '→'} {String(label)}
+            </div>
+          )}
+          {selected && (
+            <button
+              onClick={(e) => { e.stopPropagation(); _onDeleteEdge?.(id); }}
+              title="Remove relationship"
+              style={{
+                background: '#f85149cc',
+                border: 'none',
+                borderRadius: '50%',
+                width: '18px',
+                height: '18px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: '#fff',
+                fontSize: '10px',
+                fontWeight: 700,
+                lineHeight: 1,
+                flexShrink: 0,
+              }}
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      </EdgeLabelRenderer>
     </>
   );
 }
@@ -474,6 +504,23 @@ function GraphInner({ incidentId }: GraphInnerProps) {
     setSelectedEntity(null);
   }, []);
 
+  const handleDeleteEdge = useCallback(async (edgeId: string) => {
+    try {
+      await apiClient.delete(`/incidents/${incidentId}/relationships/${edgeId}`);
+      setEdges((prev) => prev.filter((e) => e.id !== edgeId));
+    } catch { /* ignore */ }
+  }, [incidentId, setEdges]);
+
+  // Register delete callback for DirectionalEdge
+  _onDeleteEdge = handleDeleteEdge;
+
+  const handleEdgesChange = useCallback((changes: Parameters<typeof onEdgesChange>[0]) => {
+    const removals = changes.filter((c) => c.type === 'remove');
+    removals.forEach((c) => { if (c.type === 'remove') handleDeleteEdge(c.id); });
+    // Only apply non-remove changes to local state (removals handled via API above)
+    onEdgesChange(changes.filter((c) => c.type !== 'remove'));
+  }, [onEdgesChange, handleDeleteEdge]);
+
   const isEmpty = !entities?.length;
 
   return (
@@ -523,7 +570,7 @@ function GraphInner({ incidentId }: GraphInnerProps) {
               nodes={nodes}
               edges={edges}
               onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
+              onEdgesChange={handleEdgesChange}
               nodeTypes={nodeTypes}
               edgeTypes={edgeTypes}
               onNodeClick={handleNodeClick}
@@ -532,6 +579,7 @@ function GraphInner({ incidentId }: GraphInnerProps) {
               connectionMode={ConnectionMode.Loose}
               connectionLineStyle={{ stroke: '#58a6ff', strokeWidth: 2, strokeDasharray: '6 3' }}
               connectionRadius={40}
+              deleteKeyCode={['Delete', 'Backspace']}
               fitView
               fitViewOptions={{ padding: 0.2 }}
               minZoom={0.2}
@@ -552,7 +600,7 @@ function GraphInner({ incidentId }: GraphInnerProps) {
           )}
           <div style={{ padding: '6px 10px', borderTop: '1px solid #21262d', background: '#0d1117', borderRadius: '0 0 8px 8px' }}>
             <span style={{ color: '#484f58', fontSize: '11px' }}>
-              Click a node to view details · Drag between connection points to link entities · Drag nodes to reposition
+              Click node to view details · Drag handle to link entities · Click edge then ✕ or press Delete to remove · Drag nodes to reposition
             </span>
           </div>
         </div>
