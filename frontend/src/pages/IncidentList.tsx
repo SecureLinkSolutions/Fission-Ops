@@ -4,6 +4,7 @@ import { useFetch } from '../hooks/useFetch';
 import { apiClient } from '../api/client';
 import { Incident } from '../types';
 import IncidentStatusBadge from '../components/IncidentStatusBadge';
+import { useAuth } from '../context/AuthContext';
 
 const SEVERITY_COLORS: Record<string, string> = { low: '#3fb950', medium: '#d29922', high: '#f85149', critical: '#ff7b72' };
 const STATUS_COLORS: Record<string, string> = { open: '#58a6ff', contained: '#d29922', closed: '#8b949e' };
@@ -83,10 +84,14 @@ function IncidentCard({ inc, onClick }: { inc: Incident & { task_total?: number;
   );
 }
 
+const ROLE_RANK: Record<string, number> = { analyst: 1, senior_analyst: 2, incident_commander: 3, super_admin: 99 };
+
 export default function IncidentList() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [statusFilter, setStatusFilter] = useState('');
   const [severityFilter, setSeverityFilter] = useState('');
+  const canCreate = ROLE_RANK[user?.role ?? ''] >= ROLE_RANK['incident_commander'];
 
   const { data, loading, error } = useFetch<{ incidents: Incident[]; total: number }>(
     () => {
@@ -110,7 +115,7 @@ export default function IncidentList() {
           <div style={{ fontSize: '24px', fontWeight: 700, color: '#e6edf3' }}>Incidents</div>
           {data && <div style={{ color: '#8b949e', fontSize: '13px', marginTop: '4px' }}>{data.total} total</div>}
         </div>
-        <Link to="/incidents/new" style={{ background: '#238636', border: 'none', borderRadius: '6px', padding: '10px 20px', color: '#fff', fontSize: '14px', fontWeight: 600, cursor: 'pointer', textDecoration: 'none' }}>+ New Incident</Link>
+        {canCreate && <Link to="/incidents/new" style={{ background: '#238636', border: 'none', borderRadius: '6px', padding: '10px 20px', color: '#fff', fontSize: '14px', fontWeight: 600, cursor: 'pointer', textDecoration: 'none' }}>+ New Incident</Link>}
       </div>
 
       <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>

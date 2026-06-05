@@ -29,7 +29,7 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
 router.post(
   '/',
   authenticate,
-  requireRole('analyst'),
+  requireRole('incident_commander'),
   auditLog('incident', 'CREATE'),
   async (req: Request, res: Response) => {
     const body = createIncidentSchema.parse(req.body);
@@ -53,6 +53,24 @@ router.put(
   '/:id',
   authenticate,
   requireRole('senior_analyst'),
+  auditLog('incident', 'UPDATE'),
+  async (req: Request, res: Response) => {
+    const body = updateIncidentSchema.parse(req.body);
+    const isSuperAdmin = req.user!.role === 'super_admin';
+    const orgId = isSuperAdmin ? undefined : req.user!.org_id;
+    const incident = await repo.updateIncident(req.params.id, body, orgId);
+    if (!incident) {
+      res.status(404).json({ error: 'Incident not found', code: 'NOT_FOUND' });
+      return;
+    }
+    res.json(incident);
+  },
+);
+
+router.patch(
+  '/:id',
+  authenticate,
+  requireRole('incident_commander'),
   auditLog('incident', 'UPDATE'),
   async (req: Request, res: Response) => {
     const body = updateIncidentSchema.parse(req.body);

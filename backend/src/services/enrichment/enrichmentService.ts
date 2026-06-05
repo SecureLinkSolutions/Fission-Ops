@@ -4,6 +4,20 @@ import { queryAbuseIPDB } from './abuseipdb';
 import { queryShodan } from './shodan';
 import { emitToIncident } from '../../socket';
 
+function isPrivateIP(ip: string): boolean {
+  const parts = ip.split('.').map(Number);
+  if (parts.length !== 4 || parts.some(isNaN)) return false;
+  const [a, b] = parts;
+  return (
+    a === 10 ||
+    a === 127 ||
+    (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && b === 168) ||
+    (a === 169 && b === 254) || // link-local
+    a === 0
+  );
+}
+
 export async function runEnrichment(entityId: string, orgId: string): Promise<void> {
   // Mark as running
   await pool.query(
@@ -14,6 +28,14 @@ export async function runEnrichment(entityId: string, orgId: string): Promise<vo
   const entityResult = await pool.query('SELECT * FROM entities WHERE id = $1', [entityId]);
   const entity = entityResult.rows[0];
   if (!entity) return;
+
+  if (entity.type === 'ip' && isPrivateIP(entity.value)) {
+    await pool.query(
+      `UPDATE entities SET enrichment_status = 'skipped', enrichment_updated_at = NOW() WHERE id = $1`,
+      [entityId],
+    );
+    return;
+  }
 
   // Fetch API keys for this org
   const keysResult = await pool.query(

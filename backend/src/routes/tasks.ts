@@ -82,4 +82,24 @@ router.get('/tasks/mine', authenticate, async (req: Request, res: Response) => {
   res.json(tasks);
 });
 
+// Task comments
+router.get('/incidents/:incidentId/tasks/:taskId/comments', authenticate, async (req, res) => {
+  const result = await pool.query(
+    `SELECT tc.*, u.email AS user_email, u.name AS user_name
+     FROM task_comments tc JOIN users u ON u.id = tc.user_id
+     WHERE tc.task_id = $1 ORDER BY tc.created_at ASC`,
+    [req.params.taskId],
+  );
+  res.json(result.rows);
+});
+
+router.post('/incidents/:incidentId/tasks/:taskId/comments', authenticate, async (req, res) => {
+  const { content } = z.object({ content: z.string().min(1) }).parse(req.body);
+  const result = await pool.query(
+    `INSERT INTO task_comments (task_id, user_id, content) VALUES ($1, $2, $3) RETURNING *`,
+    [req.params.taskId, req.user!.sub, content],
+  );
+  res.status(201).json(result.rows[0]);
+});
+
 export default router;

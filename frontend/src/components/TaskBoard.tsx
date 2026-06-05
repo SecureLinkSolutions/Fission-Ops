@@ -83,7 +83,16 @@ function TaskCard({ task, teamMembers, availableEntities, onRefresh, canManage }
     due_date: task.due_date ?? '',
   });
   const [selectedEntityIds, setSelectedEntityIds] = useState<string[]>((task.entities ?? []).map((e) => e.id));
+  const [comments, setComments] = useState<{id:string; user_email:string; user_name:string; content:string; created_at:string}[]>([]);
+  const [commentText, setCommentText] = useState('');
+  const [commentsLoaded, setCommentsLoaded] = useState(false);
   const isOverdue = task.due_date && task.status !== 'complete' && new Date(task.due_date) < new Date();
+
+  async function loadComments() {
+    const r = await apiClient.get(`/incidents/${task.incident_id}/tasks/${task.id}/comments`).catch(() => ({ data: [] }));
+    setComments(r.data);
+    setCommentsLoaded(true);
+  }
 
   async function handleSave() {
     const payload: Record<string, unknown> = { title: form.title, priority: form.priority, status: form.status };
@@ -111,7 +120,7 @@ function TaskCard({ task, teamMembers, availableEntities, onRefresh, canManage }
 
   return (
     <div style={{ background: '#21262d', border: '1px solid #30363d', borderRadius: '6px', padding: '10px 12px', marginBottom: '8px' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', cursor: 'pointer' }} onClick={() => setExpanded(!expanded)}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', cursor: 'pointer' }} onClick={() => { const next = !expanded; setExpanded(next); if (next) loadComments(); }}>
         <span style={{ background: `${PRIORITY_COLORS[task.priority]}22`, color: PRIORITY_COLORS[task.priority], border: `1px solid ${PRIORITY_COLORS[task.priority]}44`, borderRadius: '4px', padding: '1px 6px', fontSize: '10px', fontWeight: 700, flexShrink: 0 }}>
           {task.priority.toUpperCase()}
         </span>
@@ -154,6 +163,46 @@ function TaskCard({ task, teamMembers, availableEntities, onRefresh, canManage }
             {canManage && <button onClick={() => { setSelectedEntityIds((task.entities ?? []).map((e) => e.id)); setEditing(true); }} style={{ background: 'transparent', border: '1px solid #30363d', borderRadius: '4px', padding: '3px 8px', color: '#8b949e', fontSize: '11px', cursor: 'pointer' }}>Edit</button>}
             {canManage && <button onClick={handleDelete} style={{ background: 'transparent', border: '1px solid #f8514944', borderRadius: '4px', padding: '3px 8px', color: '#f85149', fontSize: '11px', cursor: 'pointer' }}>Delete</button>}
           </div>
+          {commentsLoaded && (
+            <div style={{ marginTop: '10px', borderTop: '1px solid #21262d', paddingTop: '8px' }}>
+              <div style={{ color: '#8b949e', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>
+                Comments ({comments.length})
+              </div>
+              {comments.map(c => (
+                <div key={c.id} style={{ marginBottom: '6px' }}>
+                  <span style={{ color: '#58a6ff', fontSize: '11px', fontWeight: 600 }}>{c.user_name || c.user_email}</span>
+                  <span style={{ color: '#484f58', fontSize: '10px', marginLeft: '6px' }}>{new Date(c.created_at).toLocaleString()}</span>
+                  <div style={{ color: '#c9d1d9', fontSize: '12px', marginTop: '2px' }}>{c.content}</div>
+                </div>
+              ))}
+              <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
+                <input
+                  style={{ flex: 1, background: '#0d1117', border: '1px solid #30363d', borderRadius: '4px', padding: '4px 8px', color: '#e6edf3', fontSize: '12px', outline: 'none' }}
+                  placeholder="Add a comment…"
+                  value={commentText}
+                  onChange={e => setCommentText(e.target.value)}
+                  onKeyDown={async e => {
+                    if (e.key === 'Enter' && commentText.trim()) {
+                      await apiClient.post(`/incidents/${task.incident_id}/tasks/${task.id}/comments`, { content: commentText });
+                      setCommentText('');
+                      loadComments();
+                    }
+                  }}
+                />
+                <button
+                  onClick={async () => {
+                    if (!commentText.trim()) return;
+                    await apiClient.post(`/incidents/${task.incident_id}/tasks/${task.id}/comments`, { content: commentText });
+                    setCommentText('');
+                    loadComments();
+                  }}
+                  style={{ background: '#21262d', border: '1px solid #30363d', borderRadius: '4px', padding: '4px 10px', color: '#8b949e', fontSize: '11px', cursor: 'pointer' }}
+                >
+                  Post
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

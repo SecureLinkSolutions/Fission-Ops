@@ -147,6 +147,7 @@ export default function IncidentDetail() {
   const teamMembers = (assignments ?? []).map((a) => ({ id: a.user_id, email: a.user_email, name: a.user_name }));
   const ROLE_RANK_INC: Record<string, number> = { analyst: 1, senior_analyst: 2, incident_commander: 3, super_admin: 99 };
   const canChangeIncidentStatus = ROLE_RANK_INC[user?.role ?? ''] >= ROLE_RANK_INC['senior_analyst'];
+  const canChangeStatusField = ROLE_RANK_INC[user?.role ?? ''] >= ROLE_RANK_INC['incident_commander'];
 
   return (
     <div style={{ padding: '32px', maxWidth: '1400px', margin: '0 auto' }}>
@@ -197,6 +198,24 @@ export default function IncidentDetail() {
                 ))}
                 <button onClick={() => setShowStatusDropdown(false)} style={{ background: 'transparent', border: '1px solid #30363d', borderRadius: '6px', padding: '2px 8px', color: '#8b949e', fontSize: '11px', cursor: 'pointer' }}>✕</button>
               </div>
+            )}
+            {canChangeStatusField && (
+              <button
+                onClick={async () => {
+                  const newStatus = incident.status === 'closed' ? 'open' : 'closed';
+                  await apiClient.patch(`/incidents/${id}`, { status: newStatus });
+                  refetchIncident();
+                }}
+                style={{
+                  background: incident.status === 'closed' ? '#3fb95022' : '#f8514922',
+                  border: `1px solid ${incident.status === 'closed' ? '#3fb95044' : '#f8514944'}`,
+                  borderRadius: '8px', padding: '3px 10px', color: incident.status === 'closed' ? '#3fb950' : '#f85149',
+                  fontSize: '11px', fontWeight: 600, cursor: 'pointer'
+                }}
+                title={incident.status === 'closed' ? 'Reopen incident' : 'Close incident'}
+              >
+                {incident.status === 'closed' ? '↩ Reopen' : '✕ Close Incident'}
+              </button>
             )}
             {incident.description && <span style={{ color: '#8b949e', fontSize: '13px' }}>{incident.description}</span>}
             {taskStats && taskStats.total > 0 && (
@@ -269,7 +288,7 @@ export default function IncidentDetail() {
         {(entities ?? []).map((e) => {
           const ext = e as Entity & { ioc_status?: string; enrichment_status?: string; enrichment_data?: { verdict?: string } };
           const ioc = ext.ioc_status ? IOC_STATUS_DISPLAY[ext.ioc_status] : null;
-          const isFlagged = ext.status === 'confirmed_malicious' || ext.status === 'under_investigation' || ext.ioc_status === 'confirmed';
+          const isFlagged = ext.status === 'confirmed_malicious' || ext.ioc_status === 'confirmed';
           const borderColor = isFlagged ? '#f0883e44' : '#30363d';
           return (
             <div key={e.id} style={{ background: '#161b22', border: `1px solid ${borderColor}`, borderRadius: '8px', marginBottom: '8px', overflow: 'hidden' }}>

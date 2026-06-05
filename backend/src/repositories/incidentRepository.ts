@@ -133,7 +133,13 @@ export async function updateIncidentOperationalStatus(
   }
 
   const result = await pool.query(
-    `UPDATE incidents SET incident_status = $1, updated_at = NOW() WHERE id = $2${orgFilter} RETURNING *`,
+    `UPDATE incidents
+     SET incident_status = $1,
+         status = CASE WHEN $1 = 'closed' THEN 'closed'
+                       WHEN status = 'closed' THEN 'open'
+                       ELSE status END,
+         updated_at = NOW()
+     WHERE id = $2${orgFilter} RETURNING *`,
     params,
   );
   const incident = result.rows[0] ?? null;

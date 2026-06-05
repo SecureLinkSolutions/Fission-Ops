@@ -149,8 +149,7 @@ function ActionItem({ text, onCreateTask }: { text: string; onCreateTask: (title
 export default function SuggestedActions({ entity, onCreateTask }: Props) {
   const shouldShow =
     entity.status === 'confirmed_malicious' ||
-    entity.ioc_status === 'confirmed' ||
-    entity.status === 'under_investigation';
+    entity.ioc_status === 'confirmed';
 
   if (!shouldShow) return null;
 

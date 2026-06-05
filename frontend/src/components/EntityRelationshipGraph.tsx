@@ -19,6 +19,7 @@ import {
   getBezierPath,
   EdgeLabelRenderer,
   BaseEdge,
+  ConnectionMode,
 } from '@xyflow/react';
 import { useFetch } from '../hooks/useFetch';
 import { apiClient } from '../api/client';
@@ -528,6 +529,7 @@ function GraphInner({ incidentId }: GraphInnerProps) {
               onNodeClick={handleNodeClick}
               onNodeDragStop={handleNodeDragStop}
               onConnect={handleConnect}
+              connectionMode={ConnectionMode.Loose}
               connectionLineStyle={{ stroke: '#58a6ff', strokeWidth: 2, strokeDasharray: '6 3' }}
               connectionRadius={40}
               fitView
