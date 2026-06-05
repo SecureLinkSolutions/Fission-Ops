@@ -1,51 +1,59 @@
 # ⚡ Fission Ops
 
-A full-stack incident response platform for cyber analysts — built for SOC teams to track, investigate, and communicate about live security incidents in real time.
+A full-stack incident response platform for SOC analysts — built for security teams to track, investigate, and collaborate on live security incidents in real time.
+
+Developed by **NullVector Security**.
 
 ---
 
 ## Features
 
-### Core Platform
-- **Incident Management** — Create and track incidents with severity levels (low/medium/high/critical) and status (open/contained/closed)
-- **Entity Tracking** — Add entities of type hostname, IP, email, domain, or account with type-specific metadata (JSONB)
-- **Kill Chain Mapping** — Map entities across Lockheed Martin (7 stages), MITRE ATT&CK Enterprise (12 stages), or MITRE ATT&CK ICS (12 stages) with drag-and-drop
-- **Entity Relationship Graph** — Directed labeled relationship graph with React Flow (zoom/pan/minimap)
-- **Network Boundary Visualization** — Swimlane flow showing entity zone assignments and boundary traversals
-- **TTP Assignment** — Full MITRE ATT&CK technique search and assignment per kill-chain mapping (1,000+ techniques seeded at startup)
-- **PDF Report Export** — Server-side incident report generation with pdfmake
+### Incident Management
+- **Incident tracking** — Create and manage incidents with severity (low / medium / high / critical), operational status (active / contained / eradicated / recovered / closed), and lifecycle status (open / contained / closed)
+- **Entity tracking** — Add entities of type hostname, IP, email, domain, account, file, process, registry key, certificate, URL, or custom; each with type-specific metadata (JSONB `entity_details`)
+- **IOC Flagging** — Flag entities as `suspected`, `confirmed`, or `cleared` IOC; analysts suggest, senior analysts confirm; confirmation triggers live notifications and email broadcast
+- **Suggested Actions** — Context-aware investigation and containment playbooks that surface automatically based on entity type and IOC status (investigation actions for suspected, full response actions when confirmed malicious)
+- **Incident Tasking** — Kanban task board (Open / In Progress / Complete) with priority, due dates, overdue highlighting, and entity linkage; task completion shown in the incident header
+- **IOC Summary Panel** — Instant view of all confirmed/suspected IOCs pinned to the incident page
+
+### Intelligence & Visualization
+- **Kill Chain Mapping** — Drag-and-drop entity assignment across Lockheed Martin (7 stages), MITRE ATT&CK Enterprise (14 tactics), or MITRE ATT&CK ICS (12 stages); entities can appear in multiple stages
+- **AI Attack Narrative** — Generate a 2–4 paragraph analyst-quality attack narrative from kill chain data using the Anthropic API (claude-haiku); API key configurable per org
+- **TTP Assignment** — Full MITRE ATT&CK technique search and assignment per kill chain mapping; 1,000+ techniques seeded at startup
+- **Entity Relationship Graph** — Interactive directed graph (React Flow) showing entity relationships with labeled edges, animated flow particles, bidirectional support, drag to reposition, delete edges with keyboard or click
+- **Network Boundary Visualization** — Swimlane flow showing entity zone assignments (IT / OT / trusted / untrusted / DMZ) and boundary traversals
+- **Threat Intelligence Enrichment** — Automatic async enrichment on entity create using VirusTotal v3, AbuseIPDB, and Shodan; per-org API keys configured in Org Settings; verdict badge (malicious / suspicious / clean / unknown) shown on entity cards
 
 ### Collaboration & Communication
-- **Real-Time Collaboration** — Socket.io with JWT-authenticated incident rooms; entity/kill chain/relationship changes pushed live to all connected analysts
+- **Real-Time Collaboration** — Socket.io with JWT-authenticated incident rooms; entity, kill chain, and relationship changes pushed live to all connected analysts
 - **Presence Bar** — Live avatar chips showing which analysts are currently viewing an incident
-- **Comments & Mentions** — Threaded comments on incidents and entities with `@mention` autocomplete, markdown support (bold, italic, code), edit/delete by author or commander
+- **Discussion Panel** — Persistent slide-out comment drawer accessible from any incident tab without losing context; comments support `@mention` autocomplete, markdown (bold, italic, code), and edit/delete
+- **Live Mentions** — `@mentioning` a team member sends an instant socket notification and bell badge update
 - **Incident Timeline** — Chronological event feed filterable by action type and analyst
-
-### Analyst Workflow
-- **Incident Tasking** — Kanban task board (Open / In Progress / Complete) with priority badges, due dates, overdue highlighting, and task completion percentage in incident header
-- **My Tasks** — Cross-incident task view for the logged-in analyst, grouped by incident
-- **IOC Flagging** — Flag entities as `suspected`, `confirmed`, or `cleared` IOC; analysts suggest, senior analysts+ confirm; confirmation triggers notifications + email broadcast
-- **IOC Summary Panel** — Instant view of all confirmed/suspected IOCs on the incident dashboard
-
-### Intelligence & Reporting
-- **Threat Intelligence Enrichment** — Automatic async enrichment on entity create; integrates VirusTotal v3, AbuseIPDB, and Shodan; verdict (malicious/suspicious/clean) shown on entity chips
-- **Executive Summary** — Non-technical incident summary page (overview, attack timeline, business impact, key findings, remediation, risk rating); editable by senior analysts+; printable
+- **Toast Notifications** — Non-blocking in-app toasts for task assignments, mentions, and IOC events; click to navigate directly to the relevant resource
 
 ### Notifications
-- **In-App Notification Bell** — Unread count badge, dropdown of last 20 notifications, mark read/mark all read
-- **Live Notifications** — Socket.io push for mentions, task assignments, IOC confirmations, and incident status changes
-- **Email Notifications** — Nodemailer for critical alerts (IOC confirmed, status changes); gracefully skipped if SMTP not configured
+- **Notification Bell** — Unread count badge, dropdown of last 20 notifications, mark read / mark all read; click navigates to incident, entity, or specific task
+- **Live Push** — Socket.io delivers notifications instantly without polling; bell count increments in real time
+- **Task Deep-Link** — Notification click opens the Tasks tab, expands and scrolls to the specific task
+- **Email** — Nodemailer for critical alerts (IOC confirmed, status changes); silently skipped if SMTP is not configured
+
+### Analyst Workflow
+- **My Tasks** — Cross-incident task view for the logged-in analyst, grouped by incident with priority and due-date indicators
+- **Executive Summary** — Non-technical incident summary (overview, attack timeline, business impact, key findings, remediation steps, risk rating); editable by senior analysts+; printable
+- **PDF Report Export** — Server-side incident report generation with pdfmake (Professional tier)
 
 ### Security & Administration
-- **JWT Authentication** — Local email/password login; `jsonwebtoken` with minimum 32-char secret enforced at startup
-- **SSO** — Azure AD and Okta OIDC via `openid-client` v6; auto-provisions new users as `analyst`
-- **RBAC** — Four roles: `analyst` → `senior_analyst` → `incident_commander` → `super_admin` with rank-based enforcement
-- **Audit Logging** — Append-only audit log capturing creates/updates/deletes on incidents and entities; filterable by user, action, and resource type
+- **JWT Authentication** — Local email/password login; minimum 32-character secret enforced at startup
+- **SSO** — Azure AD and Okta OIDC via `openid-client` v6; new users auto-provisioned as `analyst`
+- **RBAC** — Four roles: `analyst` → `senior_analyst` → `incident_commander` → `super_admin` with rank-based enforcement at both API and UI layers
+- **Audit Log** — Append-only log of creates/updates/deletes on incidents and entities; never deletable by any role; filterable by user, action type, and resource
 - **User Management** — Create users, assign roles, deactivate/reactivate, manage incident assignments
-- **Multi-Tenancy** — Organizations table with `org_id`-scoped JWT; all data isolated per organization
-- **Organization Onboarding** — Self-service registration flow with 3-step wizard
-- **Super Admin Console** — Platform-wide organization management (create/deactivate/reactivate)
-- **Security Hardening** — Helmet.js headers, rate limiting (100 req/15min global, 10 req/15min auth)
+- **Multi-Tenancy** — Organizations table with `org_id`-scoped JWTs; all data isolated per organization
+- **Organization Onboarding** — Self-service registration with a 3-step wizard
+- **Super Admin Console** — Platform-wide organization management (create / deactivate / reactivate)
+- **Licensing** — Per-org feature flags (relationships graph, PDF export, enrichment, AI narrative) with tier-based gating (community / professional)
+- **Security Hardening** — Helmet.js headers, rate limiting (100 req/15 min global, 10 req/15 min auth), CORS origin enforcement
 - **HTTPS** — Traefik v3 + Let's Encrypt via `docker-compose.prod.yml`
 
 ---
@@ -55,15 +63,17 @@ A full-stack incident response platform for cyber analysts — built for SOC tea
 | Layer | Technology |
 |---|---|
 | Backend | Node.js, Express, TypeScript |
-| Database | PostgreSQL 15 (raw `pg`, no ORM) |
+| Database | PostgreSQL 15 (raw `pg`, no ORM; repository pattern) |
 | Real-Time | Socket.io |
 | Auth | JWT, bcryptjs, openid-client v6 (OIDC) |
 | Validation | Zod |
 | Frontend | React 18, TypeScript, React Router v6 |
-| Visualization | React Flow (`@xyflow/react` v12) |
+| Visualization | React Flow (`@xyflow/react` v12) — relationships + network maps |
+| Kill Chain | Pure HTML/CSS pipeline (no canvas dependency) |
+| AI Narrative | `@anthropic-ai/sdk` — claude-haiku-4-5 |
 | PDF Export | pdfmake (server-side) |
 | Email | Nodemailer |
-| Infrastructure | Docker Compose, Traefik v3, nginx |
+| Infrastructure | Docker Compose, Traefik v3, nginx (`1-alpine-slim`) |
 
 ---
 
@@ -109,8 +119,8 @@ All demo accounts belong to the default organization (`org_id: 00000000-0000-000
 cp .env.example .env.prod
 # Set all values in .env.prod, especially:
 #   JWT_SECRET — long random string
-#   DOMAIN — your domain (e.g. fission.example.com)
-#   SSL_EMAIL — email for Let's Encrypt
+#   DOMAIN     — your domain (e.g. fission.example.com)
+#   SSL_EMAIL  — email for Let's Encrypt
 
 docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
 ```
@@ -151,7 +161,13 @@ Traefik handles TLS termination and auto-renews certificates via Let's Encrypt.
 | `SMTP_PASS` | SMTP password |
 | `SMTP_FROM` | From address (e.g. `noreply@example.com`) |
 
-If SMTP variables are absent, email notifications are silently skipped.
+Email notifications are silently skipped if SMTP variables are absent.
+
+### Optional — AI Narrative
+
+| Variable | Description |
+|---|---|
+| `ANTHROPIC_API_KEY` | Fallback Anthropic key if not set per-org in Org Settings |
 
 ### Optional — Production
 
@@ -161,12 +177,16 @@ If SMTP variables are absent, email notifications are silently skipped.
 | `SSL_EMAIL` | Let's Encrypt registration email |
 | `NODE_ENV` | Set to `production` |
 
-### Optional — Threat Intelligence
+### Per-Organisation — Integrations
 
-Configure per-organization in the **Org Settings → API Keys** page (stored encrypted per org, not in env):
-- **VirusTotal** API key
-- **AbuseIPDB** API key
-- **Shodan** API key
+Configured in **Org Settings → Integrations** (stored per org, not in env):
+
+| Service | Used for |
+|---|---|
+| VirusTotal | Entity enrichment — IPs, domains, files |
+| AbuseIPDB | IP reputation and abuse reports |
+| Shodan | Internet-facing device and service discovery |
+| Anthropic | AI-generated kill chain attack narratives |
 
 ---
 
@@ -174,63 +194,58 @@ Configure per-organization in the **Org Settings → API Keys** page (stored enc
 
 | Role | Permissions |
 |---|---|
-| `analyst` | Read all incident data; create entities and comments; suggest IOC status; view tasks |
-| `senior_analyst` | All analyst permissions + update incidents/entities; confirm/clear IOC status; create and update tasks |
+| `analyst` | Read all incident data; create entities, comments, and tasks; suggest IOC status |
+| `senior_analyst` | All analyst permissions + update incidents/entities; confirm/clear IOC status; manage tasks |
 | `incident_commander` | All senior analyst permissions + delete; manage users; view audit logs; manage incident assignments |
 | `super_admin` | Platform-wide access across all organizations |
 
 ---
 
-## SSO Configuration
-
-### Azure AD
-1. Register an app in Azure Portal → Azure Active Directory → App registrations
-2. Set redirect URI to `{SSO_REDIRECT_BASE_URL}/api/v1/auth/sso/callback`
-3. Set `OIDC_AZURE_CLIENT_ID`, `OIDC_AZURE_CLIENT_SECRET`, `OIDC_AZURE_TENANT_ID`
-
-### Okta
-1. Create an OIDC Web Application in Okta Admin Console
-2. Set Sign-in redirect URI to `{SSO_REDIRECT_BASE_URL}/api/v1/auth/sso/callback`
-3. Set `OIDC_OKTA_CLIENT_ID`, `OIDC_OKTA_CLIENT_SECRET`, `OIDC_OKTA_DOMAIN`
-
-SSO users are auto-provisioned as `analyst` role on first login and scoped to the configured organization.
-
----
-
 ## Database Migrations
 
-Migrations are applied automatically on backend startup. Never need to run them manually.
+Migrations run automatically on backend startup — no manual intervention required.
 
-| File | Contents |
+| File | Description |
 |---|---|
-| `db/init.sql` | Core schema + 7 Lockheed Martin kill chain stages + 2 demo users |
-| `db/migrate_001.sql` | `entity_relationships` table; MITRE ATT&CK Enterprise + ICS kill chain stages |
-| `db/migrate_002.sql` | `ttps`, `entity_stage_ttps`, `entity_zone_assignments`, `boundary_traversals` tables |
+| `db/init.sql` | Core schema; Lockheed Martin kill chain stages; demo users |
+| `db/migrate_001.sql` | `entity_relationships`; MITRE ATT&CK Enterprise and ICS stages |
+| `db/migrate_002.sql` | `ttps`, `entity_stage_ttps`, `entity_zone_assignments`, `boundary_traversals` |
 | `db/migrate_003.sql` | `audit_logs`, `incident_assignments`; user deactivation columns |
-| `db/migrate_004.sql` | `organizations` table; `super_admin` role; `org_id` on users/incidents/audit_logs |
+| `db/migrate_004.sql` | `organizations`; `super_admin` role; `org_id` on users/incidents/audit_logs |
 | `db/migrate_005.sql` | `incident_executive_summaries`, `notifications`, `comments`, `incident_tasks`, `org_api_keys`; IOC and enrichment columns on entities |
+| `db/migrate_006.sql` | `incident_status` operational field; license/feature flag columns on organizations |
+| `db/migrate_007.sql` | File, process, registry, certificate, URL, custom entity types |
+| `db/migrate_008.sql` | Entity relationship and boundary traversal enhancements |
+| `db/migrate_009.sql` | `task_comments`; task–entity linking table |
+| `db/migrate_010.sql` | `task_entity_links` foreign key fixes |
+| `db/migrate_011.sql` | `entity_relationships` schema cleanup |
+| `db/migrate_012.sql` | `task_id` column on `notifications` for task deep-link navigation |
 
 ---
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    Browser (React SPA)                  │
-│  React Router · React Flow · Socket.io-client · Axios   │
-└────────────────────────┬────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                     Browser (React SPA)                     │
+│   React Router · React Flow · Socket.io-client · Axios      │
+│   Shared: utils/constants.ts · utils/time.ts                │
+└────────────────────────┬────────────────────────────────────┘
                          │ HTTP + WebSocket
-┌────────────────────────▼────────────────────────────────┐
-│              Backend (Express + Socket.io)               │
-│  JWT Auth · RBAC · Zod Validation · express-async-errors│
-│  Routes → Repositories → PostgreSQL (raw pg)            │
-│  Services: enrichment, email, socket emitters           │
-└────────────────────────┬────────────────────────────────┘
+                    nginx (proxy /api + /socket.io)
+                         │
+┌────────────────────────▼────────────────────────────────────┐
+│              Backend (Express + Socket.io)                  │
+│  JWT Auth · RBAC · Zod Validation · express-async-errors    │
+│  Routes → Repositories → PostgreSQL (raw pg)                │
+│  Services: enrichment (VT/AbuseIPDB/Shodan), email, AI      │
+│  Socket: incident rooms + per-user notification channels    │
+└────────────────────────┬────────────────────────────────────┘
                          │ pg pool
-┌────────────────────────▼────────────────────────────────┐
-│                    PostgreSQL 15                         │
-│  15 tables · 5 migrations · MITRE ATT&CK seeded         │
-└─────────────────────────────────────────────────────────┘
+┌────────────────────────▼────────────────────────────────────┐
+│                    PostgreSQL 15                             │
+│  20+ tables · 12 migrations · MITRE ATT&CK seeded           │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -244,10 +259,19 @@ The `users` table doesn't exist. Run `docker compose up postgres` first and wait
 Set a longer value in your `.env` file. The backend validates this at startup.
 
 **MITRE ATT&CK data not seeding**
-The seeder fetches from `raw.githubusercontent.com` on startup. Ensure outbound HTTPS is allowed. It is skipped automatically if >200 TTPs already exist.
+The seeder fetches from `raw.githubusercontent.com` on startup. Ensure outbound HTTPS is allowed from the backend container. Seeding is skipped automatically if more than 200 TTPs already exist.
 
 **SSO redirect mismatch**
 Ensure `SSO_REDIRECT_BASE_URL` exactly matches the base URL registered in your IdP, without a trailing slash.
 
 **Enrichment shows "skipped"**
-No API keys are configured for the entity's organization. Add them in Org Settings → API Keys.
+No API keys are configured for the entity's organization. Add them in **Org Settings → Integrations**.
+
+**AI narrative returns an error**
+The Anthropic key is not configured. Set it in **Org Settings → Integrations** or via the `ANTHROPIC_API_KEY` environment variable. The org-level key takes precedence over the env var.
+
+**Kill chain entities only appear in one stage**
+This was a known limitation — it is fixed. Entities can now be assigned to multiple kill chain stages. Already-mapped entities show a green ✓ in the drag panel and remain draggable to additional stages.
+
+**Notification click doesn't navigate to the task**
+Ensure you are on migration 012 (`task_id` column on `notifications`). On a fresh deploy this applies automatically. Task notifications now deep-link directly to the task card, which auto-expands and scrolls into view.
