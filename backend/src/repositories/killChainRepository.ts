@@ -46,11 +46,30 @@ export async function removeMappingById(mappingId: string): Promise<boolean> {
   return (result.rowCount ?? 0) > 0;
 }
 
-export async function getKillChainMatrix(incidentId: string): Promise<unknown[]> {
+export interface KillChainMatrixRow {
+  entity_id: string;
+  type: string;
+  value: string;
+  stage_id: string;
+  stage_name: string;
+  order_index: number;
+  framework: string;
+  confidence: string;
+  mapping_id: string;
+  ttps: { id: string; ttp_id: string; technique_id: string; name: string }[];
+  entity_details: Record<string, unknown> | null;
+  ioc_status: string | null;
+  entity_status: string | null;
+}
+
+export async function getKillChainMatrix(incidentId: string): Promise<KillChainMatrixRow[]> {
   const result = await pool.query(
     `SELECT e.id AS entity_id, e.type, e.value,
             kcs.id AS stage_id, kcs.name AS stage_name, kcs.order_index, kcs.framework,
             ekm.confidence, ekm.id AS mapping_id,
+            e.entity_details,
+            e.ioc_status,
+            e.status AS entity_status,
             COALESCE(
               json_agg(
                 json_build_object('id', est.id, 'ttp_id', t.id, 'technique_id', t.technique_id, 'name', t.name)
@@ -62,7 +81,7 @@ export async function getKillChainMatrix(incidentId: string): Promise<unknown[]>
      LEFT JOIN entity_stage_ttps est ON est.kill_chain_mapping_id = ekm.id
      LEFT JOIN ttps t ON t.id = est.ttp_id
      WHERE e.incident_id = $1
-     GROUP BY e.id, e.type, e.value, kcs.id, kcs.name, kcs.order_index, kcs.framework, ekm.confidence, ekm.id
+     GROUP BY e.id, e.type, e.value, kcs.id, kcs.name, kcs.order_index, kcs.framework, ekm.confidence, ekm.id, e.entity_details, e.ioc_status, e.status
      ORDER BY kcs.order_index, e.value`,
     [incidentId],
   );

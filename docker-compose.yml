@@ -30,6 +30,7 @@ services:
       JWT_SECRET: dev_secret_minimum_32_characters_long
       PORT: 3001
       FRONTEND_URL: http://localhost:3000
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     ports:
       - "3001:3001"
 
