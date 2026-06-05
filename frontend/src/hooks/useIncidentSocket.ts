@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { addToast, ToastNotification } from '../components/ToastContainer';
 
 const SOCKET_URL = (() => {
   const base = import.meta.env.VITE_API_URL || '/api/v1';
@@ -134,6 +135,7 @@ export function initGlobalSocket(token: string): Socket {
   });
   globalSocket.on('notification:new', (data: unknown) => {
     notificationListeners.forEach((fn) => fn(data));
+    addToast(data as ToastNotification);
   });
   return globalSocket;
 }

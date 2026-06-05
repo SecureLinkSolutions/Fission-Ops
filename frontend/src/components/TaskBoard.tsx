@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { apiClient } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 
@@ -30,6 +30,7 @@ interface TaskBoardProps {
   teamMembers?: TeamMember[];
   availableEntities?: TaskEntity[];
   onRefresh: () => void;
+  highlightTaskId?: string;
 }
 
 const PRIORITY_COLORS: Record<string, string> = {
@@ -47,6 +48,7 @@ interface TaskCardProps {
   availableEntities: TaskEntity[];
   onRefresh: () => void;
   canManage: boolean;
+  highlight?: boolean;
 }
 
 function EntityPicker({ entities, selected, onChange }: {
@@ -71,8 +73,9 @@ function EntityPicker({ entities, selected, onChange }: {
   );
 }
 
-function TaskCard({ task, teamMembers, availableEntities, onRefresh, canManage }: TaskCardProps) {
-  const [expanded, setExpanded] = useState(false);
+function TaskCard({ task, teamMembers, availableEntities, onRefresh, canManage, highlight }: TaskCardProps) {
+  const [expanded, setExpanded] = useState(highlight ?? false);
+  const cardRef = useRef<HTMLDivElement>(null);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({
     title: task.title,
@@ -93,6 +96,15 @@ function TaskCard({ task, teamMembers, availableEntities, onRefresh, canManage }
     setComments(r.data);
     setCommentsLoaded(true);
   }
+
+  useEffect(() => {
+    if (highlight && cardRef.current) {
+      cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setExpanded(true);
+      loadComments();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [highlight]);
 
   async function handleSave() {
     const payload: Record<string, unknown> = { title: form.title, priority: form.priority, status: form.status };
@@ -119,7 +131,7 @@ function TaskCard({ task, teamMembers, availableEntities, onRefresh, canManage }
   const inputStyle: React.CSSProperties = { background: '#0d1117', border: '1px solid #30363d', borderRadius: '4px', padding: '4px 8px', color: '#e6edf3', fontSize: '12px', outline: 'none', width: '100%', boxSizing: 'border-box' };
 
   return (
-    <div style={{ background: '#21262d', border: '1px solid #30363d', borderRadius: '6px', padding: '10px 12px', marginBottom: '8px' }}>
+    <div ref={cardRef} style={{ background: highlight ? '#1c2128' : '#21262d', border: `1px solid ${highlight ? '#f97316' : '#30363d'}`, borderRadius: '6px', padding: '10px 12px', marginBottom: '8px' }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', cursor: 'pointer' }} onClick={() => { const next = !expanded; setExpanded(next); if (next) loadComments(); }}>
         <span style={{ background: `${PRIORITY_COLORS[task.priority]}22`, color: PRIORITY_COLORS[task.priority], border: `1px solid ${PRIORITY_COLORS[task.priority]}44`, borderRadius: '4px', padding: '1px 6px', fontSize: '10px', fontWeight: 700, flexShrink: 0 }}>
           {task.priority.toUpperCase()}
@@ -232,7 +244,7 @@ function TaskCard({ task, teamMembers, availableEntities, onRefresh, canManage }
   );
 }
 
-export default function TaskBoard({ incidentId, tasks, teamMembers = [], availableEntities = [], onRefresh }: TaskBoardProps) {
+export default function TaskBoard({ incidentId, tasks, teamMembers = [], availableEntities = [], onRefresh, highlightTaskId }: TaskBoardProps) {
   const { user } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ title: '', description: '', assignee_id: '', priority: 'medium', due_date: '' });
@@ -306,7 +318,7 @@ export default function TaskBoard({ incidentId, tasks, teamMembers = [], availab
                 {label} ({colTasks.length})
               </div>
               {colTasks.map((t) => (
-                <TaskCard key={t.id} task={t} teamMembers={teamMembers} availableEntities={availableEntities} onRefresh={onRefresh} canManage={canManage} />
+                <TaskCard key={t.id} task={t} teamMembers={teamMembers} availableEntities={availableEntities} onRefresh={onRefresh} canManage={canManage} highlight={highlightTaskId === t.id} />
               ))}
               {colTasks.length === 0 && <div style={{ color: '#484f58', fontSize: '12px', textAlign: 'center', paddingTop: '20px' }}>No tasks</div>}
             </div>

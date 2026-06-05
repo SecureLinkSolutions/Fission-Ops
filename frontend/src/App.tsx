@@ -19,6 +19,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import NavBar from './components/NavBar';
 import TopBar from './components/TopBar';
 import ErrorBoundary from './components/ErrorBoundary';
+import ToastContainer from './components/ToastContainer';
 import { useAuth } from './context/AuthContext';
 
 // Force full remount of IncidentDetail when the incident ID changes.
@@ -39,6 +40,7 @@ export default function App() {
     <>
       {user && <NavBar />}
       {user && <TopBar />}
+      <ToastContainer />
       <div style={user ? { marginLeft: '220px', paddingTop: '48px', minHeight: '100vh' } : undefined}>
         <ErrorBoundary>
           <Routes>
