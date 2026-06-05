@@ -26,6 +26,18 @@ export async function checkSchema(): Promise<void> {
     console.log('✅ Migration 013 applied');
   }
 
+
+  const needsMigration014 = await pool.query(
+    `SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'entity_checklists'`,
+  );
+  if ((needsMigration014.rowCount ?? 0) === 0) {
+    console.log('⚙️  Running migration 014...');
+    const migrationPath014 = join(__dirname, '../../../../db/migrate_014.sql');
+    const sql014 = readFileSync(migrationPath014, 'utf8');
+    await pool.query(sql014);
+    console.log('✅ Migration 014 applied');
+  }
+
 }
 
 async function runMigrations(): Promise<void> {
@@ -184,3 +196,4 @@ async function runMigrations(): Promise<void> {
     console.log('✅ Migration 012 applied');
   }
 }
+// Note: migration 014 block is appended below
