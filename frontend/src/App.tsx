@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Onboarding from './pages/Onboarding';
@@ -17,7 +17,20 @@ import LicenseActivation from './pages/LicenseActivation';
 import LicenseAdmin from './pages/LicenseAdmin';
 import ProtectedRoute from './components/ProtectedRoute';
 import NavBar from './components/NavBar';
+import ErrorBoundary from './components/ErrorBoundary';
 import { useAuth } from './context/AuthContext';
+
+// Force full remount of IncidentDetail when the incident ID changes.
+// Without this, navigating between incidents reuses the mounted component
+// instance and can leave stale state that causes a blank render.
+function IncidentDetailKeyed() {
+  const { id } = useParams<{ id: string }>();
+  return <IncidentDetail key={id} />;
+}
+function EntityDetailKeyed() {
+  const { entityId } = useParams<{ entityId: string }>();
+  return <EntityDetail key={entityId} />;
+}
 
 export default function App() {
   const { user } = useAuth();
@@ -25,25 +38,27 @@ export default function App() {
     <>
       {user && <NavBar />}
       <div style={user ? { marginLeft: '220px', minHeight: '100vh' } : undefined}>
-      <Routes>
-        <Route path="/activate" element={<LicenseActivation />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/sso-callback" element={<SSOCallback />} />
-        <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
-        <Route path="/settings/org" element={<ProtectedRoute><OrgSettings /></ProtectedRoute>} />
-        <Route path="/superadmin" element={<ProtectedRoute><SuperAdmin /></ProtectedRoute>} />
-        <Route path="/incidents" element={<ProtectedRoute><IncidentList /></ProtectedRoute>} />
-        <Route path="/incidents/new" element={<ProtectedRoute><IncidentNew /></ProtectedRoute>} />
-        <Route path="/incidents/:id" element={<ProtectedRoute><IncidentDetail /></ProtectedRoute>} />
-        <Route path="/incidents/:id/executive-summary" element={<ProtectedRoute><ExecutiveSummary /></ProtectedRoute>} />
-        <Route path="/incidents/:id/entities/:entityId" element={<ProtectedRoute><EntityDetail /></ProtectedRoute>} />
-        <Route path="/admin/audit" element={<ProtectedRoute><AuditLog /></ProtectedRoute>} />
-        <Route path="/admin/users" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
-        <Route path="/admin/license" element={<ProtectedRoute><LicenseAdmin /></ProtectedRoute>} />
-        <Route path="/tasks/mine" element={<ProtectedRoute><MyTasks /></ProtectedRoute>} />
-        <Route path="*" element={<Navigate to={user ? '/incidents' : '/login'} replace />} />
-      </Routes>
+        <ErrorBoundary>
+          <Routes>
+            <Route path="/activate" element={<LicenseActivation />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/sso-callback" element={<SSOCallback />} />
+            <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+            <Route path="/settings/org" element={<ProtectedRoute><OrgSettings /></ProtectedRoute>} />
+            <Route path="/superadmin" element={<ProtectedRoute><SuperAdmin /></ProtectedRoute>} />
+            <Route path="/incidents" element={<ProtectedRoute><IncidentList /></ProtectedRoute>} />
+            <Route path="/incidents/new" element={<ProtectedRoute><IncidentNew /></ProtectedRoute>} />
+            <Route path="/incidents/:id" element={<ProtectedRoute><IncidentDetailKeyed /></ProtectedRoute>} />
+            <Route path="/incidents/:id/executive-summary" element={<ProtectedRoute><ExecutiveSummary /></ProtectedRoute>} />
+            <Route path="/incidents/:id/entities/:entityId" element={<ProtectedRoute><EntityDetailKeyed /></ProtectedRoute>} />
+            <Route path="/admin/audit" element={<ProtectedRoute><AuditLog /></ProtectedRoute>} />
+            <Route path="/admin/users" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
+            <Route path="/admin/license" element={<ProtectedRoute><LicenseAdmin /></ProtectedRoute>} />
+            <Route path="/tasks/mine" element={<ProtectedRoute><MyTasks /></ProtectedRoute>} />
+            <Route path="*" element={<Navigate to={user ? '/incidents' : '/login'} replace />} />
+          </Routes>
+        </ErrorBoundary>
       </div>
     </>
   );
