@@ -86,17 +86,18 @@ export default function NotificationBell() {
     await apiClient.patch(`/notifications/${id}/read`).catch(() => {});
     setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
     setUnreadCount((c) => Math.max(0, c - 1));
-    if (notif.incident_id && notif.task_id) {
+    if (!notif.incident_id) return; // informational — keep dropdown open
+    setOpen(false);
+    if (notif.task_id) {
       navigate(`/incidents/${notif.incident_id}?tab=tasks&task=${notif.task_id}`);
-      setOpen(false);
-    } else if (notif.incident_id && notif.entity_id) {
+    } else if (notif.type === 'task_assigned' || notif.type === 'task_comment') {
+      // legacy task notification without task_id — open tasks tab
+      navigate(`/incidents/${notif.incident_id}?tab=tasks`);
+    } else if (notif.entity_id) {
       navigate(`/incidents/${notif.incident_id}/entities/${notif.entity_id}`);
-      setOpen(false);
-    } else if (notif.incident_id) {
+    } else {
       navigate(`/incidents/${notif.incident_id}`);
-      setOpen(false);
     }
-    // For informational notifications with no navigation target, just mark read and keep dropdown open
   }
 
   async function handleMarkAllRead() {

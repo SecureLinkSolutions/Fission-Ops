@@ -76,8 +76,9 @@ export default function OrgSettings() {
     { service: 'virustotal', has_key: false, masked_key: null },
     { service: 'abuseipdb', has_key: false, masked_key: null },
     { service: 'shodan', has_key: false, masked_key: null },
+    { service: 'anthropic', has_key: false, masked_key: null },
   ]);
-  const [keyInputs, setKeyInputs] = useState<Record<string, string>>({ virustotal: '', abuseipdb: '', shodan: '' });
+  const [keyInputs, setKeyInputs] = useState<Record<string, string>>({ virustotal: '', abuseipdb: '', shodan: '', anthropic: '' });
   const [showKey, setShowKey] = useState<Record<string, boolean>>({});
   const [keySaving, setKeySaving] = useState<Record<string, boolean>>({});
   const [keyTestResult, setKeyTestResult] = useState<Record<string, { success: boolean; message: string } | null>>({});
@@ -177,7 +178,13 @@ export default function OrgSettings() {
 
   const canEdit = user?.role === 'incident_commander' || user?.role === 'super_admin';
 
-  const SERVICE_LABELS: Record<string, string> = { virustotal: 'VirusTotal', abuseipdb: 'AbuseIPDB', shodan: 'Shodan' };
+  const SERVICE_LABELS: Record<string, string> = { virustotal: 'VirusTotal', abuseipdb: 'AbuseIPDB', shodan: 'Shodan', anthropic: 'Anthropic (AI Narrative)' };
+  const SERVICE_DESCRIPTIONS: Record<string, string> = {
+    virustotal: 'Threat intelligence enrichment for IPs, domains, and files',
+    abuseipdb: 'IP reputation and abuse reports',
+    shodan: 'Internet-facing device and service discovery',
+    anthropic: 'Powers AI-generated attack narratives in the Kill Chain view (uses claude-haiku-4-5)',
+  };
 
   return (
     <div style={s.page}>
@@ -292,9 +299,9 @@ export default function OrgSettings() {
           <>
             {/* API Keys */}
             <div style={s.section}>
-              <div style={s.sectionTitle}>Threat Intelligence API Keys</div>
+              <div style={s.sectionTitle}>API Keys & Integrations</div>
               <div style={{ color: '#8b949e', fontSize: '12px', marginBottom: '20px' }}>
-                API keys are stored and used for entity enrichment. Keys are masked after saving.
+                API keys are stored per organisation and masked after saving. Threat intel keys are used for entity enrichment; the Anthropic key enables AI-generated attack narratives.
               </div>
               {apiKeys.map((keyInfo) => {
                 const service = keyInfo.service;

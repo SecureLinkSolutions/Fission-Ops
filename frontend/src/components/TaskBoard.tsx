@@ -98,10 +98,14 @@ function TaskCard({ task, teamMembers, availableEntities, onRefresh, canManage, 
   }
 
   useEffect(() => {
-    if (highlight && cardRef.current) {
-      cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (highlight) {
       setExpanded(true);
       loadComments();
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+      });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [highlight]);

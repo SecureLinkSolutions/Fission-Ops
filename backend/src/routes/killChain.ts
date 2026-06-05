@@ -47,7 +47,14 @@ router.get('/incidents/:incidentId/kill-chain/matrix', authenticate, async (req:
 });
 
 router.post('/incidents/:incidentId/kill-chain/narrative', authenticate, requireRole('analyst'), async (req: Request, res: Response) => {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  // Prefer org-stored key over environment variable
+  let apiKey = process.env.ANTHROPIC_API_KEY;
+  const orgKeyResult = await pool.query(
+    "SELECT api_key FROM org_api_keys WHERE service = 'anthropic' ORDER BY updated_at DESC LIMIT 1",
+  ).catch(() => ({ rows: [] as { api_key: string }[] }));
+  if (orgKeyResult.rows.length > 0 && orgKeyResult.rows[0].api_key) {
+    apiKey = orgKeyResult.rows[0].api_key;
+  }
   if (!apiKey) {
     res.status(200).json({ narrative: null, error: 'ANTHROPIC_API_KEY not configured' });
     return;

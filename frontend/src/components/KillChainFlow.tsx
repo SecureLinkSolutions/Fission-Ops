@@ -616,28 +616,31 @@ export default function KillChainFlow({ incidentId }: KillChainFlowProps) {
         })}
       </div>
 
-      {/* Unassigned entities */}
-      {(() => {
+      {/* All entities — drag any entity to any stage (including entities already mapped elsewhere) */}
+      {entities.length > 0 && (() => {
         const mappedEntityIds = new Set(matrixRows.map((m) => m.entity_id));
-        const unassigned = entities.filter((e) => !mappedEntityIds.has(e.id));
-        if (unassigned.length === 0) return null;
         return (
           <div style={{ marginBottom: '10px', padding: '10px 12px', background: '#161b22', border: '1px solid #30363d', borderRadius: '8px' }}>
             <div style={{ color: '#8b949e', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', marginBottom: '8px' }}>
-              Unassigned Entities — drag into a stage
+              Entities — drag to assign to a stage (entities can span multiple stages)
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-              {unassigned.map((ent) => (
-                <div
-                  key={ent.id}
-                  draggable
-                  onDragStart={(e) => { e.dataTransfer.setData('entityId', ent.id); e.dataTransfer.effectAllowed = 'move'; }}
-                  style={{ background: '#21262d', border: '1px solid #30363d', borderRadius: '4px', padding: '3px 8px', fontSize: '11px', color: '#e6edf3', cursor: 'grab', display: 'flex', alignItems: 'center', gap: '4px' }}
-                >
-                  <span>{ENTITY_TYPE_ICONS[ent.type] ?? '•'}</span>
-                  <span style={{ fontFamily: 'monospace' }}>{ent.value}</span>
-                </div>
-              ))}
+              {entities.map((ent) => {
+                const isMapped = mappedEntityIds.has(ent.id);
+                return (
+                  <div
+                    key={ent.id}
+                    draggable
+                    onDragStart={(e) => { e.dataTransfer.setData('entityId', ent.id); e.dataTransfer.effectAllowed = 'move'; }}
+                    style={{ background: isMapped ? '#1a2f1a' : '#21262d', border: `1px solid ${isMapped ? '#3fb95066' : '#30363d'}`, borderRadius: '4px', padding: '3px 8px', fontSize: '11px', color: '#e6edf3', cursor: 'grab', display: 'flex', alignItems: 'center', gap: '4px' }}
+                    title={isMapped ? 'Already in kill chain — drag to add to another stage' : 'Drag to assign to a stage'}
+                  >
+                    <span>{ENTITY_TYPE_ICONS[ent.type] ?? '•'}</span>
+                    <span style={{ fontFamily: 'monospace' }}>{ent.value}</span>
+                    {isMapped && <span style={{ color: '#3fb950', fontSize: '10px' }}>✓</span>}
+                  </div>
+                );
+              })}
             </div>
           </div>
         );
