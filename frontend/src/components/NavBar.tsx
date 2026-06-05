@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate, useMatch, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 interface ConnectionDotProps {
@@ -57,7 +57,7 @@ export default function NavBar({ connectionState }: NavBarProps) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const onIncidentPage = useMatch('/incidents/:id/*') || useMatch('/incidents/:id');
+  const onIncidentPage = /^\/incidents\/[^/]+(\/|$)/.test(location.pathname);
 
   const isAdmin = user?.role === 'incident_commander' || user?.role === 'super_admin';
 
