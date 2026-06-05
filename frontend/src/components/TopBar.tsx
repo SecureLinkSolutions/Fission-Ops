@@ -1,7 +1,6 @@
 import { useLocation, Link, useParams } from 'react-router-dom';
 import NotificationBell from './NotificationBell';
 import { useAuth } from '../context/AuthContext';
-import logoUrl from '../assets/logo.svg';
 
 // Derive a readable breadcrumb from the current path
 function useBreadcrumb(): { label: string; href?: string }[] {
@@ -40,7 +39,6 @@ export default function TopBar() {
     }}>
       {/* Breadcrumb */}
       <nav style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <img src={logoUrl} alt="" style={{ width: '18px', height: '18px', marginRight: '4px', opacity: 0.85 }} />
         {crumbs.map((crumb, i) => (
           <span key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             {i > 0 && <span style={{ color: '#30363d', fontSize: '14px' }}>/</span>}
@@ -67,9 +65,9 @@ export default function TopBar() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <div style={{
             width: '28px', height: '28px', borderRadius: '50%',
-            background: '#58a6ff22', border: '1px solid #58a6ff44',
+            background: '#f9731622', border: '1px solid #f9731644',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#58a6ff', fontSize: '11px', fontWeight: 700,
+            color: '#f97316', fontSize: '11px', fontWeight: 700,
           }}>
             {(user?.email?.[0] ?? '?').toUpperCase()}
           </div>

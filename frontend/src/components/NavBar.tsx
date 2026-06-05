@@ -76,11 +76,14 @@ export default function NavBar({ connectionState }: NavBarProps) {
       zIndex: 100,
     }}>
       {/* Brand */}
-      <div style={{ padding: '16px 16px 14px', borderBottom: '1px solid #30363d', display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <img src={logoUrl} alt="Fission Ops" style={{ width: '22px', height: '22px', flexShrink: 0 }} />
-        <Link to="/incidents" style={{ color: '#e6edf3', fontWeight: 700, fontSize: '13px', textDecoration: 'none', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-          Fission Ops
-        </Link>
+      <div style={{ padding: '14px 16px 12px', borderBottom: '1px solid #30363d', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <img src={logoUrl} alt="FissionOps" style={{ width: '28px', height: '28px', flexShrink: 0 }} />
+        <div>
+          <Link to="/incidents" style={{ textDecoration: 'none', display: 'block', lineHeight: 1.1 }}>
+            <span style={{ color: '#e6edf3', fontWeight: 700, fontSize: '14px', letterSpacing: '0.01em' }}>Fission</span><span style={{ color: '#f97316', fontWeight: 700, fontSize: '14px' }}>Ops</span>
+          </Link>
+          <div style={{ color: '#484f58', fontSize: '9px', letterSpacing: '0.04em', marginTop: '1px' }}>by NullVector Security</div>
+        </div>
       </div>
 
       {/* Connection dot for incident pages */}
