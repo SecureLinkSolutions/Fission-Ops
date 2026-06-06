@@ -38,6 +38,17 @@ export async function checkSchema(): Promise<void> {
     console.log('✅ Migration 014 applied');
   }
 
+  const needsMigration015 = await pool.query(
+    `SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'remediation_items'`,
+  );
+  if ((needsMigration015.rowCount ?? 0) === 0) {
+    console.log('⚙️  Running migration 015...');
+    const migrationPath015 = join(__dirname, '../../../../db/migrate_015.sql');
+    const sql015 = readFileSync(migrationPath015, 'utf8');
+    await pool.query(sql015);
+    console.log('✅ Migration 015 applied');
+  }
+
 }
 
 async function runMigrations(): Promise<void> {

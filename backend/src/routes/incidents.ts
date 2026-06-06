@@ -160,6 +160,89 @@ router.delete(
   },
 );
 
+
+// Remediation routes
+import * as remediationRepo from '../repositories/remediationRepository';
+
+router.get('/:id/remediation/progress', authenticate, async (req: Request, res: Response) => {
+  const progress = await remediationRepo.getRemediationProgress(req.params.id);
+  res.json(progress);
+});
+
+router.get('/:id/remediation', authenticate, async (req: Request, res: Response) => {
+  const items = await remediationRepo.listRemediationItems(req.params.id);
+  res.json(items);
+});
+
+router.post(
+  '/:id/remediation',
+  authenticate,
+  requireRole('senior_analyst'),
+  async (req: Request, res: Response) => {
+    const body = z.object({
+      title: z.string().min(1),
+      description: z.string().optional(),
+      entity_id: z.string().uuid().optional(),
+      assignee_id: z.string().uuid().optional(),
+      assignee_name: z.string().optional(),
+    }).parse(req.body);
+    const item = await remediationRepo.createRemediationItem({
+      ...body,
+      incident_id: req.params.id,
+      created_by: req.user!.sub,
+      created_by_name: req.user!.email ?? '',
+    });
+    res.status(201).json(item);
+  },
+);
+
+router.patch(
+  '/:id/remediation/:itemId',
+  authenticate,
+  async (req: Request, res: Response) => {
+    const userRank = (req.user!.role === 'super_admin' ? 99 : ['analyst', 'senior_analyst', 'incident_commander'].indexOf(req.user!.role));
+    const isSeniorPlus = req.user!.role === 'super_admin' || ['senior_analyst', 'incident_commander'].includes(req.user!.role);
+    const body = z.object({
+      status: z.enum(['pending', 'in_progress', 'completed', 'verified']).optional(),
+      before_state: z.string().optional(),
+      after_state: z.string().optional(),
+      assignee_id: z.string().uuid().optional().nullable(),
+      assignee_name: z.string().optional(),
+      verified_by: z.string().uuid().optional(),
+      verified_by_name: z.string().optional(),
+    }).parse(req.body);
+
+    // Only senior_analyst+ can change assignee
+    if ((body.assignee_id !== undefined || body.assignee_name !== undefined) && !isSeniorPlus) {
+      res.status(403).json({ error: 'Insufficient permissions to change assignee' });
+      return;
+    }
+    // Only incident_commander+ can verify
+    if (body.status === 'verified' && req.user!.role !== 'incident_commander' && req.user!.role !== 'super_admin') {
+      res.status(403).json({ error: 'Insufficient permissions to verify items' });
+      return;
+    }
+
+    const updateData: Parameters<typeof remediationRepo.updateRemediationItem>[1] = {};
+    if (body.status !== undefined) updateData.status = body.status;
+    if (body.before_state !== undefined) updateData.before_state = body.before_state;
+    if (body.after_state !== undefined) updateData.after_state = body.after_state;
+    if (body.assignee_id !== undefined) updateData.assignee_id = body.assignee_id ?? undefined;
+    if (body.assignee_name !== undefined) updateData.assignee_name = body.assignee_name;
+    if (body.status === 'verified') {
+      updateData.verified_by = req.user!.sub;
+      updateData.verified_by_name = req.user!.email ?? '';
+    }
+
+    const item = await remediationRepo.updateRemediationItem(req.params.itemId, updateData);
+    if (!item) {
+      res.status(404).json({ error: 'Remediation item not found' });
+      return;
+    }
+    res.json(item);
+  },
+);
+
 export default router;
 
 // Checklist summary for all entities in an incident
