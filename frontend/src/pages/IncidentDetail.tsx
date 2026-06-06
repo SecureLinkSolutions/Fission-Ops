@@ -13,6 +13,7 @@ import CommentThread from '../components/CommentThread';
 import TaskBoard, { Task } from '../components/TaskBoard';
 import RemediationBoard from '../components/RemediationBoard';
 import AffectedAssets from '../components/AffectedAssets';
+import ActivityHeatMap from '../components/ActivityHeatMap';
 import PresenceBar from '../components/PresenceBar';
 import SuggestedActions from '../components/SuggestedActions';
 import { useIncidentSocket } from '../hooks/useIncidentSocket';
@@ -394,6 +395,12 @@ export default function IncidentDetail() {
 
       <div style={{ display: activeTab === 'timeline' ? undefined : 'none' }}>
         <div>
+          {/* Activity Heat Map */}
+          <ActivityHeatMap incidentId={id!} />
+
+          {/* Divider */}
+          <div style={{ borderTop: '1px solid #30363d', margin: '24px 0' }} />
+
           {/* Filters */}
           <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
             <select
