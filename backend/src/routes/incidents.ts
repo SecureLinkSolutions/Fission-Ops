@@ -263,3 +263,123 @@ router.get('/:id/checklist-summary', authenticate, async (req: Request, res: Res
     checked: Number(r.checked),
   })));
 });
+
+// Activity heatmap endpoint
+router.get('/:id/activity-heatmap', authenticate, async (req: Request, res: Response) => {
+  const { pool } = await import('../db/pool');
+  const incidentId = req.params.id;
+
+  // Get incident start
+  const incResult = await pool.query<{ created_at: Date }>(
+    `SELECT created_at FROM incidents WHERE id = $1`,
+    [incidentId],
+  );
+  if (incResult.rowCount === 0) {
+    res.status(404).json({ error: 'Incident not found', code: 'NOT_FOUND' });
+    return;
+  }
+  const incidentStart = incResult.rows[0].created_at;
+  const incidentEnd = new Date();
+  const durationDays = (incidentEnd.getTime() - incidentStart.getTime()) / (1000 * 60 * 60 * 24);
+
+  let bucketSize: 'hour' | '6hour' | 'day';
+  if (durationDays < 2) {
+    bucketSize = 'hour';
+  } else if (durationDays < 14) {
+    bucketSize = '6hour';
+  } else {
+    bucketSize = 'day';
+  }
+
+  const bucketExpr = bucketSize === '6hour'
+    ? `date_trunc('hour', ts) - (EXTRACT(HOUR FROM ts)::int % 6) * INTERVAL '1 hour'`
+    : bucketSize === 'hour'
+      ? `date_trunc('hour', ts)`
+      : `date_trunc('day', ts)`;
+
+  const eventsQuery = await pool.query<{ bucket: Date; action_type: string; cnt: string }>(
+    `WITH events AS (
+      SELECT e.created_at AS ts, 'ENTITY_CREATED' AS action_type
+      FROM entities e WHERE e.incident_id = $1
+      UNION ALL
+      SELECT ekm.mapped_at, 'KILL_CHAIN_MAPPED'
+      FROM entity_kill_chain_mappings ekm
+      JOIN entities e ON e.id = ekm.entity_id
+      WHERE e.incident_id = $1
+      UNION ALL
+      SELECT est.created_at, 'TTP_ASSIGNED'
+      FROM entity_stage_ttps est
+      JOIN entity_kill_chain_mappings ekm ON ekm.id = est.kill_chain_mapping_id
+      JOIN entities e ON e.id = ekm.entity_id
+      WHERE e.incident_id = $1
+      UNION ALL
+      SELECT er.created_at, 'RELATIONSHIP_CREATED'
+      FROM entity_relationships er
+      WHERE er.incident_id = $1
+      UNION ALL
+      SELECT al.created_at, CASE
+        WHEN al.action IN ('CREATE', 'UPDATE') THEN 'STATUS_CHANGED'
+        ELSE 'OTHER'
+      END
+      FROM audit_logs al
+      WHERE al.resource_type = 'incident' AND al.resource_id = $1
+    )
+    SELECT ${bucketExpr} AS bucket, action_type, COUNT(*)::text AS cnt
+    FROM events
+    GROUP BY bucket, action_type
+    ORDER BY bucket`,
+    [incidentId],
+  );
+
+  type TypeKey = 'ENTITY_CREATED' | 'KILL_CHAIN_MAPPED' | 'TTP_ASSIGNED' | 'RELATIONSHIP_CREATED' | 'IOC_FLAGGED' | 'STATUS_CHANGED' | 'OTHER';
+  const typeKeys: TypeKey[] = ['ENTITY_CREATED', 'KILL_CHAIN_MAPPED', 'TTP_ASSIGNED', 'RELATIONSHIP_CREATED', 'IOC_FLAGGED', 'STATUS_CHANGED', 'OTHER'];
+  const emptyByType = (): Record<TypeKey, number> => Object.fromEntries(typeKeys.map((k) => [k, 0])) as Record<TypeKey, number>;
+
+  const bucketMap = new Map<string, { bucket_start: Date; by_type: Record<TypeKey, number>; count: number }>();
+  for (const row of eventsQuery.rows) {
+    const key = new Date(row.bucket).toISOString();
+    if (!bucketMap.has(key)) {
+      bucketMap.set(key, { bucket_start: new Date(row.bucket), by_type: emptyByType(), count: 0 });
+    }
+    const bucket = bucketMap.get(key)!;
+    const typeKey: TypeKey = typeKeys.includes(row.action_type as TypeKey) ? (row.action_type as TypeKey) : 'OTHER';
+    bucket.by_type[typeKey] += Number(row.cnt);
+    bucket.count += Number(row.cnt);
+  }
+
+  const buckets: Array<{ bucket_start: string; count: number; by_type: Record<TypeKey, number> }> = [];
+  const typeTotals = emptyByType();
+
+  let cursor = new Date(incidentStart);
+  if (bucketSize === 'hour') {
+    cursor.setMinutes(0, 0, 0);
+  } else if (bucketSize === '6hour') {
+    cursor.setMinutes(0, 0, 0);
+    cursor.setHours(Math.floor(cursor.getHours() / 6) * 6);
+  } else {
+    cursor.setHours(0, 0, 0, 0);
+  }
+
+  while (cursor <= incidentEnd) {
+    const key = cursor.toISOString();
+    const existing = bucketMap.get(key);
+    const by_type = existing ? existing.by_type : emptyByType();
+    const count = existing ? existing.count : 0;
+    buckets.push({ bucket_start: cursor.toISOString(), count, by_type });
+    for (const k of typeKeys) typeTotals[k] += by_type[k];
+
+    const next = new Date(cursor);
+    if (bucketSize === 'hour') next.setHours(next.getHours() + 1);
+    else if (bucketSize === '6hour') next.setHours(next.getHours() + 6);
+    else next.setDate(next.getDate() + 1);
+    cursor = next;
+  }
+
+  res.json({
+    bucket_size: bucketSize,
+    incident_start: incidentStart.toISOString(),
+    incident_end: incidentEnd.toISOString(),
+    buckets,
+    type_totals: typeTotals,
+  });
+});
