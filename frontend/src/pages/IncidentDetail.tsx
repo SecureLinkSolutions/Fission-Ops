@@ -11,6 +11,7 @@ import EntityRelationshipGraph from '../components/EntityRelationshipGraph';
 import NetworkBoundaryFlow from '../components/NetworkBoundaryFlow';
 import CommentThread from '../components/CommentThread';
 import TaskBoard, { Task } from '../components/TaskBoard';
+import RemediationBoard from '../components/RemediationBoard';
 import AffectedAssets from '../components/AffectedAssets';
 import PresenceBar from '../components/PresenceBar';
 import SuggestedActions from '../components/SuggestedActions';
@@ -40,7 +41,7 @@ function badge(color: string, text: string): React.ReactElement {
   return <span style={{ background: `${color}22`, color, border: `1px solid ${color}44`, borderRadius: '20px', padding: '3px 10px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' as const }}>{text}</span>;
 }
 
-type Tab = 'entities' | 'killchain' | 'relationships' | 'network' | 'timeline' | 'tasks' | 'assets' | 'summary';
+type Tab = 'entities' | 'killchain' | 'relationships' | 'network' | 'timeline' | 'tasks' | 'assets' | 'remediation' | 'summary';
 
 export default function IncidentDetail() {
   const { id } = useParams<{ id: string }>();
@@ -95,6 +96,10 @@ export default function IncidentDetail() {
       const tl = r.data as Task[];
       return { total: tl.length, complete: tl.filter((t: Task) => t.status === 'complete').length };
     }), [id],
+  );
+
+  const { data: remediationProgress } = useFetch<{ total: number; verified: number }>(
+    () => apiClient.get(`/incidents/${id}/remediation/progress`).then((r) => r.data), [id],
   );
 
   const timelineParams = new URLSearchParams();
@@ -236,6 +241,11 @@ export default function IncidentDetail() {
                 {taskStats.complete}/{taskStats.total} tasks
               </span>
             )}
+            {remediationProgress && remediationProgress.total > 0 && (
+              <span style={{ color: '#3fb950', fontSize: '13px', background: '#3fb95022', padding: '2px 8px', borderRadius: '4px', border: '1px solid #3fb95044' }}>
+                {remediationProgress.verified}/{remediationProgress.total} remediated
+              </span>
+            )}
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
@@ -295,6 +305,7 @@ export default function IncidentDetail() {
           ['timeline', 'Timeline'],
           ['tasks', `Tasks (${tasks?.length ?? 0})`],
           ['assets', `Assets (${entities?.length ?? 0})`],
+          ['remediation', 'Remediation'],
         ] as [Tab, string][]).map(([key, label]) => (
           <button
             key={key}
@@ -462,6 +473,16 @@ export default function IncidentDetail() {
             incidentId={id!}
             incidentTitle={incident.title}
             entities={entities ?? []}
+          />
+        )}
+      </div>
+
+      <div style={{ display: activeTab === 'remediation' ? undefined : 'none' }}>
+        {visitedTabs.has('remediation') && (
+          <RemediationBoard
+            incidentId={id!}
+            entities={entities ?? []}
+            teamMembers={teamMembers}
           />
         )}
       </div>
