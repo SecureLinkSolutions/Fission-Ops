@@ -240,6 +240,25 @@ export default function IncidentDetail() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
           <PresenceBar presenceList={presenceList} connected={connected} />
+          <Link
+            to={`/incidents/${id}/war-room`}
+            style={{
+              background: 'transparent',
+              border: '1px solid #f97316',
+              borderRadius: '6px',
+              padding: '8px 16px',
+              color: '#f97316',
+              fontSize: '13px',
+              fontWeight: 700,
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              letterSpacing: '0.03em',
+            }}
+          >
+            ⚡ War Room
+          </Link>
           {isFeatureEnabled('pdf_export') ? (
             <button
               onClick={() => window.open(`${API_BASE}/incidents/${id}/report`, '_blank')}
