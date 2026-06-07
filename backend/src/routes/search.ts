@@ -12,6 +12,7 @@ const searchQuerySchema = z.object({
 router.get('/', authenticate, async (req: Request, res: Response) => {
   const { q } = searchQuerySchema.parse(req.query);
   const pattern = `%${q}%`;
+  const orgId = req.user!.org_id;
 
   const [incidentsResult, entitiesResult] = await Promise.all([
     pool.query<{
@@ -23,10 +24,11 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
     }>(
       `SELECT id, title, severity, status, created_at
        FROM incidents
-       WHERE (title ILIKE $1 OR description ILIKE $1)
+       WHERE org_id = $2
+         AND (title ILIKE $1 OR description ILIKE $1)
        ORDER BY created_at DESC
        LIMIT 10`,
-      [pattern],
+      [pattern, orgId],
     ),
     pool.query<{
       id: string;
@@ -39,10 +41,11 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
       `SELECT e.id, e.incident_id, e.type, e.value, e.ioc_status, i.title AS incident_title
        FROM entities e
        JOIN incidents i ON i.id = e.incident_id
-       WHERE e.value ILIKE $1
+       WHERE i.org_id = $2
+         AND e.value ILIKE $1
        ORDER BY e.created_at DESC
        LIMIT 10`,
-      [pattern],
+      [pattern, orgId],
     ),
   ]);
 

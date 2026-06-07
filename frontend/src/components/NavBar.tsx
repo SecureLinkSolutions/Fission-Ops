@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../api/client';
+import { SEVERITY_COLORS, ENTITY_TYPE_ICONS } from '../utils/constants';
 import logoUrl from '../assets/logo.svg';
 
 interface SearchIncident {
@@ -26,23 +27,6 @@ interface SearchResults {
   entities: SearchEntity[];
 }
 
-const SEVERITY_COLORS: Record<string, string> = {
-  critical: '#f85149',
-  high: '#f0883e',
-  medium: '#d29922',
-  low: '#3fb950',
-};
-
-const ENTITY_ICONS: Record<string, string> = {
-  hostname: '🖥',
-  ip: '🌐',
-  email: '📧',
-  domain: '🔗',
-  account: '👤',
-  file: '📄',
-  url: '🔗',
-  hash: '#️⃣',
-};
 
 interface ConnectionDotProps {
   state: 'connected' | 'reconnecting' | 'disconnected';
@@ -227,7 +211,7 @@ export default function NavBar({ connectionState }: NavBarProps) {
                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#21262d'; }}
                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
                   >
-                    <span style={{ flexShrink: 0 }}>{ENTITY_ICONS[ent.type] ?? '•'}</span>
+                    <span style={{ flexShrink: 0 }}>{ENTITY_TYPE_ICONS[ent.type] ?? '•'}</span>
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{ent.value}</span>
                     <span style={{ color: '#484f58', fontSize: '11px', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '80px', whiteSpace: 'nowrap' }}>{ent.incident_title}</span>
                   </Link>
