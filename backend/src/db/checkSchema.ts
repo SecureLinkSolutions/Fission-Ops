@@ -2,6 +2,7 @@ import { pool } from './pool';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { seedMitre } from './seedMitre';
+import { seedTTPRelationships } from '../repositories/ttpSuggestionRepository';
 
 export async function checkSchema(): Promise<void> {
   const result = await pool.query(
@@ -206,5 +207,17 @@ async function runMigrations(): Promise<void> {
     await pool.query(sql);
     console.log('✅ Migration 012 applied');
   }
+
+  const needsMigration016 = await pool.query(
+    `SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'ttp_relationships'`,
+  );
+  if ((needsMigration016.rowCount ?? 0) === 0) {
+    console.log('⚙️  Running migration 016...');
+    const migrationPath016 = join(__dirname, '../../../../db/migrate_016.sql');
+    const sql016 = readFileSync(migrationPath016, 'utf8');
+    await pool.query(sql016);
+    console.log('✅ Migration 016 applied');
+  }
+  await seedTTPRelationships().catch((e) => console.warn('TTP relationship seed skipped:', e.message));
 }
 // Note: migration 014 block is appended below

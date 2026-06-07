@@ -4,6 +4,7 @@ import { useFetch } from '../hooks/useFetch';
 import { apiClient } from '../api/client';
 import { KillChainStage, KillChainFramework } from '../types';
 import TTPSearch from './TTPSearch';
+import TTPSuggestionPanel from './TTPSuggestionPanel';
 import { ENTITY_TYPE_ICONS } from '../utils/constants';
 
 interface TTPInfo {
@@ -454,6 +455,11 @@ export default function KillChainFlow({ incidentId }: KillChainFlowProps) {
   const [updating, setUpdating] = useState(false);
   const [ttpModal, setTtpModal] = useState<MatrixRow | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [ttpSuggestions, setTtpSuggestions] = useState<{
+    entityId: string; mappingId: string;
+    techniqueId: string; techniqueName: string;
+    suggestions: { technique_id: string; name: string; weight: number }[];
+  } | null>(null);
   const matrixRef = useRef<MatrixRow[]>([]);
   const columnRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
@@ -678,9 +684,57 @@ export default function KillChainFlow({ incidentId }: KillChainFlowProps) {
           mappingId={ttpModal.mapping_id}
           entityId={ttpModal.entity_id}
           entityValue={ttpModal.value}
-          onUpdated={refetchMatrix}
+          onUpdated={async (addedTechniqueId?: string, addedTechniqueName?: string) => {
+            refetchMatrix();
+            if (addedTechniqueId && addedTechniqueName && ttpModal) {
+              try {
+                const res = await apiClient.get(
+                  `/incidents/${incidentId}/ttp-suggestions?technique_id=${addedTechniqueId}`,
+                );
+                const suggestions = res.data as { technique_id: string; name: string; weight: number }[];
+                if (suggestions.length > 0) {
+                  setTtpSuggestions({
+                    entityId: ttpModal.entity_id,
+                    mappingId: ttpModal.mapping_id,
+                    techniqueId: addedTechniqueId,
+                    techniqueName: addedTechniqueName,
+                    suggestions,
+                  });
+                }
+              } catch { /* suggestions are non-critical */ }
+            }
+          }}
           onClose={() => setTtpModal(null)}
         />
+      )}
+      {ttpSuggestions && (
+        <div style={{
+          position: 'fixed', bottom: '80px', right: '24px',
+          width: '380px', zIndex: 500,
+        }}>
+          <TTPSuggestionPanel
+            incidentId={incidentId}
+            entityId={ttpSuggestions.entityId}
+            triggerTechniqueId={ttpSuggestions.techniqueId}
+            triggerTechniqueName={ttpSuggestions.techniqueName}
+            suggestions={ttpSuggestions.suggestions}
+            onAddTTP={async (techniqueId, techniqueName) => {
+              // Assign the suggested TTP to the same mapping
+              await apiClient.post(
+                `/entities/${ttpSuggestions.entityId}/kill-chain/${ttpSuggestions.mappingId}/ttps`,
+                { technique_id: techniqueId },
+              ).catch(() => {});
+              refetchMatrix();
+              // Update suggestion list name for context
+              setTtpSuggestions((prev) => prev ? {
+                ...prev,
+                techniqueId: techniqueId,
+                techniqueName: techniqueName,
+              } : null);
+            }}
+            onDismiss={() => setTtpSuggestions(null)}
+          />
+        </div>
       )}
     </div>
   );

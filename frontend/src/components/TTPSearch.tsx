@@ -23,7 +23,7 @@ interface Props {
   mappingId: string;
   entityId: string;
   entityValue: string;
-  onUpdated: () => void;
+  onUpdated: (techniqueId?: string, techniqueName?: string) => void;
   onClose: () => void;
 }
 
@@ -58,10 +58,10 @@ export default function TTPSearch({ mappingId, entityId, entityValue, onUpdated,
 
   const assignedIds = new Set((assigned ?? []).map((a) => a.ttp_id));
 
-  async function assign(ttpId: string) {
-    await apiClient.post(`/entities/${entityId}/kill-chain/${mappingId}/ttps`, { ttp_id: ttpId });
+  async function assign(ttp: TTP) {
+    await apiClient.post(`/entities/${entityId}/kill-chain/${mappingId}/ttps`, { ttp_id: ttp.id });
     refetchAssigned();
-    onUpdated();
+    onUpdated(ttp.technique_id, ttp.name);
   }
 
   async function remove(entityStageTtpId: string) {
@@ -151,7 +151,7 @@ export default function TTPSearch({ mappingId, entityId, entityValue, onUpdated,
             return (
               <div
                 key={ttp.id}
-                onClick={() => assign(ttp.id)}
+                onClick={() => assign(ttp)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '12px',
                   padding: '10px 20px', cursor: 'pointer', borderBottom: '1px solid #21262d',

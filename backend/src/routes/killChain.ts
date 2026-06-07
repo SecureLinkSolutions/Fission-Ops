@@ -9,6 +9,7 @@ import * as entityRepo from '../repositories/entityRepository';
 import { createError } from '../middleware/errorHandler';
 import { ttpMappingRouter } from './ttps';
 import { pool } from '../db/pool';
+import * as suggestionRepo from '../repositories/ttpSuggestionRepository';
 
 const router = Router();
 
@@ -147,6 +148,45 @@ Write the narrative in past tense, third person. Be specific and technical. Don'
 
   const narrative = message.content[0].type === 'text' ? message.content[0].text : '';
   res.json({ narrative });
+});
+
+// TTP co-occurrence suggestions
+router.get('/incidents/:incidentId/ttp-suggestions', authenticate, async (req: Request, res: Response) => {
+  const { technique_id } = z.object({ technique_id: z.string().min(1) }).parse(req.query);
+
+  // Get all techniques already assigned on this incident
+  const assignedResult = await pool.query(
+    `SELECT DISTINCT t.technique_id
+     FROM entity_stage_ttps est
+     JOIN ttps t ON t.id = est.ttp_id
+     JOIN entity_kill_chain_mappings ekm ON ekm.id = est.mapping_id
+     JOIN entities e ON e.id = ekm.entity_id
+     WHERE e.incident_id = $1`,
+    [req.params.incidentId],
+  );
+  const alreadyAssigned = assignedResult.rows.map((r: { technique_id: string }) => r.technique_id);
+
+  const suggestions = await suggestionRepo.getSuggestionsForTechnique(technique_id, alreadyAssigned);
+  res.json(suggestions);
+});
+
+router.post('/incidents/:incidentId/ttp-suggestions/log', authenticate, async (req: Request, res: Response) => {
+  const body = z.object({
+    suggested_technique_id: z.string(),
+    trigger_technique_id: z.string(),
+    action: z.enum(['accepted', 'dismissed']),
+    entity_id: z.string().uuid(),
+  }).parse(req.body);
+
+  await suggestionRepo.logSuggestion({
+    incident_id: req.params.incidentId,
+    entity_id: body.entity_id,
+    suggested_technique_id: body.suggested_technique_id,
+    trigger_technique_id: body.trigger_technique_id,
+    action: body.action,
+    user_id: req.user!.sub,
+  });
+  res.json({ ok: true });
 });
 
 router.use('/entities/:entityId/kill-chain/:mappingId/ttps', ttpMappingRouter);
