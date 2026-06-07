@@ -6,6 +6,7 @@ import { pool } from '../db/pool';
 import { createNotification } from '../repositories/notificationRepository';
 import { sendEmail } from '../services/emailService';
 import { emitToIncident } from '../socket';
+import { recordCustody } from '../repositories/custodyRepository';
 
 const router = Router();
 
@@ -66,6 +67,16 @@ router.patch('/entities/:entityId/ioc-status', authenticate, async (req: Request
   }
 
   res.json(entity);
+  recordCustody({
+    entity_id: req.params.entityId,
+    incident_id: entity.incident_id,
+    action: 'ioc_status_changed',
+    actor_id: req.user!.sub,
+    actor_name: req.user!.email,
+    actor_role: req.user!.role,
+    actor_ip: req.ip,
+    details: { new_status: status, notes },
+  }).catch(() => {});
 });
 
 export default router;

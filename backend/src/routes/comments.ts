@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { authenticate } from '../middleware/auth';
 import * as repo from '../repositories/commentRepository';
+import { recordCustody } from '../repositories/custodyRepository';
 
 const router = Router({ mergeParams: true });
 
@@ -39,6 +40,15 @@ router.post('/entities/:entityId/comments', authenticate, async (req: Request, r
     org_id: req.user!.org_id,
   });
   res.status(201).json(comment);
+  recordCustody({
+    entity_id: req.params.entityId,
+    action: 'comment_added',
+    actor_id: req.user!.sub,
+    actor_name: req.user!.email,
+    actor_role: req.user!.role,
+    actor_ip: req.ip,
+    details: { comment_id: comment.id },
+  }).catch(() => {});
 });
 
 // PATCH /comments/:id

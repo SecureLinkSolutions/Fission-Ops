@@ -5,13 +5,23 @@ import { requireRole } from '../middleware/rbac';
 import { updateEntitySchema } from '../schemas/entity';
 import * as repo from '../repositories/entityRepository';
 import { createError } from '../middleware/errorHandler';
+import { recordCustody, getCustodyLog } from '../repositories/custodyRepository';
 
 const router = Router();
 
 router.get('/:id', authenticate, async (req: Request, res: Response) => {
-  const entity = await repo.getEntityWithMappings(req.params.id);
+  const entity = await repo.getEntityWithMappings(req.params.id) as ({ incident_id?: string } | null);
   if (!entity) throw createError('Entity not found', 404, 'NOT_FOUND');
   res.json(entity);
+  recordCustody({
+    entity_id: req.params.id,
+    incident_id: entity.incident_id,
+    action: 'entity_viewed',
+    actor_id: req.user!.sub,
+    actor_name: req.user!.email,
+    actor_role: req.user!.role,
+    actor_ip: req.ip,
+  }).catch(() => {});
 });
 
 router.put('/:id', authenticate, requireRole('senior_analyst'), async (req: Request, res: Response) => {
@@ -19,6 +29,16 @@ router.put('/:id', authenticate, requireRole('senior_analyst'), async (req: Requ
   const entity = await repo.updateEntity(req.params.id, body);
   if (!entity) throw createError('Entity not found', 404, 'NOT_FOUND');
   res.json(entity);
+  recordCustody({
+    entity_id: req.params.id,
+    incident_id: entity.incident_id,
+    action: 'entity_edited',
+    actor_id: req.user!.sub,
+    actor_name: req.user!.email,
+    actor_role: req.user!.role,
+    actor_ip: req.ip,
+    details: { fields_changed: Object.keys(req.body) },
+  }).catch(() => {});
 });
 
 router.patch('/:id/status', authenticate, requireRole('analyst'), async (req: Request, res: Response) => {
@@ -34,6 +54,11 @@ router.delete('/:id', authenticate, requireRole('incident_commander'), async (re
   const deleted = await repo.deleteEntity(req.params.id);
   if (!deleted) throw createError('Entity not found', 404, 'NOT_FOUND');
   res.status(204).send();
+});
+
+router.get('/:id/custody-log', authenticate, async (req: Request, res: Response) => {
+  const log = await getCustodyLog(req.params.id);
+  res.json(log);
 });
 
 export default router;

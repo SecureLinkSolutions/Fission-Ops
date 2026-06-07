@@ -11,6 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import EntityStatusBadge, { ENTITY_STATUS_CONFIG } from '../components/EntityStatusBadge';
 import SuggestedActions from '../components/SuggestedActions';
 import ContainmentChecklist from '../components/ContainmentChecklist';
+import CustodyLog from '../components/CustodyLog';
 import { ROLE_RANK, ENTITY_TYPE_ICONS, ENTITY_TYPE_COLORS } from '../utils/constants';
 
 const IOC_STATUS_DISPLAY: Record<string, { label: string; color: string }> = {
@@ -63,7 +64,7 @@ interface ExtendedEntity extends Entity {
 export default function EntityDetail() {
   const { id, entityId } = useParams<{ id: string; entityId: string }>();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'overview' | 'enrichment' | 'checklist'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'enrichment' | 'checklist' | 'custody'>('overview');
   const [iocNotes, setIocNotes] = useState('');
   const [statusChanging, setStatusChanging] = useState(false);
   const [settingIOC, setSettingIOC] = useState(false);
@@ -167,7 +168,7 @@ export default function EntityDetail() {
 
       {/* Tab Bar */}
       <div style={{ display: 'flex', gap: '0', borderBottom: '1px solid #30363d', marginBottom: '24px' }}>
-        {(['overview', 'enrichment', 'checklist'] as const).map((tab) => (
+        {(['overview', 'enrichment', 'checklist', 'custody'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -183,7 +184,7 @@ export default function EntityDetail() {
               marginBottom: '-1px',
             }}
           >
-            {tab === 'enrichment' ? 'Enrichment' : tab === 'checklist' ? 'Checklist' : 'Overview'}
+            {tab === 'enrichment' ? 'Enrichment' : tab === 'checklist' ? 'Checklist' : tab === 'custody' ? 'Chain of Custody' : 'Overview'}
           </button>
         ))}
       </div>
@@ -194,6 +195,10 @@ export default function EntityDetail() {
 
       {activeTab === 'checklist' && entityId && entity && (
         <ContainmentChecklist entityId={entityId} entityType={entity.type} />
+      )}
+
+      {activeTab === 'custody' && entityId && (
+        <CustodyLog entityId={entityId} />
       )}
 
       {activeTab === 'overview' && (<>

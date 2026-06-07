@@ -219,5 +219,16 @@ async function runMigrations(): Promise<void> {
     console.log('✅ Migration 016 applied');
   }
   await seedTTPRelationships().catch((e) => console.warn('TTP relationship seed skipped:', e.message));
+
+  const needsMigration017 = await pool.query(
+    `SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'evidence_custody_log'`,
+  );
+  if ((needsMigration017.rowCount ?? 0) === 0) {
+    console.log('⚙️  Running migration 017...');
+    const migrationPath017 = join(__dirname, '../../../../db/migrate_017.sql');
+    const sql017 = readFileSync(migrationPath017, 'utf8');
+    await pool.query(sql017);
+    console.log('✅ Migration 017 applied');
+  }
 }
 // Note: migration 014 block is appended below

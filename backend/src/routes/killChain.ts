@@ -10,6 +10,7 @@ import { createError } from '../middleware/errorHandler';
 import { ttpMappingRouter } from './ttps';
 import { pool } from '../db/pool';
 import * as suggestionRepo from '../repositories/ttpSuggestionRepository';
+import { recordCustody } from '../repositories/custodyRepository';
 
 const router = Router();
 
@@ -27,6 +28,16 @@ router.post('/entities/:entityId/kill-chain', authenticate, requireRole('analyst
   const body = killChainMappingSchema.parse(req.body);
   const mapping = await repo.mapEntityToStage({ ...body, entity_id: req.params.entityId, mapped_by: req.user!.sub });
   res.status(201).json(mapping);
+  recordCustody({
+    entity_id: req.params.entityId,
+    incident_id: entity.incident_id,
+    action: 'kill_chain_mapped',
+    actor_id: req.user!.sub,
+    actor_name: req.user!.email,
+    actor_role: req.user!.role,
+    actor_ip: req.ip,
+    details: { stage_id: body.stage_id, confidence: body.confidence },
+  }).catch(() => {});
 });
 
 router.patch('/entities/:entityId/kill-chain/:mappingId', authenticate, requireRole('analyst'), async (req: Request, res: Response) => {

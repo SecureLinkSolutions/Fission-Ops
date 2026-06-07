@@ -4,6 +4,7 @@ import { queryVirusTotal } from './virustotal';
 import { queryAbuseIPDB } from './abuseipdb';
 import { queryShodan } from './shodan';
 import { emitToIncident } from '../../socket';
+import { recordCustody } from '../../repositories/custodyRepository';
 
 function isPrivateIP(ip: string): boolean {
   const parts = ip.split('.').map(Number);
@@ -197,4 +198,13 @@ export async function runEnrichment(entityId: string, orgId: string, triggeredBy
   if (entity.incident_id) {
     emitToIncident(entity.incident_id, 'entity:enriched', { entityId, verdict, enrichmentData });
   }
+
+  recordCustody({
+    entity_id: entityId,
+    incident_id: entity.incident_id,
+    action: 'enrichment_retrieved',
+    actor_id: triggeredBy,
+    actor_name: triggeredByName,
+    details: { sources: ['virustotal', 'abuseipdb', 'shodan'], verdict },
+  }).catch(() => {});
 }
