@@ -167,7 +167,7 @@ export default function IncidentDetail() {
   const canChangeStatusField = ROLE_RANK[user?.role ?? ''] >= ROLE_RANK['incident_commander'];
 
   return (
-    <div style={{ padding: '32px', maxWidth: '1400px', margin: '0 auto' }}>
+    <div style={{ padding: '32px', maxWidth: '1400px', margin: '0 auto', paddingRight: commentPanelOpen ? '436px' : '32px', transition: 'padding-right 0.3s ease' }}>
       <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <div style={{ color: '#8b949e', fontSize: '12px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { apiClient } from '../api/client';
 import { useFetch } from '../hooks/useFetch';
 import { useAuth } from '../context/AuthContext';
@@ -78,10 +78,12 @@ function RemediationCard({
   item,
   onRefresh,
   canVerify,
+  onDragStart,
 }: {
   item: RemediationItem;
   onRefresh: () => void;
   canVerify: boolean;
+  onDragStart: (id: string) => void;
 }) {
   const { user } = useAuth();
   const currentStatusIdx = STATUS_ORDER.indexOf(item.status);
@@ -111,10 +113,14 @@ function RemediationCard({
   const col = COLUMNS.find((c) => c.key === item.status)!;
 
   return (
-    <div style={{
-      background: '#161b22', border: '1px solid #30363d', borderRadius: '8px',
-      padding: '12px', marginBottom: '8px',
-    }}>
+    <div
+      draggable
+      onDragStart={() => onDragStart(item.id)}
+      style={{
+        background: '#161b22', border: '1px solid #30363d', borderRadius: '8px',
+        padding: '12px', marginBottom: '8px', cursor: 'grab',
+      }}
+    >
       <div style={{ fontWeight: 600, fontSize: '13px', color: '#e6edf3', marginBottom: '8px' }}>{item.title}</div>
 
       {item.entity_id && item.entity_type ? (
@@ -200,6 +206,23 @@ export default function RemediationBoard({ incidentId, entities, teamMembers }: 
     () => apiClient.get(`/incidents/${incidentId}/remediation`).then((r) => r.data),
     [incidentId],
   );
+
+  const dragItemId = useRef<string | null>(null);
+  const [dragOverCol, setDragOverCol] = useState<string | null>(null);
+
+  async function handleDrop(targetStatus: RemediationItem['status']) {
+    const id = dragItemId.current;
+    if (!id) return;
+    const item = (items ?? []).find((i) => i.id === id);
+    if (!item || item.status === targetStatus) return;
+    const data: Record<string, unknown> = { status: targetStatus };
+    if (targetStatus === 'verified') {
+      data.verified_by = user?.id;
+      data.verified_by_name = user?.name ?? user?.email ?? '';
+    }
+    await apiClient.patch(`/incidents/${incidentId}/remediation/${id}`, data);
+    refetch();
+  }
 
   const [showForm, setShowForm] = useState(false);
   const [formTitle, setFormTitle] = useState('');
@@ -310,18 +333,38 @@ export default function RemediationBoard({ incidentId, entities, teamMembers }: 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
         {COLUMNS.map((col) => {
           const colItems = columnItems(col.key);
+          const isOver = dragOverCol === col.key;
           return (
-            <div key={col.key} style={{ background: '#0d1117', border: '1px solid #30363d', borderRadius: '8px', padding: '12px' }}>
+            <div
+              key={col.key}
+              onDragOver={(e) => { e.preventDefault(); setDragOverCol(col.key); }}
+              onDragLeave={() => setDragOverCol(null)}
+              onDrop={() => { setDragOverCol(null); handleDrop(col.key); }}
+              style={{
+                background: isOver ? '#1c2128' : '#0d1117',
+                border: `1px solid ${isOver ? col.color : '#30363d'}`,
+                borderRadius: '8px', padding: '12px',
+                transition: 'border-color 0.15s, background 0.15s',
+              }}
+            >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                 <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: col.color }} />
                 <span style={{ fontWeight: 600, fontSize: '13px', color: col.color }}>{col.label}</span>
                 <span style={{ marginLeft: 'auto', background: '#21262d', color: '#8b949e', borderRadius: '10px', padding: '1px 7px', fontSize: '11px' }}>{colItems.length}</span>
               </div>
               {colItems.length === 0 ? (
-                <div style={{ color: '#484f58', fontSize: '12px', textAlign: 'center', padding: '16px 0' }}>No items</div>
+                <div style={{ color: '#484f58', fontSize: '12px', textAlign: 'center', padding: '16px 0' }}>
+                  {isOver ? 'Drop here' : 'No items'}
+                </div>
               ) : (
                 colItems.map((item) => (
-                  <RemediationCard key={item.id} item={item} onRefresh={refetch} canVerify={canVerify} />
+                  <RemediationCard
+                    key={item.id}
+                    item={item}
+                    onRefresh={refetch}
+                    canVerify={canVerify}
+                    onDragStart={(id) => { dragItemId.current = id; }}
+                  />
                 ))
               )}
             </div>
