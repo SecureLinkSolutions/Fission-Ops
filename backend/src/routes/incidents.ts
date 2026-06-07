@@ -10,6 +10,20 @@ import * as assignRepo from '../repositories/userManagementRepository';
 
 const router = Router();
 
+// Returns the orgId to use for scoping queries (undefined for super_admin = no filter).
+// Call at the start of any endpoint that accepts an incidentId path param.
+// Returns null if the incident doesn't belong to the user's org (caller should 404).
+async function resolveOrgId(
+  incidentId: string,
+  userRole: string,
+  userOrgId: string | undefined,
+): Promise<{ orgId: string | undefined } | null> {
+  if (userRole === 'super_admin') return { orgId: undefined };
+  const incident = await repo.getIncidentById(incidentId, userOrgId);
+  if (!incident) return null;
+  return { orgId: userOrgId };
+}
+
 router.get('/', authenticate, async (req: Request, res: Response) => {
   const query = listIncidentsQuerySchema.parse(req.query);
   const isSuperAdmin = req.user!.role === 'super_admin';
@@ -123,6 +137,8 @@ router.delete(
 
 // Timeline endpoint
 router.get('/:id/timeline', authenticate, async (req: Request, res: Response) => {
+  const scope = await resolveOrgId(req.params.id, req.user!.role, req.user!.org_id);
+  if (!scope) { res.status(404).json({ error: 'Incident not found', code: 'NOT_FOUND' }); return; }
   const actionType = req.query.action_type as string | undefined;
   const userId = req.query.user_id as string | undefined;
   const entries = await getIncidentTimeline(req.params.id, actionType, userId);
@@ -131,6 +147,8 @@ router.get('/:id/timeline', authenticate, async (req: Request, res: Response) =>
 
 // Incident assignments
 router.get('/:incidentId/assignments', authenticate, async (req: Request, res: Response) => {
+  const scope = await resolveOrgId(req.params.incidentId, req.user!.role, req.user!.org_id);
+  if (!scope) { res.status(404).json({ error: 'Incident not found', code: 'NOT_FOUND' }); return; }
   const assignments = await assignRepo.listIncidentAssignments(req.params.incidentId);
   res.json(assignments);
 });
@@ -140,6 +158,8 @@ router.post(
   authenticate,
   requireRole('incident_commander'),
   async (req: Request, res: Response) => {
+    const scope = await resolveOrgId(req.params.incidentId, req.user!.role, req.user!.org_id);
+    if (!scope) { res.status(404).json({ error: 'Incident not found', code: 'NOT_FOUND' }); return; }
     const { user_id } = z.object({ user_id: z.string().uuid() }).parse(req.body);
     const assignment = await assignRepo.assignUserToIncident(
       req.params.incidentId,
@@ -155,6 +175,8 @@ router.delete(
   authenticate,
   requireRole('incident_commander'),
   async (req: Request, res: Response) => {
+    const scope = await resolveOrgId(req.params.incidentId, req.user!.role, req.user!.org_id);
+    if (!scope) { res.status(404).json({ error: 'Incident not found', code: 'NOT_FOUND' }); return; }
     await assignRepo.removeUserFromIncident(req.params.incidentId, req.params.userId);
     res.status(204).send();
   },
@@ -165,11 +187,15 @@ router.delete(
 import * as remediationRepo from '../repositories/remediationRepository';
 
 router.get('/:id/remediation/progress', authenticate, async (req: Request, res: Response) => {
+  const scope = await resolveOrgId(req.params.id, req.user!.role, req.user!.org_id);
+  if (!scope) { res.status(404).json({ error: 'Incident not found', code: 'NOT_FOUND' }); return; }
   const progress = await remediationRepo.getRemediationProgress(req.params.id);
   res.json(progress);
 });
 
 router.get('/:id/remediation', authenticate, async (req: Request, res: Response) => {
+  const scope = await resolveOrgId(req.params.id, req.user!.role, req.user!.org_id);
+  if (!scope) { res.status(404).json({ error: 'Incident not found', code: 'NOT_FOUND' }); return; }
   const items = await remediationRepo.listRemediationItems(req.params.id);
   res.json(items);
 });
@@ -179,6 +205,8 @@ router.post(
   authenticate,
   requireRole('senior_analyst'),
   async (req: Request, res: Response) => {
+    const scope = await resolveOrgId(req.params.id, req.user!.role, req.user!.org_id);
+    if (!scope) { res.status(404).json({ error: 'Incident not found', code: 'NOT_FOUND' }); return; }
     const body = z.object({
       title: z.string().min(1),
       description: z.string().optional(),
@@ -200,6 +228,8 @@ router.patch(
   '/:id/remediation/:itemId',
   authenticate,
   async (req: Request, res: Response) => {
+    const scope = await resolveOrgId(req.params.id, req.user!.role, req.user!.org_id);
+    if (!scope) { res.status(404).json({ error: 'Incident not found', code: 'NOT_FOUND' }); return; }
     const userRank = (req.user!.role === 'super_admin' ? 99 : ['analyst', 'senior_analyst', 'incident_commander'].indexOf(req.user!.role));
     const isSeniorPlus = req.user!.role === 'super_admin' || ['senior_analyst', 'incident_commander'].includes(req.user!.role);
     const body = z.object({
@@ -247,6 +277,8 @@ export default router;
 
 // Checklist summary for all entities in an incident
 router.get('/:id/checklist-summary', authenticate, async (req: Request, res: Response) => {
+  const scope = await resolveOrgId(req.params.id, req.user!.role, req.user!.org_id);
+  if (!scope) { res.status(404).json({ error: 'Incident not found', code: 'NOT_FOUND' }); return; }
   const result = await (await import('../db/pool')).pool.query(
     `SELECT ec.entity_id,
             COUNT(*) AS total,
@@ -269,10 +301,13 @@ router.get('/:id/activity-heatmap', authenticate, async (req: Request, res: Resp
   const { pool } = await import('../db/pool');
   const incidentId = req.params.id;
 
-  // Get incident start
+  // Get incident start — scoped to org
+  const orgFilter = req.user!.role === 'super_admin' ? '' : ' AND org_id = $2';
+  const incParams: unknown[] = [incidentId];
+  if (req.user!.role !== 'super_admin') incParams.push(req.user!.org_id);
   const incResult = await pool.query<{ created_at: Date }>(
-    `SELECT created_at FROM incidents WHERE id = $1`,
-    [incidentId],
+    `SELECT created_at FROM incidents WHERE id = $1${orgFilter}`,
+    incParams,
   );
   if (incResult.rowCount === 0) {
     res.status(404).json({ error: 'Incident not found', code: 'NOT_FOUND' });

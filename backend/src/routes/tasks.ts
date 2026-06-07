@@ -58,6 +58,18 @@ router.post('/incidents/:incidentId/tasks', authenticate, requireRole('senior_an
 });
 
 router.patch('/incidents/:incidentId/tasks/:taskId', authenticate, async (req: Request, res: Response) => {
+  // Verify the task belongs to the specified incident and the user's org
+  if (req.user!.role !== 'super_admin') {
+    const check = await pool.query(
+      `SELECT t.id FROM tasks t JOIN incidents i ON i.id = t.incident_id
+       WHERE t.id = $1 AND t.incident_id = $2 AND i.org_id = $3`,
+      [req.params.taskId, req.params.incidentId, req.user!.org_id],
+    );
+    if (check.rowCount === 0) {
+      res.status(404).json({ error: 'Task not found', code: 'NOT_FOUND' });
+      return;
+    }
+  }
   const { entity_ids, ...body } = taskSchema.partial().parse(req.body);
   const task = await repo.updateTask(req.params.taskId, body);
   if (!task) {
@@ -69,6 +81,17 @@ router.patch('/incidents/:incidentId/tasks/:taskId', authenticate, async (req: R
 });
 
 router.delete('/incidents/:incidentId/tasks/:taskId', authenticate, requireRole('senior_analyst'), async (req: Request, res: Response) => {
+  if (req.user!.role !== 'super_admin') {
+    const check = await pool.query(
+      `SELECT t.id FROM tasks t JOIN incidents i ON i.id = t.incident_id
+       WHERE t.id = $1 AND t.incident_id = $2 AND i.org_id = $3`,
+      [req.params.taskId, req.params.incidentId, req.user!.org_id],
+    );
+    if (check.rowCount === 0) {
+      res.status(404).json({ error: 'Task not found', code: 'NOT_FOUND' });
+      return;
+    }
+  }
   const deleted = await repo.deleteTask(req.params.taskId);
   if (!deleted) {
     res.status(404).json({ error: 'Task not found', code: 'NOT_FOUND' });

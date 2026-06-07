@@ -34,22 +34,24 @@ export function authenticate(req: Request, res: Response, next: NextFunction): v
     return;
   }
   const token = header.slice(7);
+  let payload: JwtPayload;
   try {
-    const payload = jwt.verify(token, config.JWT_SECRET) as JwtPayload;
-    req.user = payload;
-
-    // Async deactivation check — don't block but reject if deactivated
-    isUserDeactivated(payload.sub).then((deactivated) => {
-      if (deactivated) {
-        res.status(401).json({ error: 'Account deactivated', code: 'ACCOUNT_DEACTIVATED' });
-        return;
-      }
-      next();
-    }).catch(() => {
-      // If DB check fails, allow through (fail open)
-      next();
-    });
+    payload = jwt.verify(token, config.JWT_SECRET) as JwtPayload;
   } catch {
     res.status(401).json({ error: 'Invalid or expired token', code: 'TOKEN_INVALID' });
+    return;
   }
+  req.user = payload;
+
+  // Await the deactivation check so response cannot be sent after headers are flushed.
+  // Fail closed: if the DB is unreachable, reject the request rather than allowing through.
+  isUserDeactivated(payload.sub).then((deactivated) => {
+    if (deactivated) {
+      res.status(401).json({ error: 'Account deactivated', code: 'ACCOUNT_DEACTIVATED' });
+      return;
+    }
+    next();
+  }).catch(() => {
+    res.status(503).json({ error: 'Authentication service unavailable', code: 'SERVICE_UNAVAILABLE' });
+  });
 }

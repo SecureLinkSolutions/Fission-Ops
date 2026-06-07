@@ -15,11 +15,17 @@ export interface ManagedUser {
   created_at: Date;
 }
 
-export async function listUsers(): Promise<ManagedUser[]> {
-  const result = await pool.query(
-    `SELECT id, email, name, role, sso_provider, sso_subject, deactivated_at, last_login_at, password_reset_required, created_at
-     FROM users ORDER BY created_at DESC`,
-  );
+const USER_COLS = 'id, email, name, role, org_id, sso_provider, sso_subject, deactivated_at, last_login_at, password_reset_required, created_at';
+
+export async function listUsers(orgId?: string): Promise<ManagedUser[]> {
+  if (orgId) {
+    const result = await pool.query(
+      `SELECT ${USER_COLS} FROM users WHERE org_id = $1 ORDER BY created_at DESC`,
+      [orgId],
+    );
+    return result.rows;
+  }
+  const result = await pool.query(`SELECT ${USER_COLS} FROM users ORDER BY created_at DESC`);
   return result.rows;
 }
 
@@ -28,49 +34,59 @@ export async function createUser(data: {
   name: string;
   role: UserRole;
   password: string;
+  org_id?: string;
 }): Promise<ManagedUser> {
   const hash = await bcrypt.hash(data.password, 12);
   const result = await pool.query(
-    `INSERT INTO users (email, name, role, password_hash)
-     VALUES ($1, $2, $3, $4)
-     RETURNING id, email, name, role, sso_provider, sso_subject, deactivated_at, last_login_at, password_reset_required, created_at`,
-    [data.email, data.name, data.role, hash],
+    `INSERT INTO users (email, name, role, password_hash, org_id)
+     VALUES ($1, $2, $3, $4, $5)
+     RETURNING ${USER_COLS}`,
+    [data.email, data.name, data.role, hash, data.org_id ?? null],
   );
   return result.rows[0];
 }
 
-export async function deactivateUser(id: string): Promise<ManagedUser | null> {
+export async function deactivateUser(id: string, orgId?: string): Promise<ManagedUser | null> {
+  const filter = orgId ? ' AND org_id = $2' : '';
+  const params: unknown[] = [id];
+  if (orgId) params.push(orgId);
   const result = await pool.query(
-    `UPDATE users SET deactivated_at = NOW() WHERE id = $1
-     RETURNING id, email, name, role, sso_provider, sso_subject, deactivated_at, last_login_at, password_reset_required, created_at`,
-    [id],
+    `UPDATE users SET deactivated_at = NOW() WHERE id = $1${filter} RETURNING ${USER_COLS}`,
+    params,
   );
   return result.rows[0] ?? null;
 }
 
-export async function reactivateUser(id: string): Promise<ManagedUser | null> {
+export async function reactivateUser(id: string, orgId?: string): Promise<ManagedUser | null> {
+  const filter = orgId ? ' AND org_id = $2' : '';
+  const params: unknown[] = [id];
+  if (orgId) params.push(orgId);
   const result = await pool.query(
-    `UPDATE users SET deactivated_at = NULL WHERE id = $1
-     RETURNING id, email, name, role, sso_provider, sso_subject, deactivated_at, last_login_at, password_reset_required, created_at`,
-    [id],
+    `UPDATE users SET deactivated_at = NULL WHERE id = $1${filter} RETURNING ${USER_COLS}`,
+    params,
   );
   return result.rows[0] ?? null;
 }
 
-export async function resetUserPassword(id: string, newPassword: string): Promise<boolean> {
+export async function resetUserPassword(id: string, newPassword: string, orgId?: string): Promise<boolean> {
   const hash = await bcrypt.hash(newPassword, 12);
+  const filter = orgId ? ' AND org_id = $3' : '';
+  const params: unknown[] = [hash, id];
+  if (orgId) params.push(orgId);
   const result = await pool.query(
-    `UPDATE users SET password_hash = $1, password_reset_required = TRUE WHERE id = $2`,
-    [hash, id],
+    `UPDATE users SET password_hash = $1, password_reset_required = TRUE WHERE id = $2${filter}`,
+    params,
   );
   return (result.rowCount ?? 0) > 0;
 }
 
-export async function updateUserRole(id: string, role: UserRole): Promise<ManagedUser | null> {
+export async function updateUserRole(id: string, role: UserRole, orgId?: string): Promise<ManagedUser | null> {
+  const filter = orgId ? ' AND org_id = $3' : '';
+  const params: unknown[] = [role, id];
+  if (orgId) params.push(orgId);
   const result = await pool.query(
-    `UPDATE users SET role = $1 WHERE id = $2
-     RETURNING id, email, name, role, sso_provider, sso_subject, deactivated_at, last_login_at, password_reset_required, created_at`,
-    [role, id],
+    `UPDATE users SET role = $1 WHERE id = $2${filter} RETURNING ${USER_COLS}`,
+    params,
   );
   return result.rows[0] ?? null;
 }
