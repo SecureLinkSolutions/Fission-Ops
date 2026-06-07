@@ -16,6 +16,7 @@ import AuditLog from './pages/AuditLog';
 import UserManagement from './pages/UserManagement';
 import LicenseActivation from './pages/LicenseActivation';
 import LicenseAdmin from './pages/LicenseAdmin';
+import Search from './pages/Search';
 import ProtectedRoute from './components/ProtectedRoute';
 import NavBar from './components/NavBar';
 import TopBar from './components/TopBar';
@@ -62,6 +63,7 @@ export default function App() {
             <Route path="/admin/users" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
             <Route path="/admin/license" element={<ProtectedRoute><LicenseAdmin /></ProtectedRoute>} />
             <Route path="/tasks/mine" element={<ProtectedRoute><MyTasks /></ProtectedRoute>} />
+            <Route path="/search" element={<ProtectedRoute><Search /></ProtectedRoute>} />
             <Route path="*" element={<Navigate to={user ? '/incidents' : '/login'} replace />} />
           </Routes>
         </ErrorBoundary>

@@ -26,6 +26,7 @@ import executiveSummaryRouter from './routes/executiveSummary';
 import enrichmentRouter from './routes/enrichment';
 import iocRouter from './routes/ioc';
 import licenseRouter from './routes/license';
+import searchRouter from './routes/search';
 import { requireFeature } from './middleware/featureGate';
 import { errorHandler, notFound } from './middleware/errorHandler';
 
@@ -84,6 +85,7 @@ v1.use('/', executiveSummaryRouter);
 v1.use('/entities/:entityId/enrich', requireFeature('threat_intelligence'));
 v1.use('/', enrichmentRouter);
 v1.use('/', iocRouter);
+v1.use('/search', searchRouter);
 
 app.use('/api/v1', v1);
 app.use(notFound);
