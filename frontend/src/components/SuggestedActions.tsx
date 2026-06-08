@@ -14,6 +14,50 @@ interface Props {
   onCreateTask: (title: string) => void;
 }
 
+// RFC 1918, loopback, link-local, CGNAT, and other non-routable ranges
+function isPrivateIp(value: string): boolean {
+  const v = value.trim();
+  // Strip CIDR suffix if present
+  const addr = v.split('/')[0];
+  const parts = addr.split('.').map(Number);
+  if (parts.length !== 4 || parts.some((p) => isNaN(p) || p < 0 || p > 255)) return false;
+  const [a, b] = parts;
+  return (
+    a === 10 ||
+    a === 127 ||
+    (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && b === 168) ||
+    (a === 169 && b === 254) ||  // link-local
+    (a === 100 && b >= 64 && b <= 127) || // CGNAT RFC 6598
+    (a === 198 && (b === 18 || b === 19)) || // benchmark RFC 2544
+    a === 0 ||
+    (a === 255 && b === 255)     // broadcast
+  );
+}
+
+// Investigation actions for internal / RFC-1918 IPs
+const INVESTIGATE_INTERNAL_IP: string[] = [
+  'Identify the device assigned to {value} via DHCP leases or IPAM',
+  'Search SIEM for all traffic to/from {value} in the last 30 days',
+  'Review firewall and switch logs for connection frequency involving {value}',
+  'Determine which other internal hosts communicated with {value}',
+  'Check network access control (NAC) records — is {value} an authorised device?',
+  'Pull ARP tables from adjacent routers/switches to find the MAC address at {value}',
+  'Review DNS logs for hostnames resolving to {value}',
+  'Check if {value} is within an expected subnet for its apparent role',
+];
+
+// Response actions for internal / RFC-1918 IPs
+const RESPOND_INTERNAL_IP: string[] = [
+  'Isolate the device at {value} at the switch port or via NAC policy',
+  'Block all lateral traffic from {value} at internal firewall/VLAN ACL',
+  'Revoke DHCP lease for {value} and prevent re-assignment to the same device',
+  'Coordinate with network team to identify and physically locate the device at {value}',
+  'Search for active sessions from {value} and terminate them',
+  'Add {value} to SIEM watchlist for ongoing lateral movement detection',
+  'Document device identity, owner, and business justification for {value}',
+];
+
 // Investigation actions: shown when suspected / under investigation
 const INVESTIGATE_TEMPLATES: Record<string, string[]> = {
   ip: [
@@ -295,10 +339,11 @@ export default function SuggestedActions({ entity, onCreateTask }: Props) {
 
   if (!isConfirmed && !isSuspected) return null;
 
+  const isInternalIp = entity.type === 'ip' && isPrivateIp(entity.value);
   const type = entity.type in INVESTIGATE_TEMPLATES ? entity.type : 'custom';
   const fill = (t: string) => t.replace(/\{value\}/g, entity.value);
-  const investigateActions = INVESTIGATE_TEMPLATES[type].map(fill);
-  const respondActions = RESPOND_TEMPLATES[type].map(fill);
+  const investigateActions = (isInternalIp ? INVESTIGATE_INTERNAL_IP : INVESTIGATE_TEMPLATES[type]).map(fill);
+  const respondActions = (isInternalIp ? RESPOND_INTERNAL_IP : RESPOND_TEMPLATES[type]).map(fill);
 
   return (
     <div style={{
@@ -321,6 +366,12 @@ export default function SuggestedActions({ entity, onCreateTask }: Props) {
           {isConfirmed ? 'Confirmed Malicious' : 'Under Investigation'}
         </span>
       </div>
+
+      {isInternalIp && (
+        <div style={{ background: '#e3b34122', border: '1px solid #e3b34144', borderRadius: '6px', padding: '8px 12px', marginBottom: '14px', fontSize: '12px', color: '#e3b341' }}>
+          ⚠️ <strong>{entity.value}</strong> is a private / non-routable IP address. External threat intel lookups (VirusTotal, Shodan, AbuseIPDB, WHOIS) are not applicable — showing internal investigation playbook instead.
+        </div>
+      )}
 
       {/* Always show investigation actions — they remain relevant even after confirmation */}
       <ActionSection
