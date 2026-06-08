@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import { authenticate } from '../middleware/auth';
 import { requireRole } from '../middleware/rbac';
 import { pool } from '../db/pool';
+import { standardPasswordSchema, platformAdminPasswordSchema } from '../utils/passwordPolicy';
 
 const router = Router();
 
@@ -24,15 +25,19 @@ router.get('/users', async (_req: Request, res: Response) => {
 
 // POST /superadmin/users — create a user in a specific org
 router.post('/users', async (req: Request, res: Response) => {
-  const schema = z.object({
+  const baseSchema = z.object({
     email: z.string().email(),
     name: z.string().min(1),
-    password: z.string().min(8),
-    role: z.enum(['analyst', 'senior_analyst', 'incident_commander']),
-    org_id: z.string().uuid(),
+    role: z.enum(['analyst', 'senior_analyst', 'incident_commander', 'platform_admin']),
+    org_id: z.string().uuid().optional(),
   });
-  const data = schema.parse(req.body);
-  const passwordHash = await bcrypt.hash(data.password, 10);
+  const base = baseSchema.parse(req.body);
+  const pwSchema = z.object({
+    password: base.role === 'platform_admin' ? platformAdminPasswordSchema : standardPasswordSchema,
+  });
+  const { password } = pwSchema.parse(req.body);
+  const data = { ...base, password };
+  const passwordHash = await bcrypt.hash(data.password, 12);
   const result = await pool.query(
     `INSERT INTO users (email, name, role, password_hash, org_id)
      VALUES ($1, $2, $3, $4, $5)

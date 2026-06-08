@@ -4,6 +4,7 @@ import { apiClient } from '../api/client';
 import { useFetch } from '../hooks/useFetch';
 import { ManagedUser, UserRole, Incident } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { validatePassword, policyHint, STANDARD_MIN } from '../utils/passwordPolicy';
 
 const ROLE_COLORS: Record<UserRole, string> = {
   analyst: '#3fb950',
@@ -113,9 +114,12 @@ export default function UserManagement() {
     refetchUsers();
   }
 
-  async function resetPassword(id: string) {
-    const pw = window.prompt('Enter new password (min 8 chars):');
-    if (!pw || pw.length < 8) return;
+  async function resetPassword(id: string, role: UserRole) {
+    const hint = policyHint(role);
+    const pw = window.prompt(`Enter new password (${hint}):`);
+    if (!pw) return;
+    const check = validatePassword(pw, role);
+    if (!check.valid) { alert(`Password does not meet policy:\n• ${check.errors.join('\n• ')}`); return; }
     await apiClient.patch(`/users/${id}/password`, { password: pw });
     alert('Password reset. User must reset on next login.');
   }
@@ -159,7 +163,7 @@ export default function UserManagement() {
           </div>
           <div>
             <div style={{ color: '#8b949e', fontSize: '11px', marginBottom: '4px', textTransform: 'uppercase' }}>Password</div>
-            <input style={inputStyle} type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} minLength={8} required />
+            <input style={inputStyle} type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} minLength={STANDARD_MIN} required />
           </div>
           <button type="submit" style={btnStyle} disabled={createLoading}>{createLoading ? 'Creating…' : 'Create'}</button>
         </form>
@@ -200,7 +204,7 @@ export default function UserManagement() {
                       <option value="senior_analyst">Senior Analyst</option>
                       <option value="incident_commander">Incident Commander</option>
                     </select>
-                    <button style={smallBtnStyle} onClick={() => resetPassword(u.id)}>Reset PW</button>
+                    <button style={smallBtnStyle} onClick={() => resetPassword(u.id, u.role)}>Reset PW</button>
                   </div>
                 </td>
               </tr>

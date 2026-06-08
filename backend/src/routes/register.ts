@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { pool } from '../db/pool';
 import { config } from '../config';
 import { getOrganizationBySlug, createOrganization } from '../repositories/organizationRepository';
+import { standardPasswordSchema } from '../utils/passwordPolicy';
 
 const router = Router();
 
@@ -13,7 +14,7 @@ const registerSchema = z.object({
   orgSlug: z.string().regex(/^[a-z0-9-]+$/, 'Slug must only contain lowercase letters, numbers, and hyphens'),
   email: z.string().email('Valid email is required'),
   name: z.string().min(1, 'Full name is required'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  password: standardPasswordSchema,
 });
 
 router.post('/', async (req: Request, res: Response) => {
@@ -37,7 +38,7 @@ router.post('/', async (req: Request, res: Response) => {
   const org = await createOrganization({ name: body.orgName, slug: body.orgSlug, tier: 'standard' });
 
   // Create user as incident_commander
-  const passwordHash = await bcrypt.hash(body.password, 10);
+  const passwordHash = await bcrypt.hash(body.password, 12);
   const userResult = await pool.query(
     `INSERT INTO users (email, name, role, password_hash, org_id)
      VALUES ($1, $2, 'incident_commander', $3, $4)

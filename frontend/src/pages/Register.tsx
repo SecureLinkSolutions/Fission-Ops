@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiClient } from '../api/client';
+import { validatePassword, STANDARD_MIN } from '../utils/passwordPolicy';
 
 export default function Register() {
   const [form, setForm] = useState({ orgName: '', orgSlug: '', email: '', name: '', password: '', confirm: '' });
@@ -15,7 +16,8 @@ export default function Register() {
     e.preventDefault();
     setError('');
     if (form.password !== form.confirm) { setError('Passwords do not match'); return; }
-    if (form.password.length < 8) { setError('Password must be at least 8 characters'); return; }
+    const pwCheck = validatePassword(form.password);
+    if (!pwCheck.valid) { setError(pwCheck.errors[0]); return; }
     setLoading(true);
     try {
       const { data } = await apiClient.post('/auth/register', {
@@ -76,7 +78,7 @@ export default function Register() {
               </div>
               <div>
                 <label style={labelStyle}>Password</label>
-                <input style={inputStyle} type="password" value={form.password} onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))} placeholder="Min 8 characters" required />
+                <input style={inputStyle} type="password" value={form.password} onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))} placeholder={`Min ${STANDARD_MIN} characters`} minLength={STANDARD_MIN} required />
               </div>
               <div>
                 <label style={labelStyle}>Confirm Password</label>

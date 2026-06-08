@@ -4,6 +4,7 @@ import { authenticate } from '../middleware/auth';
 import { requireRole } from '../middleware/rbac';
 import * as repo from '../repositories/userManagementRepository';
 import { createError } from '../middleware/errorHandler';
+import { standardPasswordSchema, passwordSchemaForRole } from '../utils/passwordPolicy';
 
 const router = Router();
 const icOnly = [authenticate, requireRole('incident_commander')];
@@ -12,15 +13,11 @@ const createUserSchema = z.object({
   email: z.string().email(),
   name: z.string().min(1),
   role: z.enum(['analyst', 'senior_analyst', 'incident_commander']),
-  password: z.string().min(8),
+  password: standardPasswordSchema,
 });
 
 const updateRoleSchema = z.object({
   role: z.enum(['analyst', 'senior_analyst', 'incident_commander']),
-});
-
-const resetPasswordSchema = z.object({
-  password: z.string().min(8),
 });
 
 router.get('/', ...icOnly, async (req: Request, res: Response) => {
@@ -63,7 +60,10 @@ router.patch('/:id/role', ...icOnly, async (req: Request, res: Response) => {
 });
 
 router.patch('/:id/password', ...icOnly, async (req: Request, res: Response) => {
-  const { password } = resetPasswordSchema.parse(req.body);
+  // Fetch the target user's role so we can enforce the right password policy
+  const targetUser = await repo.getUserById(req.params.id);
+  const schema = z.object({ password: passwordSchemaForRole(targetUser?.role) });
+  const { password } = schema.parse(req.body);
   const orgId = req.user!.role === 'platform_admin' ? undefined : req.user!.org_id;
   const ok = await repo.resetUserPassword(req.params.id, password, orgId);
   if (!ok) throw createError('User not found', 404, 'NOT_FOUND');

@@ -17,6 +17,11 @@ export interface ManagedUser {
 
 const USER_COLS = 'id, email, name, role, org_id, sso_provider, sso_subject, deactivated_at, last_login_at, password_reset_required, created_at';
 
+export async function getUserById(id: string): Promise<ManagedUser | null> {
+  const result = await pool.query(`SELECT ${USER_COLS} FROM users WHERE id = $1`, [id]);
+  return result.rows[0] ?? null;
+}
+
 export async function listUsers(orgId?: string, platformAdminAccessOnly?: boolean): Promise<ManagedUser[]> {
   if (orgId) {
     const result = await pool.query(
