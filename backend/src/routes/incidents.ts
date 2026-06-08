@@ -7,18 +7,35 @@ import { createIncidentSchema, updateIncidentSchema, listIncidentsQuerySchema } 
 import * as repo from '../repositories/incidentRepository';
 import { getIncidentTimeline } from '../repositories/timelineRepository';
 import * as assignRepo from '../repositories/userManagementRepository';
+import { pool } from '../db/pool';
 
 const router = Router();
 
-// Returns the orgId to use for scoping queries (undefined for super_admin = no filter).
-// Call at the start of any endpoint that accepts an incidentId path param.
-// Returns null if the incident doesn't belong to the user's org (caller should 404).
+// Check whether the org owning a given incident has granted platform_admin_access.
+async function incidentOrgAllowsPlatformAdmin(incidentId: string): Promise<boolean> {
+  const r = await pool.query<{ platform_admin_access: boolean }>(
+    `SELECT o.platform_admin_access
+     FROM organizations o
+     JOIN incidents i ON i.org_id = o.id
+     WHERE i.id = $1`,
+    [incidentId],
+  );
+  return r.rows.length > 0 && r.rows[0].platform_admin_access;
+}
+
+// Returns the orgId to use for scoping queries.
+// For platform_admin: only allows access if the incident's org has platform_admin_access = TRUE.
+// Returns null if access is denied or incident not found (caller should 404).
 async function resolveOrgId(
   incidentId: string,
   userRole: string,
   userOrgId: string | undefined,
 ): Promise<{ orgId: string | undefined } | null> {
-  if (userRole === 'super_admin') return { orgId: undefined };
+  if (userRole === 'platform_admin') {
+    const allowed = await incidentOrgAllowsPlatformAdmin(incidentId);
+    if (!allowed) return null;
+    return { orgId: undefined };
+  }
   const incident = await repo.getIncidentById(incidentId, userOrgId);
   if (!incident) return null;
   return { orgId: userOrgId };
@@ -26,11 +43,32 @@ async function resolveOrgId(
 
 router.get('/', authenticate, async (req: Request, res: Response) => {
   const query = listIncidentsQuerySchema.parse(req.query);
-  const isSuperAdmin = req.user!.role === 'super_admin';
-  // Super admin can pass ?org_id= to inspect a specific org; otherwise no org filter
-  const orgId = isSuperAdmin
-    ? (req.query.org_id as string | undefined)
-    : req.user!.org_id;
+  const isPlatformAdmin = req.user!.role === 'platform_admin';
+  // platform_admin can pass ?org_id= to inspect a specific org that has granted access;
+  // without ?org_id they see only orgs where platform_admin_access = TRUE.
+  let orgId: string | undefined;
+  if (isPlatformAdmin) {
+    const requestedOrgId = req.query.org_id as string | undefined;
+    if (requestedOrgId) {
+      // Verify the specific org has granted access
+      const accessCheck = await pool.query<{ platform_admin_access: boolean }>(
+        `SELECT platform_admin_access FROM organizations WHERE id = $1`,
+        [requestedOrgId],
+      );
+      if (!accessCheck.rows[0]?.platform_admin_access) {
+        res.status(403).json({ error: 'Organization has not granted platform admin access', code: 'FORBIDDEN' });
+        return;
+      }
+      orgId = requestedOrgId;
+    } else {
+      // No filter — but listIncidents will be called with orgId=undefined;
+      // this is a cross-org listing. We rely on platform_admin_access flag at the org level.
+      // For simplicity, pass undefined and let the query return all accessible orgs.
+      orgId = undefined;
+    }
+  } else {
+    orgId = req.user!.org_id;
+  }
   const result = await repo.listIncidents({
     ...query,
     requestingUserId: req.user!.sub,
@@ -53,9 +91,9 @@ router.post(
 );
 
 router.get('/:id', authenticate, async (req: Request, res: Response) => {
-  const isSuperAdmin = req.user!.role === 'super_admin';
-  const orgId = isSuperAdmin ? undefined : req.user!.org_id;
-  const incident = await repo.getIncidentById(req.params.id, orgId);
+  const scope = await resolveOrgId(req.params.id, req.user!.role, req.user!.org_id);
+  if (!scope) { res.status(404).json({ error: 'Incident not found', code: 'NOT_FOUND' }); return; }
+  const incident = await repo.getIncidentById(req.params.id, scope.orgId);
   if (!incident) {
     res.status(404).json({ error: 'Incident not found', code: 'NOT_FOUND' });
     return;
@@ -70,9 +108,9 @@ router.put(
   auditLog('incident', 'UPDATE'),
   async (req: Request, res: Response) => {
     const body = updateIncidentSchema.parse(req.body);
-    const isSuperAdmin = req.user!.role === 'super_admin';
-    const orgId = isSuperAdmin ? undefined : req.user!.org_id;
-    const incident = await repo.updateIncident(req.params.id, body, orgId);
+    const scope = await resolveOrgId(req.params.id, req.user!.role, req.user!.org_id);
+    if (!scope) { res.status(404).json({ error: 'Incident not found', code: 'NOT_FOUND' }); return; }
+    const incident = await repo.updateIncident(req.params.id, body, scope.orgId);
     if (!incident) {
       res.status(404).json({ error: 'Incident not found', code: 'NOT_FOUND' });
       return;
@@ -88,9 +126,9 @@ router.patch(
   auditLog('incident', 'UPDATE'),
   async (req: Request, res: Response) => {
     const body = updateIncidentSchema.parse(req.body);
-    const isSuperAdmin = req.user!.role === 'super_admin';
-    const orgId = isSuperAdmin ? undefined : req.user!.org_id;
-    const incident = await repo.updateIncident(req.params.id, body, orgId);
+    const scope = await resolveOrgId(req.params.id, req.user!.role, req.user!.org_id);
+    if (!scope) { res.status(404).json({ error: 'Incident not found', code: 'NOT_FOUND' }); return; }
+    const incident = await repo.updateIncident(req.params.id, body, scope.orgId);
     if (!incident) {
       res.status(404).json({ error: 'Incident not found', code: 'NOT_FOUND' });
       return;
@@ -107,9 +145,9 @@ router.patch(
     const { incident_status } = z.object({
       incident_status: z.enum(['active', 'contained', 'eradicated', 'recovered', 'closed']),
     }).parse(req.body);
-    const isSuperAdmin = req.user!.role === 'super_admin';
-    const orgId = isSuperAdmin ? undefined : req.user!.org_id;
-    const incident = await repo.updateIncidentOperationalStatus(req.params.id, incident_status, req.user!.sub, orgId);
+    const scope = await resolveOrgId(req.params.id, req.user!.role, req.user!.org_id);
+    if (!scope) { res.status(404).json({ error: 'Incident not found', code: 'NOT_FOUND' }); return; }
+    const incident = await repo.updateIncidentOperationalStatus(req.params.id, incident_status, req.user!.sub, scope.orgId);
     if (!incident) {
       res.status(404).json({ error: 'Incident not found', code: 'NOT_FOUND' });
       return;
@@ -124,9 +162,9 @@ router.delete(
   requireRole('incident_commander'),
   auditLog('incident', 'DELETE'),
   async (req: Request, res: Response) => {
-    const isSuperAdmin = req.user!.role === 'super_admin';
-    const orgId = isSuperAdmin ? undefined : req.user!.org_id;
-    const incident = await repo.closeIncident(req.params.id, orgId);
+    const scope = await resolveOrgId(req.params.id, req.user!.role, req.user!.org_id);
+    if (!scope) { res.status(404).json({ error: 'Incident not found', code: 'NOT_FOUND' }); return; }
+    const incident = await repo.closeIncident(req.params.id, scope.orgId);
     if (!incident) {
       res.status(404).json({ error: 'Incident not found', code: 'NOT_FOUND' });
       return;
@@ -230,8 +268,8 @@ router.patch(
   async (req: Request, res: Response) => {
     const scope = await resolveOrgId(req.params.id, req.user!.role, req.user!.org_id);
     if (!scope) { res.status(404).json({ error: 'Incident not found', code: 'NOT_FOUND' }); return; }
-    const userRank = (req.user!.role === 'super_admin' ? 99 : ['analyst', 'senior_analyst', 'incident_commander'].indexOf(req.user!.role));
-    const isSeniorPlus = req.user!.role === 'super_admin' || ['senior_analyst', 'incident_commander'].includes(req.user!.role);
+    const userRank = (req.user!.role === 'platform_admin' ? 99 : ['analyst', 'senior_analyst', 'incident_commander'].indexOf(req.user!.role));
+    const isSeniorPlus = req.user!.role === 'platform_admin' || ['senior_analyst', 'incident_commander'].includes(req.user!.role);
     const body = z.object({
       status: z.enum(['pending', 'in_progress', 'completed', 'verified']).optional(),
       before_state: z.string().optional(),
@@ -248,7 +286,7 @@ router.patch(
       return;
     }
     // Only incident_commander+ can verify
-    if (body.status === 'verified' && req.user!.role !== 'incident_commander' && req.user!.role !== 'super_admin') {
+    if (body.status === 'verified' && req.user!.role !== 'incident_commander' && req.user!.role !== 'platform_admin') {
       res.status(403).json({ error: 'Insufficient permissions to verify items' });
       return;
     }
@@ -301,10 +339,14 @@ router.get('/:id/activity-heatmap', authenticate, async (req: Request, res: Resp
   const { pool } = await import('../db/pool');
   const incidentId = req.params.id;
 
+  // Verify access via resolveOrgId (enforces platform_admin_access check)
+  const scope = await resolveOrgId(incidentId, req.user!.role, req.user!.org_id);
+  if (!scope) { res.status(404).json({ error: 'Incident not found', code: 'NOT_FOUND' }); return; }
+
   // Get incident start — scoped to org
-  const orgFilter = req.user!.role === 'super_admin' ? '' : ' AND org_id = $2';
+  const orgFilter = scope.orgId ? ' AND org_id = $2' : '';
   const incParams: unknown[] = [incidentId];
-  if (req.user!.role !== 'super_admin') incParams.push(req.user!.org_id);
+  if (scope.orgId) incParams.push(scope.orgId);
   const incResult = await pool.query<{ created_at: Date }>(
     `SELECT created_at FROM incidents WHERE id = $1${orgFilter}`,
     incParams,

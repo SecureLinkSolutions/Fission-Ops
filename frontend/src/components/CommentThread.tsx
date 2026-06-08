@@ -39,7 +39,7 @@ const ROLE_COLORS: Record<string, string> = {
   analyst: '#8b949e',
   senior_analyst: '#58a6ff',
   incident_commander: '#d29922',
-  super_admin: '#a371f7',
+  platform_admin: '#a371f7',
 };
 
 interface CommentThreadProps {
@@ -133,7 +133,7 @@ export default function CommentThread({ incidentId, entityId, teamMembers = [], 
             <span style={{ fontWeight: 600, fontSize: '13px', color: '#e6edf3' }}>{c.author_name || c.author_email}</span>
             {c.author_role && (
               <span style={{ fontSize: '10px', background: `${ROLE_COLORS[c.author_role] ?? '#8b949e'}22`, color: ROLE_COLORS[c.author_role] ?? '#8b949e', border: `1px solid ${ROLE_COLORS[c.author_role] ?? '#8b949e'}44`, borderRadius: '8px', padding: '1px 6px', fontWeight: 600 }}>
-                {c.author_role.replace(/_/g, ' ')}
+                {c.author_role === 'platform_admin' ? 'Platform Admin' : c.author_role.replace(/_/g, ' ')}
               </span>
             )}
             <span style={{ color: '#484f58', fontSize: '11px', marginLeft: 'auto' }}>{relativeTime(c.created_at)}{c.edited_at ? ' (edited)' : ''}</span>

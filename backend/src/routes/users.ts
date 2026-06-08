@@ -24,27 +24,31 @@ const resetPasswordSchema = z.object({
 });
 
 router.get('/', ...icOnly, async (req: Request, res: Response) => {
-  const orgId = req.user!.role === 'super_admin' ? undefined : req.user!.org_id;
-  const users = await repo.listUsers(orgId);
+  const isPlatformAdmin = req.user!.role === 'platform_admin';
+  const users = isPlatformAdmin
+    ? await repo.listUsers(undefined, true)
+    : await repo.listUsers(req.user!.org_id);
   res.json(users);
 });
 
 router.post('/', ...icOnly, async (req: Request, res: Response) => {
   const body = createUserSchema.parse(req.body);
-  const orgId = req.user!.role === 'super_admin' ? undefined : req.user!.org_id;
+  // platform_admin cannot create users without belonging to an org themselves
+  const orgId = req.user!.role === 'platform_admin' ? req.user!.org_id : req.user!.org_id;
   const user = await repo.createUser({ ...body, org_id: orgId });
   res.status(201).json(user);
 });
 
 router.patch('/:id/deactivate', ...icOnly, async (req: Request, res: Response) => {
-  const orgId = req.user!.role === 'super_admin' ? undefined : req.user!.org_id;
+  // platform_admin can only act on users in orgs with platform_admin_access
+  const orgId = req.user!.role === 'platform_admin' ? undefined : req.user!.org_id;
   const user = await repo.deactivateUser(req.params.id, orgId);
   if (!user) throw createError('User not found', 404, 'NOT_FOUND');
   res.json(user);
 });
 
 router.patch('/:id/reactivate', ...icOnly, async (req: Request, res: Response) => {
-  const orgId = req.user!.role === 'super_admin' ? undefined : req.user!.org_id;
+  const orgId = req.user!.role === 'platform_admin' ? undefined : req.user!.org_id;
   const user = await repo.reactivateUser(req.params.id, orgId);
   if (!user) throw createError('User not found', 404, 'NOT_FOUND');
   res.json(user);
@@ -52,7 +56,7 @@ router.patch('/:id/reactivate', ...icOnly, async (req: Request, res: Response) =
 
 router.patch('/:id/role', ...icOnly, async (req: Request, res: Response) => {
   const { role } = updateRoleSchema.parse(req.body);
-  const orgId = req.user!.role === 'super_admin' ? undefined : req.user!.org_id;
+  const orgId = req.user!.role === 'platform_admin' ? undefined : req.user!.org_id;
   const user = await repo.updateUserRole(req.params.id, role, orgId);
   if (!user) throw createError('User not found', 404, 'NOT_FOUND');
   res.json(user);
@@ -60,7 +64,7 @@ router.patch('/:id/role', ...icOnly, async (req: Request, res: Response) => {
 
 router.patch('/:id/password', ...icOnly, async (req: Request, res: Response) => {
   const { password } = resetPasswordSchema.parse(req.body);
-  const orgId = req.user!.role === 'super_admin' ? undefined : req.user!.org_id;
+  const orgId = req.user!.role === 'platform_admin' ? undefined : req.user!.org_id;
   const ok = await repo.resetUserPassword(req.params.id, password, orgId);
   if (!ok) throw createError('User not found', 404, 'NOT_FOUND');
   res.json({ success: true });

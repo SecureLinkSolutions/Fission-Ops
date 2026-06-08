@@ -106,7 +106,7 @@ export default function SuperAdmin() {
   return (
     <div style={s.page}>
       <div style={s.container}>
-        <div style={s.title}>Super Admin Console</div>
+        <div style={s.title}>Platform Admin Console</div>
         <div style={s.sub}>Manage all organizations and platform-wide settings.</div>
 
         {/* Organizations Table */}

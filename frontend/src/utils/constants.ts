@@ -2,7 +2,7 @@ export const ROLE_RANK: Record<string, number> = {
   analyst: 1,
   senior_analyst: 2,
   incident_commander: 3,
-  super_admin: 99,
+  platform_admin: 99,
 };
 
 export const SEVERITY_COLORS: Record<string, string> = {

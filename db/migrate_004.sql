@@ -8,9 +8,9 @@ CREATE TABLE IF NOT EXISTS organizations (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Add 'super_admin' to user_role enum (idempotent)
+-- Add 'platform_admin' to user_role enum (idempotent)
 DO $$ BEGIN
-  ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'super_admin';
+  ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'platform_admin';
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
@@ -49,7 +49,7 @@ UPDATE incidents SET org_id = '00000000-0000-0000-0000-000000000001' WHERE org_i
 -- Assign all existing audit_logs to default org
 UPDATE audit_logs SET org_id = '00000000-0000-0000-0000-000000000001' WHERE org_id IS NULL;
 
--- Seed a super_admin user (password: superadmin123)
+-- Seed a platform_admin user (password: superadmin123)
 INSERT INTO users (email, name, role, password_hash, org_id)
-VALUES ('superadmin@fission.local', 'Super Admin', 'super_admin', '$2a$10$7M7mkF0cQf.y3kkaKytINe5s1UX2DHeuV/oCUQbrgWQmhwbGhmTOy', NULL)
+VALUES ('superadmin@fission.local', 'Platform Admin', 'platform_admin', '$2a$10$7M7mkF0cQf.y3kkaKytINe5s1UX2DHeuV/oCUQbrgWQmhwbGhmTOy', NULL)
 ON CONFLICT (email) DO NOTHING;

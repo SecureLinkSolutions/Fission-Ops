@@ -21,7 +21,7 @@ export async function listIncidents(opts: ListOptions): Promise<{ incidents: Inc
   if (opts.severity) { conditions.push(`i.severity = $${i++}`); params.push(opts.severity); }
 
   // Visibility filter for non-commanders
-  if (opts.requestingUserId && opts.requestingUserRole !== 'incident_commander' && opts.requestingUserRole !== 'super_admin') {
+  if (opts.requestingUserId && opts.requestingUserRole !== 'incident_commander' && opts.requestingUserRole !== 'platform_admin') {
     params.push(opts.requestingUserId);
     const uidParam = `$${i++}`;
     conditions.push(

@@ -35,7 +35,7 @@ const ROLE_COLORS: Record<string, string> = {
   analyst:            '#8b949e',
   senior_analyst:     '#58a6ff',
   incident_commander: '#d29922',
-  super_admin:        '#a371f7',
+  platform_admin:        '#a371f7',
 };
 
 export default function CustodyLog({ entityId }: Props) {
@@ -156,7 +156,7 @@ export default function CustodyLog({ entityId }: Props) {
                             textTransform: 'uppercase',
                             letterSpacing: '0.04em',
                           }}>
-                            {entry.actor_role.replace(/_/g, ' ')}
+                            {entry.actor_role === 'platform_admin' ? 'Platform Admin' : entry.actor_role.replace(/_/g, ' ')}
                           </span>
                         )}
                       </div>

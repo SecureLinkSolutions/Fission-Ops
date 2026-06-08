@@ -15,6 +15,7 @@ interface OrgData {
   slug: string;
   tier: string;
   active: boolean;
+  platform_admin_access: boolean;
   created_at: string;
   stats: OrgStats;
 }
@@ -88,6 +89,11 @@ export default function OrgSettings() {
   const [threatIntelMode, setThreatIntelMode] = useState<'automatic' | 'manual'>('automatic');
   const [threatModeSaving, setThreatModeSaving] = useState(false);
 
+  // Platform admin access state
+  const [platformAdminAccess, setPlatformAdminAccess] = useState(false);
+  const [platformAdminSaving, setPlatformAdminSaving] = useState(false);
+  const [platformAdminError, setPlatformAdminError] = useState('');
+
   const fetchApiKeys = useCallback(() => {
     apiClient.get<ApiKeyInfo[]>('/organizations/me/api-keys').then((r) => {
       setApiKeys(r.data);
@@ -150,8 +156,23 @@ export default function OrgSettings() {
     apiClient.get<OrgData>('/organizations/me').then((r) => {
       setOrg(r.data);
       setEditName(r.data.name);
+      setPlatformAdminAccess(r.data.platform_admin_access);
     });
   }, []);
+
+  async function handleTogglePlatformAdminAccess(allow: boolean) {
+    setPlatformAdminSaving(true);
+    setPlatformAdminError('');
+    try {
+      await apiClient.patch('/organizations/me/platform-admin-access', { allow });
+      setPlatformAdminAccess(allow);
+      setOrg((prev) => prev ? { ...prev, platform_admin_access: allow } : prev);
+    } catch (_e) {
+      setPlatformAdminError('Failed to update platform admin access setting.');
+    } finally {
+      setPlatformAdminSaving(false);
+    }
+  }
 
   async function handleSave(e: FormEvent) {
     e.preventDefault();
@@ -176,7 +197,7 @@ export default function OrgSettings() {
 
   if (!org) return <div style={{ ...s.page, color: '#8b949e', textAlign: 'center' }}>Loading…</div>;
 
-  const canEdit = user?.role === 'incident_commander' || user?.role === 'super_admin';
+  const canEdit = user?.role === 'incident_commander' || user?.role === 'platform_admin';
 
   const SERVICE_LABELS: Record<string, string> = { virustotal: 'VirusTotal', abuseipdb: 'AbuseIPDB', shodan: 'Shodan', anthropic: 'Anthropic (AI Narrative)' };
 
@@ -278,6 +299,37 @@ export default function OrgSettings() {
                 </div>
               </div>
             </div>
+
+            {/* Platform Admin Access */}
+            {canEdit && (
+              <div style={s.section}>
+                <div style={s.sectionTitle}>Platform Admin Access</div>
+                <div style={{ color: '#8b949e', fontSize: '13px', marginBottom: '16px' }}>
+                  Control whether NullVector Security platform administrators can access this organisation&apos;s incident data for support purposes.
+                </div>
+                {platformAdminAccess && (
+                  <div style={{ background: '#d2992215', border: '1px solid #d2992244', borderRadius: '6px', padding: '10px 14px', fontSize: '12px', color: '#d29922', marginBottom: '14px' }}>
+                    Platform administrators will be able to view all incidents, entities, and investigation data in this organisation.
+                  </div>
+                )}
+                {platformAdminError && (
+                  <div style={{ color: '#f85149', fontSize: '13px', marginBottom: '12px' }}>{platformAdminError}</div>
+                )}
+                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: platformAdminSaving ? 'not-allowed' : 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={platformAdminAccess}
+                    disabled={platformAdminSaving}
+                    onChange={(e) => handleTogglePlatformAdminAccess(e.target.checked)}
+                    style={{ accentColor: '#58a6ff', width: '16px', height: '16px' }}
+                  />
+                  <span style={{ color: '#e6edf3', fontSize: '13px' }}>
+                    Allow NullVector Security platform administrators to access this organisation&apos;s incident data for support purposes
+                  </span>
+                </label>
+                {platformAdminSaving && <div style={{ color: '#8b949e', fontSize: '12px', marginTop: '8px' }}>Saving…</div>}
+              </div>
+            )}
 
             {/* Danger Zone */}
             <div style={s.danger}>

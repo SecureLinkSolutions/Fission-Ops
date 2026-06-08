@@ -1,4 +1,4 @@
-export type UserRole = 'analyst' | 'senior_analyst' | 'incident_commander' | 'super_admin';
+export type UserRole = 'analyst' | 'senior_analyst' | 'incident_commander' | 'platform_admin';
 export type IncidentSeverity = 'low' | 'medium' | 'high' | 'critical';
 export type IncidentStatus = 'open' | 'contained' | 'closed';
 export type IncidentOperationalStatus = 'active' | 'contained' | 'eradicated' | 'recovered' | 'closed';
@@ -14,6 +14,7 @@ export interface Organization {
   slug: string;
   tier: string;
   active: boolean;
+  platform_admin_access: boolean;
   created_at: string;
 }
 

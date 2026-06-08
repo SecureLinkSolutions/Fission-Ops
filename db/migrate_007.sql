@@ -16,12 +16,12 @@ UPDATE users
 SET password_hash = '$2a$10$7M7mkF0cQf.y3kkaKytINe5s1UX2DHeuV/oCUQbrgWQmhwbGhmTOy'
 WHERE email = 'superadmin@fission.local';
 
--- Ensure superadmin exists even if migrate_004 was skipped
+-- Ensure platform_admin exists even if migrate_004 was skipped
 INSERT INTO users (email, name, role, password_hash, org_id)
 VALUES (
   'superadmin@fission.local',
-  'Super Admin',
-  'super_admin',
+  'Platform Admin',
+  'platform_admin',
   '$2a$10$7M7mkF0cQf.y3kkaKytINe5s1UX2DHeuV/oCUQbrgWQmhwbGhmTOy',
   NULL
 )

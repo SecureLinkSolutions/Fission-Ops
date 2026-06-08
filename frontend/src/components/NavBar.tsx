@@ -122,7 +122,7 @@ export default function NavBar({ connectionState }: NavBarProps) {
     setQuery('');
   }
 
-  const isAdmin = user?.role === 'incident_commander' || user?.role === 'super_admin';
+  const isAdmin = user?.role === 'incident_commander' || user?.role === 'platform_admin';
 
   return (
     <nav style={{
@@ -245,8 +245,8 @@ export default function NavBar({ connectionState }: NavBarProps) {
             <NavLink to="/admin/audit" icon="📋" label="Audit Log" active={location.pathname === '/admin/audit'} />
             <NavLink to="/admin/users" icon="👥" label="Users" active={location.pathname === '/admin/users'} />
             <NavLink to="/settings/org" icon="🔐" label="Org Settings" active={location.pathname === '/settings/org'} />
-            {user?.role === 'super_admin' && (
-              <NavLink to="/superadmin" icon="🛡" label="Super Admin" active={location.pathname === '/superadmin'} />
+            {user?.role === 'platform_admin' && (
+              <NavLink to="/superadmin" icon="🛡" label="Platform Admin" active={location.pathname === '/superadmin'} />
             )}
           </>
         )}

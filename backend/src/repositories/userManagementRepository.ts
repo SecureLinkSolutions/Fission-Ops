@@ -17,11 +17,23 @@ export interface ManagedUser {
 
 const USER_COLS = 'id, email, name, role, org_id, sso_provider, sso_subject, deactivated_at, last_login_at, password_reset_required, created_at';
 
-export async function listUsers(orgId?: string): Promise<ManagedUser[]> {
+export async function listUsers(orgId?: string, platformAdminAccessOnly?: boolean): Promise<ManagedUser[]> {
   if (orgId) {
     const result = await pool.query(
       `SELECT ${USER_COLS} FROM users WHERE org_id = $1 ORDER BY created_at DESC`,
       [orgId],
+    );
+    return result.rows;
+  }
+  if (platformAdminAccessOnly) {
+    // Only return users from orgs that have granted platform admin access
+    const result = await pool.query(
+      `SELECT u.id, u.email, u.name, u.role, u.org_id, u.sso_provider, u.sso_subject,
+              u.deactivated_at, u.last_login_at, u.password_reset_required, u.created_at
+       FROM users u
+       JOIN organizations o ON o.id = u.org_id
+       WHERE o.platform_admin_access = TRUE
+       ORDER BY u.created_at DESC`,
     );
     return result.rows;
   }

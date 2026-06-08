@@ -7,8 +7,8 @@ import { pool } from '../db/pool';
 
 const router = Router();
 
-// All superadmin routes require super_admin role
-router.use(authenticate, requireRole('super_admin'));
+// All superadmin routes require platform_admin role
+router.use(authenticate, requireRole('platform_admin'));
 
 // GET /superadmin/users — list all users across all orgs
 router.get('/users', async (_req: Request, res: Response) => {

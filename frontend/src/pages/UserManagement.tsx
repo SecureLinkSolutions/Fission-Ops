@@ -9,14 +9,21 @@ const ROLE_COLORS: Record<UserRole, string> = {
   analyst: '#3fb950',
   senior_analyst: '#58a6ff',
   incident_commander: '#a371f7',
-  super_admin: '#f0883e',
+  platform_admin: '#f0883e',
+};
+
+const ROLE_LABELS: Record<UserRole, string> = {
+  analyst: 'Analyst',
+  senior_analyst: 'Senior Analyst',
+  incident_commander: 'Incident Commander',
+  platform_admin: 'Platform Admin',
 };
 
 function roleBadge(role: UserRole) {
   const color = ROLE_COLORS[role] ?? '#8b949e';
   return (
     <span style={{ background: `${color}22`, color, border: `1px solid ${color}44`, borderRadius: '12px', padding: '2px 10px', fontSize: '11px', fontWeight: 600 }}>
-      {role.replace(/_/g, ' ')}
+      {ROLE_LABELS[role] ?? role.replace(/_/g, ' ')}
     </span>
   );
 }

@@ -95,14 +95,14 @@ async function runMigrations(): Promise<void> {
   );
   if ((needsMigration004.rowCount ?? 0) === 0) {
     console.log('⚙️  Running migration 004...');
-    // ALTER TYPE ADD VALUE must be committed before 'super_admin' can be used.
+    // ALTER TYPE ADD VALUE must be committed before 'platform_admin' can be used.
     // Run it alone so it auto-commits, then run the rest of the migration.
-    await pool.query(`ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'super_admin'`);
+    await pool.query(`ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'platform_admin'`);
     const migrationPath = join(__dirname, '../../../../db/migrate_004.sql');
     const sql = readFileSync(migrationPath, 'utf8');
     // Strip the DO block that re-adds the enum value — it was already committed above.
     const sqlWithoutEnumDo = sql.replace(
-      /-- Add 'super_admin' to user_role enum.*?END \$\$;/s,
+      /-- Add 'platform_admin' to user_role enum.*?END \$\$;/s,
       '',
     );
     await pool.query(sqlWithoutEnumDo);
@@ -229,6 +229,17 @@ async function runMigrations(): Promise<void> {
     const sql017 = readFileSync(migrationPath017, 'utf8');
     await pool.query(sql017);
     console.log('✅ Migration 017 applied');
+  }
+  const needsMigration018 = await pool.query(
+    `SELECT 1 FROM information_schema.columns
+     WHERE table_schema = 'public' AND table_name = 'organizations' AND column_name = 'platform_admin_access'`,
+  );
+  if ((needsMigration018.rowCount ?? 0) === 0) {
+    console.log('⚙️  Running migration 018...');
+    const migrationPath018 = join(__dirname, '../../../../db/migrate_018.sql');
+    const sql018 = readFileSync(migrationPath018, 'utf8');
+    await pool.query(sql018);
+    console.log('✅ Migration 018 applied');
   }
 }
 // Note: migration 014 block is appended below
