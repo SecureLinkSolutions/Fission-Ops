@@ -16,8 +16,18 @@ interface OrgData {
   tier: string;
   active: boolean;
   platform_admin_access: boolean;
+  platform_admin_access_expires_at: string | null;
   created_at: string;
   stats: OrgStats;
+}
+
+interface AccessLogEntry {
+  id: string;
+  action: 'granted' | 'revoked' | 'expired';
+  actor_name: string | null;
+  actor_role: string | null;
+  expires_at: string | null;
+  created_at: string;
 }
 
 interface ApiKeyInfo {
@@ -91,8 +101,13 @@ export default function OrgSettings() {
 
   // Platform admin access state
   const [platformAdminAccess, setPlatformAdminAccess] = useState(false);
+  const [platformAdminExpiresAt, setPlatformAdminExpiresAt] = useState<string | null>(null);
   const [platformAdminSaving, setPlatformAdminSaving] = useState(false);
   const [platformAdminError, setPlatformAdminError] = useState('');
+  const [showAccessLog, setShowAccessLog] = useState(false);
+  const [accessLog, setAccessLog] = useState<AccessLogEntry[] | null>(null);
+  const [accessLogLoading, setAccessLogLoading] = useState(false);
+  const [showGrantConfirm, setShowGrantConfirm] = useState(false);
 
   const fetchApiKeys = useCallback(() => {
     apiClient.get<ApiKeyInfo[]>('/organizations/me/api-keys').then((r) => {
@@ -157,21 +172,58 @@ export default function OrgSettings() {
       setOrg(r.data);
       setEditName(r.data.name);
       setPlatformAdminAccess(r.data.platform_admin_access);
+      setPlatformAdminExpiresAt(r.data.platform_admin_access_expires_at ?? null);
     });
   }, []);
 
   async function handleTogglePlatformAdminAccess(allow: boolean) {
+    if (allow) { setShowGrantConfirm(true); return; }
+    await doTogglePlatformAdminAccess(false);
+  }
+
+  async function doTogglePlatformAdminAccess(allow: boolean) {
+    setShowGrantConfirm(false);
     setPlatformAdminSaving(true);
     setPlatformAdminError('');
     try {
-      await apiClient.patch('/organizations/me/platform-admin-access', { allow });
+      const r = await apiClient.patch<{ platform_admin_access: boolean; platform_admin_access_expires_at: string | null }>('/organizations/me/platform-admin-access', { allow });
       setPlatformAdminAccess(allow);
-      setOrg((prev) => prev ? { ...prev, platform_admin_access: allow } : prev);
+      setPlatformAdminExpiresAt(r.data.platform_admin_access_expires_at ?? null);
+      setOrg((prev) => prev ? { ...prev, platform_admin_access: allow, platform_admin_access_expires_at: r.data.platform_admin_access_expires_at ?? null } : prev);
+      // Refresh access log if visible
+      if (showAccessLog) { void fetchAccessLog(); }
     } catch (_e) {
       setPlatformAdminError('Failed to update platform admin access setting.');
     } finally {
       setPlatformAdminSaving(false);
     }
+  }
+
+  async function fetchAccessLog() {
+    setAccessLogLoading(true);
+    try {
+      const r = await apiClient.get<AccessLogEntry[]>('/organizations/me/platform-admin-access-log');
+      setAccessLog(r.data);
+    } catch (_e) {
+      setAccessLog([]);
+    } finally {
+      setAccessLogLoading(false);
+    }
+  }
+
+  function handleToggleAccessLog() {
+    if (!showAccessLog && accessLog === null) { void fetchAccessLog(); }
+    setShowAccessLog((prev) => !prev);
+  }
+
+  function relativeTime(dateStr: string): string {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    return `${Math.floor(hrs / 24)}d ago`;
   }
 
   async function handleSave(e: FormEvent) {
@@ -310,6 +362,20 @@ export default function OrgSettings() {
                 {platformAdminAccess && (
                   <div style={{ background: '#d2992215', border: '1px solid #d2992244', borderRadius: '6px', padding: '10px 14px', fontSize: '12px', color: '#d29922', marginBottom: '14px' }}>
                     Platform administrators will be able to view all incidents, entities, and investigation data in this organisation.
+                    {platformAdminExpiresAt && (
+                      <span style={{ marginLeft: '8px' }}>
+                        Access expires: <strong>{new Date(platformAdminExpiresAt).toLocaleDateString()} ({relativeTime(platformAdminExpiresAt)})</strong>
+                      </span>
+                    )}
+                  </div>
+                )}
+                {showGrantConfirm && (
+                  <div style={{ background: '#1f6feb22', border: '1px solid #1f6feb66', borderRadius: '6px', padding: '12px 14px', fontSize: '13px', color: '#e6edf3', marginBottom: '14px' }}>
+                    <div style={{ marginBottom: '10px' }}>Platform admins will have access for <strong>7 days</strong>. You can revoke access at any time.</div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button style={{ ...s.btn, background: '#1f6feb' }} onClick={() => doTogglePlatformAdminAccess(true)}>Confirm</button>
+                      <button style={{ ...s.btn, background: 'transparent', border: '1px solid #30363d', color: '#8b949e' }} onClick={() => setShowGrantConfirm(false)}>Cancel</button>
+                    </div>
                   </div>
                 )}
                 {platformAdminError && (
@@ -328,6 +394,54 @@ export default function OrgSettings() {
                   </span>
                 </label>
                 {platformAdminSaving && <div style={{ color: '#8b949e', fontSize: '12px', marginTop: '8px' }}>Saving…</div>}
+                <div style={{ marginTop: '14px' }}>
+                  <button
+                    style={{ background: 'transparent', border: 'none', color: '#58a6ff', fontSize: '12px', cursor: 'pointer', padding: 0 }}
+                    onClick={handleToggleAccessLog}
+                  >
+                    {showAccessLog ? 'Hide access log' : 'View access log'}
+                  </button>
+                  {showAccessLog && (
+                    <div style={{ marginTop: '10px', border: '1px solid #30363d', borderRadius: '6px', overflow: 'hidden' }}>
+                      {accessLogLoading ? (
+                        <div style={{ padding: '12px 16px', color: '#8b949e', fontSize: '13px' }}>Loading…</div>
+                      ) : (accessLog ?? []).length === 0 ? (
+                        <div style={{ padding: '12px 16px', color: '#8b949e', fontSize: '13px' }}>No access log entries yet.</div>
+                      ) : (
+                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                          <thead>
+                            <tr style={{ background: '#0d1117', borderBottom: '1px solid #30363d' }}>
+                              {['Action', 'By', 'Date'].map((h) => (
+                                <th key={h} style={{ padding: '8px 12px', textAlign: 'left', color: '#8b949e', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase' }}>{h}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(accessLog ?? []).map((entry) => {
+                              const badgeColor = entry.action === 'granted' ? '#3fb950' : entry.action === 'revoked' ? '#f85149' : '#8b949e';
+                              const badgeBg = entry.action === 'granted' ? '#3fb95022' : entry.action === 'revoked' ? '#f8514922' : '#8b949e22';
+                              return (
+                                <tr key={entry.id} style={{ borderBottom: '1px solid #21262d' }}>
+                                  <td style={{ padding: '8px 12px' }}>
+                                    <span style={{ background: badgeBg, color: badgeColor, border: `1px solid ${badgeColor}44`, borderRadius: '10px', padding: '2px 8px', fontSize: '11px', fontWeight: 600 }}>
+                                      {entry.action}
+                                    </span>
+                                  </td>
+                                  <td style={{ padding: '8px 12px', color: '#e6edf3', fontSize: '12px' }}>
+                                    {entry.actor_name ?? 'system'}{entry.actor_role ? ` (${entry.actor_role})` : ''}
+                                  </td>
+                                  <td style={{ padding: '8px 12px', color: '#8b949e', fontSize: '12px' }}>
+                                    {new Date(entry.created_at).toLocaleString()}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 

@@ -142,7 +142,8 @@ export default function UserManagement() {
 
       {/* Create user form */}
       <div style={{ background: '#161b22', border: '1px solid #30363d', borderRadius: '8px', padding: '20px', marginBottom: '24px' }}>
-        <div style={{ fontSize: '16px', fontWeight: 600, color: '#e6edf3', marginBottom: '16px' }}>Create User</div>
+        <div style={{ fontSize: '16px', fontWeight: 600, color: '#e6edf3', marginBottom: '8px' }}>Create User</div>
+        <div style={{ color: '#8b949e', fontSize: '12px', marginBottom: '12px' }}>Platform admin accounts are managed by NullVector Security.</div>
         {createError && <div style={{ background: '#3d1a1a', border: '1px solid #f85149', color: '#f85149', borderRadius: '6px', padding: '8px 12px', marginBottom: '12px', fontSize: '13px' }}>{createError}</div>}
         <form onSubmit={createUser} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr auto', gap: '12px', alignItems: 'end' }}>
           <div>

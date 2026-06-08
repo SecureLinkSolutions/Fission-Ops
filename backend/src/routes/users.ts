@@ -20,52 +20,50 @@ const updateRoleSchema = z.object({
   role: z.enum(['analyst', 'senior_analyst', 'incident_commander']),
 });
 
+const PLATFORM_ADMIN_FORBIDDEN = { error: 'Platform admins manage the platform, not org users', code: 'FORBIDDEN' };
+
 router.get('/', ...icOnly, async (req: Request, res: Response) => {
-  const isPlatformAdmin = req.user!.role === 'platform_admin';
-  const users = isPlatformAdmin
-    ? await repo.listUsers(undefined, true)
-    : await repo.listUsers(req.user!.org_id);
+  if (req.user!.role === 'platform_admin') { res.status(403).json(PLATFORM_ADMIN_FORBIDDEN); return; }
+  const users = await repo.listUsers(req.user!.org_id);
   res.json(users);
 });
 
 router.post('/', ...icOnly, async (req: Request, res: Response) => {
+  if (req.user!.role === 'platform_admin') { res.status(403).json(PLATFORM_ADMIN_FORBIDDEN); return; }
   const body = createUserSchema.parse(req.body);
-  // platform_admin cannot create users without belonging to an org themselves
-  const orgId = req.user!.role === 'platform_admin' ? req.user!.org_id : req.user!.org_id;
-  const user = await repo.createUser({ ...body, org_id: orgId });
+  const user = await repo.createUser({ ...body, org_id: req.user!.org_id });
   res.status(201).json(user);
 });
 
 router.patch('/:id/deactivate', ...icOnly, async (req: Request, res: Response) => {
-  // platform_admin can only act on users in orgs with platform_admin_access
-  const orgId = req.user!.role === 'platform_admin' ? undefined : req.user!.org_id;
-  const user = await repo.deactivateUser(req.params.id, orgId);
+  if (req.user!.role === 'platform_admin') { res.status(403).json(PLATFORM_ADMIN_FORBIDDEN); return; }
+  const user = await repo.deactivateUser(req.params.id, req.user!.org_id);
   if (!user) throw createError('User not found', 404, 'NOT_FOUND');
   res.json(user);
 });
 
 router.patch('/:id/reactivate', ...icOnly, async (req: Request, res: Response) => {
-  const orgId = req.user!.role === 'platform_admin' ? undefined : req.user!.org_id;
-  const user = await repo.reactivateUser(req.params.id, orgId);
+  if (req.user!.role === 'platform_admin') { res.status(403).json(PLATFORM_ADMIN_FORBIDDEN); return; }
+  const user = await repo.reactivateUser(req.params.id, req.user!.org_id);
   if (!user) throw createError('User not found', 404, 'NOT_FOUND');
   res.json(user);
 });
 
 router.patch('/:id/role', ...icOnly, async (req: Request, res: Response) => {
+  if (req.user!.role === 'platform_admin') { res.status(403).json(PLATFORM_ADMIN_FORBIDDEN); return; }
   const { role } = updateRoleSchema.parse(req.body);
-  const orgId = req.user!.role === 'platform_admin' ? undefined : req.user!.org_id;
-  const user = await repo.updateUserRole(req.params.id, role, orgId);
+  const user = await repo.updateUserRole(req.params.id, role, req.user!.org_id);
   if (!user) throw createError('User not found', 404, 'NOT_FOUND');
   res.json(user);
 });
 
 router.patch('/:id/password', ...icOnly, async (req: Request, res: Response) => {
+  if (req.user!.role === 'platform_admin') { res.status(403).json(PLATFORM_ADMIN_FORBIDDEN); return; }
   // Fetch the target user's role so we can enforce the right password policy
   const targetUser = await repo.getUserById(req.params.id);
   const schema = z.object({ password: passwordSchemaForRole(targetUser?.role) });
   const { password } = schema.parse(req.body);
-  const orgId = req.user!.role === 'platform_admin' ? undefined : req.user!.org_id;
-  const ok = await repo.resetUserPassword(req.params.id, password, orgId);
+  const ok = await repo.resetUserPassword(req.params.id, password, req.user!.org_id);
   if (!ok) throw createError('User not found', 404, 'NOT_FOUND');
   res.json({ success: true });
 });

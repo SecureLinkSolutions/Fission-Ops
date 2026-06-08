@@ -93,6 +93,7 @@ export interface Organization {
   tier: string;
   active: boolean;
   platform_admin_access: boolean;
+  platform_admin_access_expires_at: Date | null;
   created_at: Date;
 }
 

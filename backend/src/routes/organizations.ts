@@ -218,11 +218,44 @@ router.patch('/me/platform-admin-access', authenticate, requireRole('incident_co
   if (!orgId) { res.status(400).json({ error: 'No org', code: 'NO_ORG' }); return; }
   const { allow } = z.object({ allow: z.boolean() }).parse(req.body);
   const { pool } = await import('../db/pool');
+  let expiresAt: string | null = null;
+  if (allow) {
+    const r = await pool.query(
+      `UPDATE organizations
+       SET platform_admin_access = TRUE, platform_admin_access_expires_at = NOW() + INTERVAL '7 days'
+       WHERE id = $1
+       RETURNING platform_admin_access_expires_at`,
+      [orgId],
+    );
+    expiresAt = r.rows[0]?.platform_admin_access_expires_at ?? null;
+  } else {
+    await pool.query(
+      `UPDATE organizations SET platform_admin_access = FALSE, platform_admin_access_expires_at = NULL WHERE id = $1`,
+      [orgId],
+    );
+  }
   await pool.query(
-    `UPDATE organizations SET platform_admin_access = $1 WHERE id = $2`,
-    [allow, orgId],
+    `INSERT INTO platform_admin_access_log (org_id, action, actor_id, actor_name, actor_role, actor_ip, expires_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    [orgId, allow ? 'granted' : 'revoked', req.user!.sub, req.user!.email, req.user!.role, req.ip ?? null, allow ? expiresAt : null],
   );
-  res.json({ platform_admin_access: allow });
+  res.json({ platform_admin_access: allow, platform_admin_access_expires_at: expiresAt });
+});
+
+// GET /organizations/me/platform-admin-access-log — incident_commander can view the access log
+router.get('/me/platform-admin-access-log', authenticate, requireRole('incident_commander'), async (req: Request, res: Response) => {
+  const orgId = req.user!.org_id;
+  if (!orgId) { res.status(400).json({ error: 'No org', code: 'NO_ORG' }); return; }
+  const { pool } = await import('../db/pool');
+  const result = await pool.query(
+    `SELECT id, action, actor_id, actor_name, actor_role, actor_ip, expires_at, created_at
+     FROM platform_admin_access_log
+     WHERE org_id = $1
+     ORDER BY created_at DESC
+     LIMIT 50`,
+    [orgId],
+  );
+  res.json(result.rows);
 });
 
 // GET /organizations/:id/api-keys (platform_admin / for specific org)

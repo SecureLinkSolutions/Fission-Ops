@@ -11,16 +11,34 @@ import { pool } from '../db/pool';
 
 const router = Router();
 
-// Check whether the org owning a given incident has granted platform_admin_access.
+// Check whether the org owning a given incident has granted platform_admin_access (and it hasn't expired).
+// Auto-revokes and logs if the access has expired.
 async function incidentOrgAllowsPlatformAdmin(incidentId: string): Promise<boolean> {
-  const r = await pool.query<{ platform_admin_access: boolean }>(
-    `SELECT o.platform_admin_access
+  const r = await pool.query<{ org_id: string; platform_admin_access: boolean; platform_admin_access_expires_at: Date | null }>(
+    `SELECT o.id AS org_id, o.platform_admin_access, o.platform_admin_access_expires_at
      FROM organizations o
      JOIN incidents i ON i.org_id = o.id
      WHERE i.id = $1`,
     [incidentId],
   );
-  return r.rows.length > 0 && r.rows[0].platform_admin_access;
+  if (r.rows.length === 0) return false;
+  const { org_id, platform_admin_access, platform_admin_access_expires_at } = r.rows[0];
+  if (!platform_admin_access) return false;
+  // Check expiry
+  if (platform_admin_access_expires_at !== null && platform_admin_access_expires_at <= new Date()) {
+    // Auto-revoke
+    await pool.query(
+      `UPDATE organizations SET platform_admin_access = FALSE, platform_admin_access_expires_at = NULL WHERE id = $1`,
+      [org_id],
+    );
+    await pool.query(
+      `INSERT INTO platform_admin_access_log (org_id, action, actor_id, actor_name, actor_role, actor_ip, expires_at)
+       VALUES ($1, 'expired', NULL, 'system', NULL, NULL, $2)`,
+      [org_id, platform_admin_access_expires_at],
+    );
+    return false;
+  }
+  return true;
 }
 
 // Returns the orgId to use for scoping queries.
