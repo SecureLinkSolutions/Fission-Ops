@@ -55,10 +55,14 @@ function EntityNode({ data, selected }: NodeProps) {
         animation: 'nodeEntrance 0.3s ease-out',
       }}
     >
-      <Handle type="source" id="left"   position={Position.Left}   style={{ background: color, width: 9, height: 9, border: '2px solid #0d1117' }} />
-      <Handle type="source" id="top"    position={Position.Top}    style={{ background: color, width: 9, height: 9, border: '2px solid #0d1117' }} />
-      <Handle type="source" id="right"  position={Position.Right}  style={{ background: color, width: 9, height: 9, border: '2px solid #0d1117' }} />
-      <Handle type="source" id="bottom" position={Position.Bottom} style={{ background: color, width: 9, height: 9, border: '2px solid #0d1117' }} />
+      <Handle type="source" id="left-s"   position={Position.Left}   style={{ background: color, width: 9, height: 9, border: '2px solid #0d1117', top: '40%' }} />
+      <Handle type="target" id="left-t"   position={Position.Left}   style={{ background: color, width: 9, height: 9, border: '2px solid #0d1117', top: '60%' }} />
+      <Handle type="source" id="top-s"    position={Position.Top}    style={{ background: color, width: 9, height: 9, border: '2px solid #0d1117', left: '40%' }} />
+      <Handle type="target" id="top-t"    position={Position.Top}    style={{ background: color, width: 9, height: 9, border: '2px solid #0d1117', left: '60%' }} />
+      <Handle type="source" id="right-s"  position={Position.Right}  style={{ background: color, width: 9, height: 9, border: '2px solid #0d1117', top: '40%' }} />
+      <Handle type="target" id="right-t"  position={Position.Right}  style={{ background: color, width: 9, height: 9, border: '2px solid #0d1117', top: '60%' }} />
+      <Handle type="source" id="bottom-s" position={Position.Bottom} style={{ background: color, width: 9, height: 9, border: '2px solid #0d1117', left: '40%' }} />
+      <Handle type="target" id="bottom-t" position={Position.Bottom} style={{ background: color, width: 9, height: 9, border: '2px solid #0d1117', left: '60%' }} />
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
         <span style={{ fontSize: '16px' }}>{ENTITY_TYPE_ICONS[entity.type] ?? '•'}</span>
         <span style={{ background: `${color}22`, color, border: `1px solid ${color}44`, borderRadius: '4px', padding: '1px 6px', fontSize: '10px', fontWeight: 700 }}>{entity.type}</span>
