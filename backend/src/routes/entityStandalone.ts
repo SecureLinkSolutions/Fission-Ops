@@ -6,6 +6,7 @@ import { updateEntitySchema } from '../schemas/entity';
 import * as repo from '../repositories/entityRepository';
 import { createError } from '../middleware/errorHandler';
 import { recordCustody, getCustodyLog } from '../repositories/custodyRepository';
+import { getEnrichmentHistory } from '../repositories/enrichmentHistoryRepository';
 
 const router = Router();
 
@@ -59,6 +60,11 @@ router.delete('/:id', authenticate, requireRole('incident_commander'), async (re
 router.get('/:id/custody-log', authenticate, async (req: Request, res: Response) => {
   const log = await getCustodyLog(req.params.id);
   res.json(log);
+});
+
+router.get('/:id/enrichment-history', authenticate, async (req: Request, res: Response) => {
+  const history = await getEnrichmentHistory(req.params.id);
+  res.json(history);
 });
 
 export default router;

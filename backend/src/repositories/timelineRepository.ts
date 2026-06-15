@@ -61,8 +61,8 @@ export async function getIncidentTimeline(
        WHERE bt.incident_id = $1
      ) t
      JOIN users u ON u.id = t.user_id
-     WHERE ($2::text IS NULL OR t.action_type = $2)
-       AND ($3::uuid IS NULL OR t.user_id = $3::uuid)
+     WHERE ($2::text IS NULL OR t.action_type = $2::text)
+       AND ($3::text IS NULL OR t.user_id = $3::uuid)
      ORDER BY ts DESC
      LIMIT 500`,
     [incidentId, actionType ?? null, userId ?? null],

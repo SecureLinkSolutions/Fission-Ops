@@ -417,7 +417,7 @@ router.get('/:id/activity-heatmap', authenticate, async (req: Request, res: Resp
         ELSE 'OTHER'
       END
       FROM audit_logs al
-      WHERE al.resource_type = 'incident' AND al.resource_id = $1
+      WHERE al.resource_type = 'incident' AND al.resource_id = $1::text
     )
     SELECT ${bucketExpr} AS bucket, action_type, COUNT(*)::text AS cnt
     FROM events
