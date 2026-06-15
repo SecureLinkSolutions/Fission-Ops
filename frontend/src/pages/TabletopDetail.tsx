@@ -544,6 +544,72 @@ export default function TabletopDetail() {
             )}
           </div>
 
+          {/* Incident linking (IC+) */}
+          {canCommand && (
+            <div style={{ background: '#161b22', border: '1px solid #30363d', borderRadius: '8px', padding: '16px 20px', marginBottom: '16px' }}>
+              <div style={{ fontSize: '13px', fontWeight: 600, color: '#8b949e', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '10px' }}>Linked Incident</div>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <select
+                  value={exercise.incident_id ?? ''}
+                  onChange={e => handleLinkIncident(e.target.value || null)}
+                  style={{ flex: 1, background: '#0d1117', border: '1px solid #30363d', borderRadius: '6px', padding: '7px 10px', color: '#e6edf3', fontSize: '13px' }}
+                >
+                  <option value="">— No linked incident —</option>
+                  {orgIncidents.map((inc: Incident) => (
+                    <option key={inc.id} value={inc.id}>{inc.title}</option>
+                  ))}
+                </select>
+                {exercise.incident_id && (
+                  <a href={`/incidents/${exercise.incident_id}`} target="_blank" rel="noreferrer"
+                    style={{ background: '#1f6feb', border: '1px solid #388bfd', borderRadius: '6px', padding: '7px 14px', color: '#e6edf3', fontSize: '13px', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                    🔗 Open Incident
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Participants (IC+) */}
+          {canCommand && (
+            <div style={{ background: '#161b22', border: '1px solid #30363d', borderRadius: '8px', padding: '16px 20px', marginBottom: '16px' }}>
+              <div style={{ fontSize: '13px', fontWeight: 600, color: '#8b949e', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '10px' }}>
+                Participants {loadingParticipants && <span style={{ color: '#484f58', fontSize: '11px', fontWeight: 400 }}>Loading…</span>}
+              </div>
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                <select
+                  value={addParticipantId}
+                  onChange={e => setAddParticipantId(e.target.value)}
+                  style={{ flex: 1, background: '#0d1117', border: '1px solid #30363d', borderRadius: '6px', padding: '7px 10px', color: '#e6edf3', fontSize: '13px' }}
+                >
+                  <option value="">Add participant…</option>
+                  {orgUsers.filter((u: ManagedUser) => !participants.some((p: ExerciseParticipant) => p.user_id === u.id) && !u.deactivated_at).map((u: ManagedUser) => (
+                    <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => { if (addParticipantId) { handleAddParticipant(addParticipantId); setAddParticipantId(''); } }}
+                  disabled={!addParticipantId}
+                  style={{ background: '#238636', border: 'none', borderRadius: '6px', padding: '7px 14px', color: '#fff', fontSize: '13px', cursor: addParticipantId ? 'pointer' : 'not-allowed', opacity: addParticipantId ? 1 : 0.5 }}
+                >
+                  Add
+                </button>
+              </div>
+              {participants.length === 0 ? (
+                <div style={{ color: '#484f58', fontSize: '13px' }}>No participants added yet.</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {participants.map((p: ExerciseParticipant) => (
+                    <div key={p.user_id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 10px', background: '#0d1117', borderRadius: '6px', border: '1px solid #21262d' }}>
+                      <span style={{ flex: 1, color: '#e6edf3', fontSize: '13px' }}>{p.user_name}</span>
+                      <span style={{ color: '#8b949e', fontSize: '12px' }}>{p.user_email}</span>
+                      <button onClick={() => handleRemoveParticipant(p.user_id)} style={{ background: 'transparent', border: '1px solid #30363d', borderRadius: '4px', padding: '3px 8px', color: '#f85149', fontSize: '11px', cursor: 'pointer' }}>Remove</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Injects header */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
             <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>Injects</h2>
