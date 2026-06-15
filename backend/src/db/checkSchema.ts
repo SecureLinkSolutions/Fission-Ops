@@ -273,5 +273,19 @@ async function runMigrations(): Promise<void> {
     await pool.query(sql021);
     console.log('✅ Migration 021 applied');
   }
+
+  // Migration 022: extend org_api_keys service CHECK to include 'anthropic'
+  const needsMigration022 = await pool.query(
+    `SELECT 1 FROM information_schema.check_constraints
+     WHERE constraint_name = 'org_api_keys_service_check'
+     AND check_clause LIKE '%anthropic%'`,
+  );
+  if ((needsMigration022.rowCount ?? 0) === 0) {
+    console.log('⚙️  Running migration 022...');
+    const migrationPath022 = join(__dirname, '../../../../db/migrate_022.sql');
+    const sql022 = readFileSync(migrationPath022, 'utf8');
+    await pool.query(sql022);
+    console.log('✅ Migration 022 applied');
+  }
 }
 // Note: migration 014 block is appended below
