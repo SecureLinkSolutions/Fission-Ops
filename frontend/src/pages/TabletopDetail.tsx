@@ -692,48 +692,6 @@ export default function TabletopDetail() {
             </div>
           )}
 
-          {/* Participants (incident_commander+) */}
-          {canCommand && (
-            <div style={{ background: '#161b22', border: '1px solid #30363d', borderRadius: '8px', padding: '16px 20px', marginBottom: '16px' }}>
-              <h3 style={{ margin: '0 0 10px', fontSize: '13px', color: '#8b949e', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Participants</h3>
-              {loadingParticipants ? (
-                <div style={{ color: '#484f58', fontSize: '13px' }}>Loading…</div>
-              ) : (
-                <>
-                  {participants.length === 0 ? (
-                    <div style={{ color: '#484f58', fontSize: '13px', marginBottom: '10px' }}>No participants added yet.</div>
-                  ) : (
-                    <div style={{ display: 'grid', gap: '6px', marginBottom: '10px' }}>
-                      {participants.map(p => (
-                        <div key={p.user_id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 10px', background: '#0d1117', borderRadius: '6px', border: '1px solid #21262d' }}>
-                          <span style={{ flex: 1, fontSize: '13px', color: '#c9d1d9' }}>{p.user_name}</span>
-                          <span style={{ fontSize: '12px', color: '#8b949e' }}>{p.user_email}</span>
-                          <span style={{
-                            background: '#58a6ff22', color: '#58a6ff', border: '1px solid #58a6ff44',
-                            borderRadius: '10px', padding: '1px 8px', fontSize: '11px', fontWeight: 600,
-                          }}>{p.user_role}</span>
-                          <button onClick={() => handleRemoveParticipant(p.user_id)} style={{ background: 'transparent', border: '1px solid #f8514944', color: '#f85149', padding: '2px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>Remove</button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  <div>
-                    <select
-                      defaultValue=""
-                      onChange={e => { if (e.target.value) { handleAddParticipant(e.target.value); e.currentTarget.value = ''; } }}
-                      style={{ ...inputStyle, width: 'auto', minWidth: '220px' }}
-                    >
-                      <option value="">+ Add participant…</option>
-                      {orgUsers.filter(u => !participants.find(p => p.user_id === u.id)).map(u => (
-                        <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
-                      ))}
-                    </select>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
           {/* Inject list */}
           {injects.length === 0 && (
             <div style={{ textAlign: 'center', padding: '40px', color: '#484f58', background: '#161b22', borderRadius: '8px', border: '1px solid #30363d' }}>

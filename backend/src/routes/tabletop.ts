@@ -252,7 +252,8 @@ router.post('/exercises/generate-scenario', authenticate, requireRole('senior_an
   // Prefer org-stored key over env var
   let apiKey = process.env.ANTHROPIC_API_KEY;
   const orgKeyResult = await pool.query(
-    "SELECT api_key FROM org_api_keys WHERE service = 'anthropic' ORDER BY updated_at DESC LIMIT 1",
+    "SELECT api_key FROM org_api_keys WHERE org_id = $1 AND service = 'anthropic' LIMIT 1",
+    [req.user!.org_id],
   ).catch(() => ({ rows: [] as { api_key: string }[] }));
   if (orgKeyResult.rows.length > 0 && orgKeyResult.rows[0].api_key) {
     apiKey = orgKeyResult.rows[0].api_key;

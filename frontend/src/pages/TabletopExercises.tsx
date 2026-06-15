@@ -29,6 +29,7 @@ export default function TabletopExercises() {
   const [activeTab, setActiveTab] = useState<string>('All');
   const [showModal, setShowModal] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -50,6 +51,17 @@ export default function TabletopExercises() {
   const filtered = activeTab === 'All'
     ? exercises
     : exercises.filter(e => e.status === activeTab.toLowerCase());
+
+  async function handleDelete(e: React.MouseEvent, id: string) {
+    e.stopPropagation();
+    if (!confirm('Delete this exercise? This cannot be undone.')) return;
+    setDeletingId(id);
+    try {
+      await apiClient.delete(`/tabletop/exercises/${id}`);
+      setExercises(prev => prev.filter(ex => ex.id !== id));
+    } catch { alert('Failed to delete exercise.'); }
+    finally { setDeletingId(null); }
+  }
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -204,6 +216,15 @@ export default function TabletopExercises() {
                     <span>{new Date(ex.created_at).toLocaleDateString()}</span>
                   </div>
                 </div>
+                {ROLE_RANK[user?.role ?? 'analyst'] >= ROLE_RANK['incident_commander'] && (
+                  <button
+                    onClick={(e) => handleDelete(e, ex.id)}
+                    disabled={deletingId === ex.id}
+                    style={{ background: '#f8514922', border: '1px solid #f8514944', borderRadius: '6px', padding: '5px 12px', color: '#f85149', fontSize: '12px', cursor: 'pointer', flexShrink: 0, alignSelf: 'center' }}
+                  >
+                    {deletingId === ex.id ? 'Deleting…' : 'Delete'}
+                  </button>
+                )}
               </div>
             </div>
           ))}
