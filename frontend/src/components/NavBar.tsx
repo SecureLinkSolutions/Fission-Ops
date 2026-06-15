@@ -239,6 +239,7 @@ export default function NavBar({ connectionState }: NavBarProps) {
       <div style={{ padding: '12px 8px', flex: 1 }}>
         <NavLink to="/incidents" icon="⚡" label="Incidents" active={location.pathname.startsWith('/incidents')} />
         <NavLink to="/tasks/mine" icon="✅" label="My Tasks" active={location.pathname.startsWith('/tasks')} />
+        <NavLink to="/tabletop" icon="🎯" label="Tabletop" active={location.pathname.startsWith('/tabletop')} />
         {isAdmin && (
           <>
             <div style={{ padding: '12px 12px 4px', color: '#484f58', fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '8px' }}>Admin</div>

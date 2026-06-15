@@ -148,3 +148,70 @@ export interface BoundaryMappingWithBoundary {
   mapped_by: string;
   mapped_at: string;
 }
+
+export interface TabletopExercise {
+  id: string;
+  org_id: string;
+  title: string;
+  description?: string;
+  scenario: string;
+  objectives?: string;
+  status: 'draft' | 'ready' | 'active' | 'completed' | 'archived';
+  scheduled_at?: string;
+  duration_minutes: number;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+  inject_count?: number;
+  injects?: ExerciseInject[];
+}
+
+export interface ExerciseInject {
+  id: string;
+  exercise_id: string;
+  sequence_order: number;
+  title: string;
+  description: string;
+  inject_type: 'information' | 'decision' | 'complication' | 'escalation' | 'resolution';
+  trigger_minutes?: number;
+  expected_actions?: string;
+  discussion_prompts?: string;
+  created_at: string;
+}
+
+export interface ExerciseSession {
+  id: string;
+  exercise_id: string;
+  org_id: string;
+  facilitator_id?: string;
+  status: 'in_progress' | 'completed';
+  started_at: string;
+  completed_at?: string;
+  participant_notes?: string;
+  exercise?: TabletopExercise;
+  responses?: ExerciseInjectResponse[];
+}
+
+export interface ExerciseInjectResponse {
+  id: string;
+  session_id: string;
+  inject_id: string;
+  response_text: string;
+  gaps_identified?: string;
+  submitted_by?: string;
+  submitted_at: string;
+}
+
+export interface ExerciseAAR {
+  id: string;
+  session_id: string;
+  org_id: string;
+  strengths?: string;
+  weaknesses?: string;
+  gaps?: string;
+  recommendations?: string;
+  overall_rating?: number;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+}
