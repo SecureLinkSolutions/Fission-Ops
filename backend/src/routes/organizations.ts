@@ -104,7 +104,7 @@ router.get('/me/api-keys', authenticate, requireRole('incident_commander'), asyn
   const orgId = req.user!.org_id;
   if (!orgId) { res.status(400).json({ error: 'No org', code: 'NO_ORG' }); return; }
   const { pool } = await import('../db/pool');
-  const SERVICES = ['virustotal', 'abuseipdb', 'shodan'];
+  const SERVICES = ['virustotal', 'abuseipdb', 'shodan', 'anthropic'];
   const result = await pool.query(
     `SELECT service, api_key FROM org_api_keys WHERE org_id = $1`,
     [orgId],
@@ -263,7 +263,7 @@ router.get('/:id/api-keys', authenticate, requireRole('incident_commander'), asy
   const orgId = req.user!.role === 'platform_admin' ? req.params.id : req.user!.org_id;
   if (!orgId) { res.status(400).json({ error: 'No org', code: 'NO_ORG' }); return; }
   const { pool } = await import('../db/pool');
-  const SERVICES = ['virustotal', 'abuseipdb', 'shodan'];
+  const SERVICES = ['virustotal', 'abuseipdb', 'shodan', 'anthropic'];
   const result = await pool.query(
     `SELECT service, api_key FROM org_api_keys WHERE org_id = $1`,
     [orgId],
