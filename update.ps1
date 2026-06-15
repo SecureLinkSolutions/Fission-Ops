@@ -41,7 +41,7 @@ if ($before -eq $after) {
         exit 0
     }
 } else {
-    Write-Host "  ✓ Updated from $($before.Substring(0,7)) → $($after.Substring(0,7))" -ForegroundColor Green
+    Write-Host "  OK Updated from $($before.Substring(0,7)) to $($after.Substring(0,7))" -ForegroundColor Green
     Write-Host ""
     Write-Host "  Changes:" -ForegroundColor DarkGray
     git log --oneline "$before..$after"
