@@ -18,7 +18,10 @@ export async function listExercises(orgId: string) {
 
 export async function getExerciseById(id: string, orgId: string) {
   const ex = await pool.query(
-    `SELECT * FROM tabletop_exercises WHERE id = $1 AND org_id = $2`,
+    `SELECT e.*, i2.title AS incident_title
+     FROM tabletop_exercises e
+     LEFT JOIN incidents i2 ON i2.id = e.incident_id
+     WHERE e.id = $1 AND e.org_id = $2`,
     [id, orgId],
   );
   if (ex.rowCount === 0) return null;
@@ -69,6 +72,7 @@ export async function updateExercise(
     status: string;
     scheduled_at: string;
     duration_minutes: number;
+    incident_id: string | null;
   }>,
 ) {
   const fields: string[] = [];
@@ -227,7 +231,14 @@ export async function getSessionById(sessionId: string, orgId: string) {
     `SELECT * FROM exercise_inject_responses WHERE session_id = $1`,
     [sessionId],
   );
-  return { ...session.rows[0], responses: responses.rows };
+  const releases = await pool.query(
+    `SELECT sir.*, u.name AS released_by_name
+     FROM session_inject_releases sir
+     LEFT JOIN users u ON u.id = sir.released_by
+     WHERE sir.session_id = $1`,
+    [sessionId],
+  );
+  return { ...session.rows[0], responses: responses.rows, releases: releases.rows };
 }
 
 export async function upsertResponse(data: {
@@ -285,6 +296,77 @@ export async function getAAR(sessionId: string, orgId: string) {
     [sessionId, orgId],
   );
   return result.rows[0] ?? null;
+}
+
+// ─── Participants ─────────────────────────────────────────────────────────────
+
+export async function listParticipants(exerciseId: string) {
+  const result = await pool.query(
+    `SELECT ep.exercise_id, ep.user_id, ep.added_by, ep.added_at,
+            u.email AS user_email, u.name AS user_name, u.role AS user_role
+     FROM exercise_participants ep
+     JOIN users u ON u.id = ep.user_id
+     WHERE ep.exercise_id = $1
+     ORDER BY ep.added_at ASC`,
+    [exerciseId],
+  );
+  return result.rows;
+}
+
+export async function addParticipant(data: {
+  exercise_id: string;
+  user_id: string;
+  added_by: string;
+  org_id: string;
+}) {
+  // Validate user belongs to same org
+  const userCheck = await pool.query(
+    `SELECT id FROM users WHERE id = $1 AND org_id = $2`,
+    [data.user_id, data.org_id],
+  );
+  if ((userCheck.rowCount ?? 0) === 0) return null;
+  const result = await pool.query(
+    `INSERT INTO exercise_participants (exercise_id, user_id, added_by)
+     VALUES ($1, $2, $3)
+     ON CONFLICT (exercise_id, user_id) DO NOTHING
+     RETURNING *`,
+    [data.exercise_id, data.user_id, data.added_by],
+  );
+  return result.rows[0] ?? null;
+}
+
+export async function removeParticipant(exerciseId: string, userId: string) {
+  const result = await pool.query(
+    `DELETE FROM exercise_participants WHERE exercise_id = $1 AND user_id = $2 RETURNING exercise_id`,
+    [exerciseId, userId],
+  );
+  return (result.rowCount ?? 0) > 0;
+}
+
+// ─── Session Inject Releases ──────────────────────────────────────────────────
+
+export async function releaseInject(data: {
+  session_id: string;
+  inject_id: string;
+  released_by: string;
+}) {
+  const result = await pool.query(
+    `INSERT INTO session_inject_releases (session_id, inject_id, released_by)
+     VALUES ($1, $2, $3)
+     ON CONFLICT (session_id, inject_id) DO NOTHING
+     RETURNING *`,
+    [data.session_id, data.inject_id, data.released_by],
+  );
+  if (result.rows.length > 0) return result.rows[0];
+  // Already released — return existing record
+  const existing = await pool.query(
+    `SELECT sir.*, u.name AS released_by_name
+     FROM session_inject_releases sir
+     LEFT JOIN users u ON u.id = sir.released_by
+     WHERE sir.session_id = $1 AND sir.inject_id = $2`,
+    [data.session_id, data.inject_id],
+  );
+  return existing.rows[0] ?? null;
 }
 
 export async function upsertAAR(data: {

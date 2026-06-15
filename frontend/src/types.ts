@@ -149,6 +149,24 @@ export interface BoundaryMappingWithBoundary {
   mapped_at: string;
 }
 
+export interface ExerciseParticipant {
+  exercise_id: string;
+  user_id: string;
+  user_email: string;
+  user_name: string;
+  user_role: UserRole;
+  added_at: string;
+}
+
+export interface SessionInjectRelease {
+  id: string;
+  session_id: string;
+  inject_id: string;
+  released_by?: string;
+  released_by_name?: string;
+  released_at: string;
+}
+
 export interface TabletopExercise {
   id: string;
   org_id: string;
@@ -164,6 +182,8 @@ export interface TabletopExercise {
   updated_at: string;
   inject_count?: number;
   injects?: ExerciseInject[];
+  incident_id?: string | null;
+  incident_title?: string | null;
 }
 
 export interface ExerciseInject {
@@ -177,6 +197,7 @@ export interface ExerciseInject {
   expected_actions?: string;
   discussion_prompts?: string;
   created_at: string;
+  release?: SessionInjectRelease;
 }
 
 export interface ExerciseSession {
@@ -190,6 +211,7 @@ export interface ExerciseSession {
   participant_notes?: string;
   exercise?: TabletopExercise;
   responses?: ExerciseInjectResponse[];
+  releases?: SessionInjectRelease[];
 }
 
 export interface ExerciseInjectResponse {

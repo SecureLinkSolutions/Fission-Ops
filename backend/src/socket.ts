@@ -75,6 +75,11 @@ export function initSocket(httpServer: HttpServer): SocketServer {
       socket.leave(room);
     });
 
+    socket.on('join:tabletop_session', (sessionId: string) => {
+      const room = `tabletop:session:${sessionId}`;
+      socket.join(room);
+    });
+
     socket.on('join:user', () => {
       socket.join(`user:${user.sub}`);
     });
@@ -105,5 +110,11 @@ export function emitToIncident(incidentId: string, event: string, data: unknown)
 export function emitToUser(userId: string, event: string, data: unknown): void {
   if (io) {
     io.to(`user:${userId}`).emit(event, data);
+  }
+}
+
+export function emitToTabletopSession(sessionId: string, event: string, data: unknown): void {
+  if (io) {
+    io.to(`tabletop:session:${sessionId}`).emit(event, data);
   }
 }

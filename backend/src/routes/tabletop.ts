@@ -6,6 +6,7 @@ import { requireRole } from '../middleware/rbac';
 import { createError } from '../middleware/errorHandler';
 import { pool } from '../db/pool';
 import * as repo from '../repositories/tabletopRepository';
+import { emitToTabletopSession } from '../socket';
 
 const router = Router();
 
@@ -23,6 +24,7 @@ const exerciseBodySchema = z.object({
   objectives: z.string().optional(),
   scheduled_at: z.string().optional(),
   duration_minutes: z.number().int().positive().optional(),
+  incident_id: z.string().uuid().nullable().optional(),
 });
 
 router.post('/exercises', authenticate, requireRole('senior_analyst'), async (req: Request, res: Response) => {
@@ -140,6 +142,11 @@ router.post('/sessions/:sessionId/responses', authenticate, requireRole('senior_
     ...body,
     submitted_by: req.user!.sub,
   });
+  emitToTabletopSession(req.params.sessionId, 'tabletop:response_saved', {
+    sessionId: req.params.sessionId,
+    injectId: body.inject_id,
+    response,
+  });
   res.status(201).json(response);
 });
 
@@ -147,6 +154,7 @@ router.patch('/sessions/:sessionId/complete', authenticate, requireRole('senior_
   const { notes } = z.object({ notes: z.string().optional() }).parse(req.body);
   const session = await repo.completeSession(req.params.sessionId, req.user!.org_id!, notes);
   if (!session) throw createError('Session not found', 404, 'NOT_FOUND');
+  emitToTabletopSession(req.params.sessionId, 'tabletop:session_completed', { sessionId: req.params.sessionId });
   res.json(session);
 });
 
@@ -175,6 +183,63 @@ router.put('/sessions/:sessionId/aar', authenticate, requireRole('incident_comma
     created_by: req.user!.sub,
   });
   res.json(aar);
+});
+
+// ─── Participants ─────────────────────────────────────────────────────────────
+
+router.get('/exercises/:id/participants', authenticate, async (req: Request, res: Response) => {
+  const exercise = await repo.getExerciseById(req.params.id, req.user!.org_id!);
+  if (!exercise) throw createError('Exercise not found', 404, 'NOT_FOUND');
+  const participants = await repo.listParticipants(req.params.id);
+  res.json(participants);
+});
+
+router.post('/exercises/:id/participants', authenticate, requireRole('incident_commander'), async (req: Request, res: Response) => {
+  const { user_id } = z.object({ user_id: z.string().uuid() }).parse(req.body);
+  const exercise = await repo.getExerciseById(req.params.id, req.user!.org_id!);
+  if (!exercise) throw createError('Exercise not found', 404, 'NOT_FOUND');
+  const participant = await repo.addParticipant({
+    exercise_id: req.params.id,
+    user_id,
+    added_by: req.user!.sub,
+    org_id: req.user!.org_id!,
+  });
+  if (!participant) throw createError('User not found in org', 404, 'NOT_FOUND');
+  res.status(201).json(participant);
+});
+
+router.delete('/exercises/:id/participants/:userId', authenticate, requireRole('incident_commander'), async (req: Request, res: Response) => {
+  const exercise = await repo.getExerciseById(req.params.id, req.user!.org_id!);
+  if (!exercise) throw createError('Exercise not found', 404, 'NOT_FOUND');
+  const deleted = await repo.removeParticipant(req.params.id, req.params.userId);
+  if (!deleted) throw createError('Participant not found', 404, 'NOT_FOUND');
+  res.status(204).send();
+});
+
+// ─── Inject Release ───────────────────────────────────────────────────────────
+
+router.post('/sessions/:sessionId/release/:injectId', authenticate, requireRole('senior_analyst'), async (req: Request, res: Response) => {
+  const session = await repo.getSessionById(req.params.sessionId, req.user!.org_id!);
+  if (!session) throw createError('Session not found', 404, 'NOT_FOUND');
+  const release = await repo.releaseInject({
+    session_id: req.params.sessionId,
+    inject_id: req.params.injectId,
+    released_by: req.user!.sub,
+  });
+  // Get released_by name
+  let releasedByName: string | undefined;
+  if (req.user!.sub) {
+    const userRow = await pool.query<{ name: string }>(`SELECT name FROM users WHERE id = $1`, [req.user!.sub]);
+    releasedByName = userRow.rows[0]?.name;
+  }
+  emitToTabletopSession(req.params.sessionId, 'tabletop:inject_released', {
+    sessionId: req.params.sessionId,
+    injectId: req.params.injectId,
+    releasedAt: release?.released_at,
+    releasedBy: req.user!.sub,
+    releasedByName,
+  });
+  res.json(release);
 });
 
 // ─── AI Scenario Generation ────────────────────────────────────────────────────

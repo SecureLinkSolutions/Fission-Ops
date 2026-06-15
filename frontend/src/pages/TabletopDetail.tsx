@@ -1,8 +1,14 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { io, Socket } from 'socket.io-client';
 import { apiClient } from '../api/client';
 import { useAuth } from '../context/AuthContext';
-import { TabletopExercise, ExerciseSession, ExerciseInjectResponse, ExerciseAAR } from '../types';
+import { TabletopExercise, ExerciseSession, ExerciseInjectResponse, ExerciseAAR, ExerciseParticipant, SessionInjectRelease, ManagedUser, Incident } from '../types';
+
+const SOCKET_URL = (() => {
+  const base = import.meta.env.VITE_API_URL || '/api/v1';
+  return base.replace(/\/api\/v1\/?$/, '');
+})();
 
 const STATUS_COLORS: Record<string, string> = {
   draft: '#8b949e',
@@ -133,6 +139,8 @@ export default function TabletopDetail() {
   const [savedResponses, setSavedResponses] = useState<Map<string, ExerciseInjectResponse>>(new Map());
   const [sessionNotes, setSessionNotes] = useState('');
   const [completing, setCompleting] = useState(false);
+  const [releases, setReleases] = useState<Map<string, SessionInjectRelease>>(new Map());
+  const [sessionCompleted, setSessionCompleted] = useState(false);
 
   // AAR state
   const [aarForm, setAARForm] = useState({
@@ -144,6 +152,17 @@ export default function TabletopDetail() {
   });
   const [savingAAR, setSavingAAR] = useState(false);
   const [editingAAR, setEditingAAR] = useState(false);
+
+  // Participants state
+  const [participants, setParticipants] = useState<ExerciseParticipant[]>([]);
+  const [orgUsers, setOrgUsers] = useState<ManagedUser[]>([]);
+  const [loadingParticipants, setLoadingParticipants] = useState(false);
+
+  // Incident linking state
+  const [orgIncidents, setOrgIncidents] = useState<Incident[]>([]);
+  const [addParticipantId, setAddParticipantId] = useState('');
+
+  const socketRef = useRef<Socket | null>(null);
 
   const canEdit = ROLE_RANK[user?.role ?? 'analyst'] >= ROLE_RANK['senior_analyst'];
   const canCommand = ROLE_RANK[user?.role ?? 'analyst'] >= ROLE_RANK['incident_commander'];
@@ -159,13 +178,23 @@ export default function TabletopDetail() {
         const sessions = await apiClient.get<ExerciseSession[]>(`/tabletop/exercises/${id}/sessions`).catch(() => null);
         if (sessions && sessions.data && sessions.data.length > 0) {
           const latest = sessions.data[0];
-          setSession(latest);
-          if (latest.responses) {
+          // Fetch full session with releases
+          const fullSession = await apiClient.get<ExerciseSession>(`/tabletop/sessions/${latest.id}`).catch(() => null);
+          const sessionData = fullSession?.data ?? latest;
+          setSession(sessionData);
+          if (sessionData.responses) {
             const map = new Map<string, ExerciseInjectResponse>();
-            for (const r of latest.responses) {
+            for (const r of sessionData.responses) {
               map.set(r.inject_id, r);
             }
             setSavedResponses(map);
+          }
+          if (sessionData.releases) {
+            const rmap = new Map<string, SessionInjectRelease>();
+            for (const r of sessionData.releases) {
+              rmap.set(r.inject_id, r);
+            }
+            setReleases(rmap);
           }
           setSessionNotes(latest.participant_notes ?? '');
           if (latest.status === 'completed') {
@@ -194,11 +223,98 @@ export default function TabletopDetail() {
     loadExercise();
   }, [loadExercise]);
 
+  const loadParticipants = useCallback(async () => {
+    if (!id) return;
+    setLoadingParticipants(true);
+    try {
+      const res = await apiClient.get<ExerciseParticipant[]>(`/tabletop/exercises/${id}/participants`);
+      setParticipants(res.data);
+    } catch { /* ignore */ } finally {
+      setLoadingParticipants(false);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    if (canCommand) {
+      loadParticipants();
+      apiClient.get<ManagedUser[]>('/users').then(r => setOrgUsers(r.data)).catch(() => null);
+      apiClient.get<Incident[]>('/incidents?limit=100').then(r => setOrgIncidents(r.data)).catch(() => null);
+    }
+  }, [canCommand, loadParticipants]);
+
+  // Socket.io for Run tab — join tabletop session room
+  useEffect(() => {
+    if (!session?.id || activeTab !== 'Run') return;
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    const socket = io(SOCKET_URL, {
+      auth: { token },
+      transports: ['websocket', 'polling'],
+    });
+    socketRef.current = socket;
+
+    socket.on('connect', () => {
+      socket.emit('join:tabletop_session', session.id);
+    });
+
+    socket.on('tabletop:inject_released', (data: { sessionId: string; injectId: string; releasedAt: string; releasedBy: string; releasedByName?: string }) => {
+      if (data.sessionId !== session.id) return;
+      setReleases(prev => new Map(prev).set(data.injectId, {
+        id: '',
+        session_id: data.sessionId,
+        inject_id: data.injectId,
+        released_by: data.releasedBy,
+        released_by_name: data.releasedByName,
+        released_at: data.releasedAt,
+      }));
+    });
+
+    socket.on('tabletop:response_saved', (data: { sessionId: string; injectId: string; response: ExerciseInjectResponse }) => {
+      if (data.sessionId !== session.id) return;
+      setSavedResponses(prev => new Map(prev).set(data.injectId, data.response));
+    });
+
+    socket.on('tabletop:session_completed', (data: { sessionId: string }) => {
+      if (data.sessionId !== session.id) return;
+      setSessionCompleted(true);
+    });
+
+    return () => {
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, [session?.id, activeTab]);
+
   // Check session by getting the exercise with session info
   useEffect(() => {
     if (!id) return;
     apiClient.get<ExerciseSession>(`/tabletop/sessions/${id}`).catch(() => null);
   }, [id]);
+
+  async function handleReleaseInject(injectId: string) {
+    if (!session) return;
+    const res = await apiClient.post<SessionInjectRelease>(`/tabletop/sessions/${session.id}/release/${injectId}`, {});
+    setReleases(prev => new Map(prev).set(injectId, res.data));
+  }
+
+  async function handleAddParticipant(userId: string) {
+    if (!id) return;
+    await apiClient.post(`/tabletop/exercises/${id}/participants`, { user_id: userId });
+    await loadParticipants();
+  }
+
+  async function handleRemoveParticipant(userId: string) {
+    if (!id) return;
+    await apiClient.delete(`/tabletop/exercises/${id}/participants/${userId}`);
+    await loadParticipants();
+  }
+
+  async function handleLinkIncident(incidentId: string | null) {
+    if (!exercise) return;
+    const res = await apiClient.put<TabletopExercise>(`/tabletop/exercises/${exercise.id}`, { incident_id: incidentId });
+    setExercise(res.data);
+  }
 
   async function handleStatusChange(status: string) {
     if (!exercise) return;
@@ -482,6 +598,76 @@ export default function TabletopDetail() {
             )}
           </div>
 
+          {/* Linked Incident (incident_commander+) */}
+          {canCommand && (
+            <div style={{ background: '#161b22', border: '1px solid #30363d', borderRadius: '8px', padding: '16px 20px', marginBottom: '16px' }}>
+              <h3 style={{ margin: '0 0 10px', fontSize: '13px', color: '#8b949e', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Linked Incident</h3>
+              {exercise.incident_id ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ color: '#58a6ff', fontSize: '13px' }}>🔗 {exercise.incident_title ?? exercise.incident_id}</span>
+                  <a href={`/incidents/${exercise.incident_id}`} target="_blank" rel="noreferrer" style={{ color: '#8b949e', fontSize: '12px', textDecoration: 'underline' }}>Open Incident</a>
+                  <button onClick={() => handleLinkIncident(null)} style={{ background: 'transparent', border: '1px solid #f8514944', color: '#f85149', padding: '3px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>Unlink</button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <select
+                    defaultValue=""
+                    onChange={e => { if (e.target.value) handleLinkIncident(e.target.value); }}
+                    style={{ ...inputStyle, width: 'auto', minWidth: '260px' }}
+                  >
+                    <option value="">— Select incident to link —</option>
+                    {orgIncidents.map(inc => (
+                      <option key={inc.id} value={inc.id}>{inc.title}</option>
+                    ))}
+                  </select>
+                  <span style={{ color: '#484f58', fontSize: '12px' }}>Links this exercise to a live incident for parallel IR work</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Participants (incident_commander+) */}
+          {canCommand && (
+            <div style={{ background: '#161b22', border: '1px solid #30363d', borderRadius: '8px', padding: '16px 20px', marginBottom: '16px' }}>
+              <h3 style={{ margin: '0 0 10px', fontSize: '13px', color: '#8b949e', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Participants</h3>
+              {loadingParticipants ? (
+                <div style={{ color: '#484f58', fontSize: '13px' }}>Loading…</div>
+              ) : (
+                <>
+                  {participants.length === 0 ? (
+                    <div style={{ color: '#484f58', fontSize: '13px', marginBottom: '10px' }}>No participants added yet.</div>
+                  ) : (
+                    <div style={{ display: 'grid', gap: '6px', marginBottom: '10px' }}>
+                      {participants.map(p => (
+                        <div key={p.user_id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 10px', background: '#0d1117', borderRadius: '6px', border: '1px solid #21262d' }}>
+                          <span style={{ flex: 1, fontSize: '13px', color: '#c9d1d9' }}>{p.user_name}</span>
+                          <span style={{ fontSize: '12px', color: '#8b949e' }}>{p.user_email}</span>
+                          <span style={{
+                            background: '#58a6ff22', color: '#58a6ff', border: '1px solid #58a6ff44',
+                            borderRadius: '10px', padding: '1px 8px', fontSize: '11px', fontWeight: 600,
+                          }}>{p.user_role}</span>
+                          <button onClick={() => handleRemoveParticipant(p.user_id)} style={{ background: 'transparent', border: '1px solid #f8514944', color: '#f85149', padding: '2px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>Remove</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div>
+                    <select
+                      defaultValue=""
+                      onChange={e => { if (e.target.value) { handleAddParticipant(e.target.value); e.currentTarget.value = ''; } }}
+                      style={{ ...inputStyle, width: 'auto', minWidth: '220px' }}
+                    >
+                      <option value="">+ Add participant…</option>
+                      {orgUsers.filter(u => !participants.find(p => p.user_id === u.id)).map(u => (
+                        <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
           {/* Inject list */}
           {injects.length === 0 && (
             <div style={{ textAlign: 'center', padding: '40px', color: '#484f58', background: '#161b22', borderRadius: '8px', border: '1px solid #30363d' }}>
@@ -573,6 +759,21 @@ export default function TabletopDetail() {
             </div>
           ) : (
             <div>
+              {/* Session completed banner (real-time) */}
+              {sessionCompleted && session?.status !== 'completed' && (
+                <div style={{ background: '#a371f722', border: '1px solid #a371f744', borderRadius: '8px', padding: '12px 16px', marginBottom: '16px', color: '#a371f7', fontSize: '13px', fontWeight: 600 }}>
+                  Session has been completed by the facilitator.
+                </div>
+              )}
+
+              {/* Linked incident banner */}
+              {exercise.incident_id && (
+                <div style={{ background: '#58a6ff11', border: '1px solid #58a6ff33', borderRadius: '8px', padding: '10px 16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ color: '#58a6ff', fontSize: '13px' }}>🔗 Linked to Incident: <strong>{exercise.incident_title ?? exercise.incident_id}</strong></span>
+                  <a href={`/incidents/${exercise.incident_id}`} target="_blank" rel="noreferrer" style={{ background: '#1f6feb', border: '1px solid #388bfd', color: '#e6edf3', padding: '4px 10px', borderRadius: '5px', fontSize: '12px', textDecoration: 'none' }}>Open Incident ↗</a>
+                </div>
+              )}
+
               {/* Scenario box */}
               <div style={{ background: '#161b22', border: '1px solid #58a6ff33', borderLeft: '3px solid #58a6ff', borderRadius: '8px', padding: '16px 20px', marginBottom: '24px' }}>
                 <div style={{ fontSize: '11px', color: '#58a6ff', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>Active Scenario</div>
@@ -586,9 +787,11 @@ export default function TabletopDetail() {
                   const isExpanded = expandedInjects.has(inject.id);
                   const saved = savedResponses.get(inject.id);
                   const resp = responses.get(inject.id) ?? { response_text: saved?.response_text ?? '', gaps_identified: saved?.gaps_identified ?? '' };
+                  const release = releases.get(inject.id);
+                  const isReleased = !!release;
 
                   return (
-                    <div key={inject.id} style={{ background: '#161b22', border: '1px solid #30363d', borderRadius: '8px', overflow: 'hidden' }}>
+                    <div key={inject.id} style={{ background: '#161b22', border: `1px solid ${isReleased ? '#30363d' : '#21262d'}`, borderRadius: '8px', overflow: 'hidden', opacity: (!isReleased && !canEdit) ? 0.7 : 1 }}>
                       <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <span style={{
                           width: '24px', height: '24px', borderRadius: '50%',
@@ -602,37 +805,48 @@ export default function TabletopDetail() {
                         </span>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontWeight: 600, fontSize: '14px', marginBottom: '3px' }}>{inject.title}</div>
-                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                             <InjectTypeBadge type={inject.inject_type} />
                             {inject.trigger_minutes !== undefined && inject.trigger_minutes !== null && (
                               <span style={{ color: '#484f58', fontSize: '12px' }}>T+{inject.trigger_minutes}m</span>
                             )}
+                            {isReleased ? (
+                              <span style={{ fontSize: '11px', color: '#3fb950' }}>
+                                Released at {new Date(release.released_at).toLocaleTimeString()}{release.released_by_name ? ` by ${release.released_by_name}` : ''}
+                              </span>
+                            ) : !canEdit ? (
+                              <span style={{ fontSize: '11px', color: '#484f58' }}>🔒 Awaiting release…</span>
+                            ) : null}
                           </div>
                         </div>
-                        {session.status === 'in_progress' && canEdit && (
+                        {session.status === 'in_progress' && canEdit && !isReleased && (
                           <button
-                            onClick={() => toggleInject(inject.id)}
+                            onClick={() => handleReleaseInject(inject.id)}
                             style={{
-                              background: isExpanded ? '#21262d' : '#1f6feb22',
-                              border: `1px solid ${isExpanded ? '#30363d' : '#388bfd44'}`,
-                              color: isExpanded ? '#8b949e' : '#58a6ff',
+                              background: '#1f6feb22',
+                              border: '1px solid #388bfd44',
+                              color: '#58a6ff',
                               padding: '5px 12px', borderRadius: '5px', cursor: 'pointer', fontSize: '12px',
                             }}
                           >
-                            {isExpanded ? 'Collapse' : 'Release Inject'}
+                            Release Inject
                           </button>
                         )}
-                        {(session.status === 'completed' || saved) && !isExpanded && (
+                        {(isReleased || session.status === 'completed' || saved) && (
                           <button
                             onClick={() => toggleInject(inject.id)}
-                            style={{ background: 'transparent', border: '1px solid #30363d', color: '#8b949e', padding: '5px 12px', borderRadius: '5px', cursor: 'pointer', fontSize: '12px' }}
+                            style={{
+                              background: isExpanded ? '#21262d' : 'transparent',
+                              border: '1px solid #30363d', color: '#8b949e',
+                              padding: '5px 12px', borderRadius: '5px', cursor: 'pointer', fontSize: '12px',
+                            }}
                           >
-                            View
+                            {isExpanded ? 'Collapse' : 'View'}
                           </button>
                         )}
                       </div>
 
-                      {isExpanded && (
+                      {isExpanded && (isReleased || session.status === 'completed') && (
                         <div style={{ borderTop: '1px solid #21262d', padding: '16px' }}>
                           <p style={{ margin: '0 0 12px', color: '#c9d1d9', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{inject.description}</p>
                           {inject.discussion_prompts && (
