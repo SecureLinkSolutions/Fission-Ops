@@ -238,7 +238,7 @@ export default function TabletopDetail() {
     if (canCommand) {
       loadParticipants();
       apiClient.get<ManagedUser[]>('/users').then(r => setOrgUsers(r.data)).catch(() => null);
-      apiClient.get<Incident[]>('/incidents?limit=100').then(r => setOrgIncidents(r.data)).catch(() => null);
+      apiClient.get<{ incidents: Incident[] }>('/incidents?limit=100').then(r => setOrgIncidents(r.data.incidents ?? [])).catch(() => null);
     }
   }, [canCommand, loadParticipants]);
 
