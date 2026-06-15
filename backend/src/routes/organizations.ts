@@ -125,7 +125,7 @@ router.get('/me/api-keys', authenticate, requireRole('incident_commander'), asyn
 router.put('/me/api-keys/:service', authenticate, requireRole('incident_commander'), async (req: Request, res: Response) => {
   const orgId = req.user!.org_id;
   if (!orgId) { res.status(400).json({ error: 'No org', code: 'NO_ORG' }); return; }
-  const service = z.enum(['virustotal', 'abuseipdb', 'shodan']).parse(req.params.service);
+  const service = z.enum(['virustotal', 'abuseipdb', 'shodan', 'anthropic']).parse(req.params.service);
   const { api_key } = z.object({ api_key: z.string().min(1) }).parse(req.body);
   const { pool } = await import('../db/pool');
   await pool.query(
@@ -150,7 +150,7 @@ router.delete('/me/api-keys/:service', authenticate, requireRole('incident_comma
 router.post('/me/api-keys/:service/test', authenticate, requireRole('incident_commander'), async (req: Request, res: Response) => {
   const orgId = req.user!.org_id;
   if (!orgId) { res.status(400).json({ error: 'No org', code: 'NO_ORG' }); return; }
-  const service = z.enum(['virustotal', 'abuseipdb', 'shodan']).parse(req.params.service);
+  const service = z.enum(['virustotal', 'abuseipdb', 'shodan', 'anthropic']).parse(req.params.service);
   const { pool } = await import('../db/pool');
   const keyResult = await pool.query(
     `SELECT api_key FROM org_api_keys WHERE org_id = $1 AND service = $2`,
@@ -170,6 +170,9 @@ router.post('/me/api-keys/:service/test', authenticate, requireRole('incident_co
     } else if (service === 'abuseipdb') {
       testUrl = 'https://api.abuseipdb.com/api/v2/check?ipAddress=8.8.8.8&maxAgeInDays=90';
       headers = { 'Key': key };
+    } else if (service === 'anthropic') {
+      testUrl = 'https://api.anthropic.com/v1/models';
+      headers = { 'x-api-key': key, 'anthropic-version': '2023-06-01' };
     } else {
       testUrl = `https://api.shodan.io/api-info?key=${encodeURIComponent(key)}`;
     }
@@ -284,7 +287,7 @@ router.get('/:id/api-keys', authenticate, requireRole('incident_commander'), asy
 router.put('/:id/api-keys/:service', authenticate, requireRole('incident_commander'), async (req: Request, res: Response) => {
   const orgId = req.user!.role === 'platform_admin' ? req.params.id : req.user!.org_id;
   if (!orgId) { res.status(400).json({ error: 'No org', code: 'NO_ORG' }); return; }
-  const service = z.enum(['virustotal', 'abuseipdb', 'shodan']).parse(req.params.service);
+  const service = z.enum(['virustotal', 'abuseipdb', 'shodan', 'anthropic']).parse(req.params.service);
   const { api_key } = z.object({ api_key: z.string().min(1) }).parse(req.body);
   const { pool } = await import('../db/pool');
   await pool.query(
@@ -308,7 +311,7 @@ router.delete('/:id/api-keys/:service', authenticate, requireRole('incident_comm
 router.post('/:id/api-keys/:service/test', authenticate, requireRole('incident_commander'), async (req: Request, res: Response) => {
   const orgId = req.user!.role === 'platform_admin' ? req.params.id : req.user!.org_id;
   if (!orgId) { res.status(400).json({ error: 'No org', code: 'NO_ORG' }); return; }
-  const service = z.enum(['virustotal', 'abuseipdb', 'shodan']).parse(req.params.service);
+  const service = z.enum(['virustotal', 'abuseipdb', 'shodan', 'anthropic']).parse(req.params.service);
   const { pool } = await import('../db/pool');
   const keyResult = await pool.query(
     `SELECT api_key FROM org_api_keys WHERE org_id = $1 AND service = $2`,
@@ -328,6 +331,9 @@ router.post('/:id/api-keys/:service/test', authenticate, requireRole('incident_c
     } else if (service === 'abuseipdb') {
       testUrl = 'https://api.abuseipdb.com/api/v2/check?ipAddress=8.8.8.8&maxAgeInDays=90';
       headers = { 'Key': key };
+    } else if (service === 'anthropic') {
+      testUrl = 'https://api.anthropic.com/v1/models';
+      headers = { 'x-api-key': key, 'anthropic-version': '2023-06-01' };
     } else {
       testUrl = `https://api.shodan.io/api-info?key=${encodeURIComponent(key)}`;
     }
