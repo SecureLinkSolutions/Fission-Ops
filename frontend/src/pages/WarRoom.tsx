@@ -303,7 +303,7 @@ export default function WarRoom() {
       <div style={{ background: '#0d1117', borderTop: '2px solid #30363d', padding: '7px 0', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center' }}>
         <span style={{ color: '#f97316', fontSize: '11px', fontWeight: 700, padding: '0 14px', flexShrink: 0, letterSpacing: '0.05em', whiteSpace: 'nowrap' as const }}>━ LIVE ━</span>
         <div style={{ flex: 1, overflow: 'hidden' }}>
-          <div style={{ display: 'inline-block', whiteSpace: 'nowrap' as const, fontSize: '13px', color: '#8b949e', animation: 'warroom-ticker 80s linear infinite' }}>
+          <div style={{ display: 'inline-block', whiteSpace: 'nowrap' as const, fontSize: '13px', color: '#8b949e', animation: 'warroom-ticker 45s linear infinite' }}>
             {tickerText}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{tickerText}
           </div>
         </div>
