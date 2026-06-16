@@ -286,7 +286,7 @@ Create a detailed IR tabletop exercise scenario for a ${scenarioType} incident. 
   ]
 }
 
-Include 5-7 injects that progress logically through the incident lifecycle. Use realistic technical details (IP addresses, domain names, file hashes, etc.). Vary inject types across the timeline. trigger_minutes should be cumulative (0, 10, 25, 40, etc.).`;
+Include 7-18 injects that progress logically through the incident lifecycle. Use realistic technical details (IP addresses, domain names, file hashes, etc.). Vary inject types across the timeline. trigger_minutes should be cumulative (0, 10, 25, 40, etc.).`;
 
   let text: string;
   try {
