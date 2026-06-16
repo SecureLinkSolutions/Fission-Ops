@@ -12,14 +12,14 @@ const router = Router();
 
 router.patch('/entities/:entityId/ioc-status', authenticate, async (req: Request, res: Response) => {
   const schema = z.object({
-    status: z.enum(['suspected', 'confirmed', 'cleared']),
+    status: z.enum(['suspected', 'confirmed', 'cleared', 'false_positive']),
     notes: z.string().optional(),
   });
   const { status, notes } = schema.parse(req.body);
   const userRole = req.user!.role;
 
-  // Analysts can only set suspected
-  if (status !== 'suspected' && ROLE_RANK[userRole] < ROLE_RANK['senior_analyst']) {
+  // Analysts can only set suspected or false_positive
+  if (status !== 'suspected' && status !== 'false_positive' && ROLE_RANK[userRole] < ROLE_RANK['senior_analyst']) {
     res.status(403).json({ error: 'Insufficient permissions to set this IOC status', code: 'FORBIDDEN' });
     return;
   }

@@ -124,7 +124,7 @@ router.post('/incidents/:incidentId/kill-chain/narrative', authenticate, require
       if (d.os) enrichParts.push(`OS: ${d.os}`);
       if (d.ip_address) enrichParts.push(`IP: ${d.ip_address}`);
       const enrichStr = enrichParts.length > 0 ? ` (${enrichParts.join(', ')})` : '';
-      const iocStr = e.ioc_status === 'confirmed' ? ' [CONFIRMED IOC]' : e.ioc_status === 'suspected' ? ' [SUSPECTED IOC]' : '';
+      const iocStr = e.ioc_status === 'confirmed' ? ' [CONFIRMED IOC]' : e.ioc_status === 'suspected' ? ' [SUSPECTED IOC]' : e.ioc_status === 'false_positive' ? ' [FALSE POSITIVE]' : '';
       const ttpStr = (e.ttps ?? []).length > 0 ? `\n    TTPs: ${e.ttps.map((t) => `${t.technique_id} - ${t.name}`).join(', ')}` : '';
       return `  - ${e.type} ${e.value}${enrichStr}${iocStr}\n    Confidence: ${e.confidence}${ttpStr}`;
     }).join('\n');

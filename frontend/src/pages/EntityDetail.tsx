@@ -18,6 +18,7 @@ const IOC_STATUS_DISPLAY: Record<string, { label: string; color: string }> = {
   confirmed: { label: '💀 CONFIRMED', color: '#f85149' },
   suspected: { label: '⚠ SUSPECTED', color: '#d29922' },
   cleared: { label: '✓ CLEARED', color: '#3fb950' },
+  false_positive: { label: '⊘ FALSE POSITIVE', color: '#8b949e' },
 };
 
 const ENRICHMENT_STATUS_COLORS: Record<string, string> = {
@@ -53,7 +54,7 @@ function humanLabel(key: string): string {
 }
 
 interface ExtendedEntity extends Entity {
-  ioc_status?: 'suspected' | 'confirmed' | 'cleared';
+  ioc_status?: 'suspected' | 'confirmed' | 'cleared' | 'false_positive';
   ioc_notes?: string;
   ioc_flagged_at?: string;
   enrichment_status?: 'pending' | 'running' | 'complete' | 'failed' | 'skipped';
@@ -77,7 +78,7 @@ export default function EntityDetail() {
     () => apiClient.get(`/incidents/${id}/boundaries`).then((r) => r.data), [id],
   );
 
-  async function handleSetIOC(status: 'suspected' | 'confirmed' | 'cleared') {
+  async function handleSetIOC(status: 'suspected' | 'confirmed' | 'cleared' | 'false_positive') {
     setSettingIOC(true);
     try {
       await apiClient.patch(`/entities/${entityId}/ioc-status`, { status, notes: iocNotes || undefined });
@@ -251,6 +252,13 @@ export default function EntityDetail() {
             style={{ background: '#d2992222', border: '1px solid #d2992244', borderRadius: '6px', padding: '6px 14px', color: '#d29922', fontSize: '13px', cursor: 'pointer' }}
           >
             ⚠ Mark Suspected
+          </button>
+          <button
+            onClick={() => handleSetIOC('false_positive')}
+            disabled={settingIOC}
+            style={{ background: '#8b949e22', border: '1px solid #8b949e44', borderRadius: '6px', padding: '6px 14px', color: '#8b949e', fontSize: '13px', cursor: 'pointer' }}
+          >
+            ⊘ False Positive
           </button>
           {canConfirmIOC && (
             <>
