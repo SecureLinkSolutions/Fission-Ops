@@ -408,9 +408,16 @@ export default function TabletopDetail() {
         objectives: res.data.objectives,
       });
 
+      const validInjectTypes = ['information', 'decision', 'complication', 'escalation', 'resolution'];
       // Add all injects
       for (const inject of res.data.injects) {
-        await apiClient.post(`/tabletop/exercises/${exercise.id}/injects`, inject);
+        const normalised = {
+          ...inject,
+          inject_type: validInjectTypes.includes(inject.inject_type?.toLowerCase())
+            ? inject.inject_type.toLowerCase()
+            : 'information',
+        };
+        await apiClient.post(`/tabletop/exercises/${exercise.id}/injects`, normalised);
       }
       await loadExercise();
     } catch (err: unknown) {

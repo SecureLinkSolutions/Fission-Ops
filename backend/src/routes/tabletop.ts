@@ -69,7 +69,11 @@ router.patch('/exercises/:id/status', authenticate, requireRole('senior_analyst'
 const injectBodySchema = z.object({
   title: z.string().min(1),
   description: z.string().min(1),
-  inject_type: z.enum(['information', 'decision', 'complication', 'escalation', 'resolution']),
+  inject_type: z.string().transform(v => {
+    const valid = ['information', 'decision', 'complication', 'escalation', 'resolution'];
+    const lower = v.toLowerCase();
+    return valid.includes(lower) ? lower : 'information';
+  }),
   trigger_minutes: z.number().int().nonnegative().optional(),
   expected_actions: z.string().optional(),
   discussion_prompts: z.string().optional(),
