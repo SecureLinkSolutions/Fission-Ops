@@ -313,20 +313,20 @@ export default function TabletopDetail() {
   async function handleLinkIncident(incidentId: string | null) {
     if (!exercise) return;
     const res = await apiClient.put<TabletopExercise>(`/tabletop/exercises/${exercise.id}`, { incident_id: incidentId });
-    setExercise(res.data);
+    setExercise(e => ({ ...res.data, injects: e?.injects ?? [] }));
   }
 
   async function handleStatusChange(status: string) {
     if (!exercise) return;
     const res = await apiClient.patch<TabletopExercise>(`/tabletop/exercises/${exercise.id}/status`, { status });
-    setExercise(res.data);
+    setExercise(e => ({ ...res.data, injects: e?.injects ?? [] }));
   }
 
   async function handleStartSession() {
     if (!exercise) return;
     const res = await apiClient.post<ExerciseSession>(`/tabletop/exercises/${exercise.id}/sessions`, {});
     setSession(res.data);
-    setExercise(e => e ? { ...e, status: 'active' } : e);
+    await loadExercise();
     setActiveTab('Run');
   }
 
