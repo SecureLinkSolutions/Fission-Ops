@@ -125,6 +125,11 @@ export default function TabletopDetail() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'Build' | 'Run'>('Build');
 
+  // Scenario edit state
+  const [editingScenario, setEditingScenario] = useState(false);
+  const [scenarioForm, setScenarioForm] = useState({ title: '', scenario: '', objectives: '' });
+  const [savingScenario, setSavingScenario] = useState(false);
+
   // Inject form state
   const [showInjectForm, setShowInjectForm] = useState(false);
   const [injectForm, setInjectForm] = useState<InjectFormData>(emptyInjectForm);
@@ -314,6 +319,19 @@ export default function TabletopDetail() {
     if (!exercise) return;
     const res = await apiClient.put<TabletopExercise>(`/tabletop/exercises/${exercise.id}`, { incident_id: incidentId });
     setExercise(e => ({ ...res.data, injects: e?.injects ?? [] }));
+  }
+
+  async function handleSaveScenario(e: React.FormEvent) {
+    e.preventDefault();
+    if (!exercise) return;
+    setSavingScenario(true);
+    try {
+      const res = await apiClient.put<TabletopExercise>(`/tabletop/exercises/${exercise.id}`, scenarioForm);
+      setExercise(ex => ({ ...res.data, injects: ex?.injects ?? [] }));
+      setEditingScenario(false);
+    } finally {
+      setSavingScenario(false);
+    }
   }
 
   async function handleStatusChange(status: string) {
@@ -555,12 +573,68 @@ export default function TabletopDetail() {
         <div>
           {/* Exercise metadata */}
           <div style={{ background: '#161b22', border: '1px solid #30363d', borderRadius: '8px', padding: '20px', marginBottom: '24px' }}>
-            <h3 style={{ margin: '0 0 12px', fontSize: '14px', color: '#8b949e', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Scenario</h3>
-            <p style={{ margin: '0 0 16px', lineHeight: 1.6, color: '#e6edf3', whiteSpace: 'pre-wrap' }}>{exercise.scenario}</p>
-            {exercise.objectives && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <h3 style={{ margin: 0, fontSize: '14px', color: '#8b949e', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Scenario</h3>
+              {canEdit && !editingScenario && (
+                <button
+                  onClick={() => { setScenarioForm({ title: exercise.title, scenario: exercise.scenario, objectives: exercise.objectives ?? '' }); setEditingScenario(true); }}
+                  style={{ background: 'transparent', border: '1px solid #30363d', color: '#8b949e', padding: '4px 12px', borderRadius: '5px', cursor: 'pointer', fontSize: '12px' }}
+                >
+                  Edit
+                </button>
+              )}
+            </div>
+            {editingScenario ? (
+              <form onSubmit={handleSaveScenario}>
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={labelStyle}>Title *</label>
+                  <input
+                    type="text"
+                    value={scenarioForm.title}
+                    onChange={e => setScenarioForm(f => ({ ...f, title: e.target.value }))}
+                    required
+                    style={inputStyle}
+                  />
+                </div>
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={labelStyle}>Scenario *</label>
+                  <textarea
+                    value={scenarioForm.scenario}
+                    onChange={e => setScenarioForm(f => ({ ...f, scenario: e.target.value }))}
+                    required
+                    rows={8}
+                    style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.6 }}
+                    placeholder="Describe the scenario background, threat actor, initial indicators, and organisational context…"
+                  />
+                </div>
+                <div style={{ marginBottom: '14px' }}>
+                  <label style={labelStyle}>Objectives</label>
+                  <textarea
+                    value={scenarioForm.objectives}
+                    onChange={e => setScenarioForm(f => ({ ...f, objectives: e.target.value }))}
+                    rows={4}
+                    style={{ ...inputStyle, resize: 'vertical' }}
+                    placeholder="Learning objectives, one per line…"
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <button type="button" onClick={() => setEditingScenario(false)} style={{ background: 'transparent', border: '1px solid #30363d', color: '#8b949e', padding: '7px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>
+                    Cancel
+                  </button>
+                  <button type="submit" disabled={savingScenario} style={{ background: '#238636', border: '1px solid #2ea043', color: '#e6edf3', padding: '7px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', opacity: savingScenario ? 0.6 : 1 }}>
+                    {savingScenario ? 'Saving…' : 'Save'}
+                  </button>
+                </div>
+              </form>
+            ) : (
               <>
-                <h3 style={{ margin: '0 0 8px', fontSize: '14px', color: '#8b949e', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Objectives</h3>
-                <pre style={{ margin: 0, fontFamily: 'inherit', lineHeight: 1.6, color: '#c9d1d9', whiteSpace: 'pre-wrap' }}>{exercise.objectives}</pre>
+                <p style={{ margin: '0 0 16px', lineHeight: 1.6, color: '#e6edf3', whiteSpace: 'pre-wrap' }}>{exercise.scenario}</p>
+                {exercise.objectives && (
+                  <>
+                    <h3 style={{ margin: '0 0 8px', fontSize: '14px', color: '#8b949e', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Objectives</h3>
+                    <pre style={{ margin: 0, fontFamily: 'inherit', lineHeight: 1.6, color: '#c9d1d9', whiteSpace: 'pre-wrap' }}>{exercise.objectives}</pre>
+                  </>
+                )}
               </>
             )}
           </div>
