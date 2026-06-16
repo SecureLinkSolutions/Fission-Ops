@@ -20,7 +20,6 @@ const IOC_STATUS_DISPLAY: Record<string, { label: string; color: string }> = {
   confirmed: { label: 'CONFIRMED', color: '#f85149' },
   suspected: { label: 'SUSPECTED', color: '#d29922' },
   cleared: { label: 'CLEARED', color: '#3fb950' },
-  false_positive: { label: 'FALSE POSITIVE', color: '#8b949e' },
 };
 
 const CATEGORY_GROUPS: { label: string; types: string[] }[] = [
