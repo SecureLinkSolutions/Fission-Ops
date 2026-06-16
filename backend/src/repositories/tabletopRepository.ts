@@ -54,7 +54,7 @@ export async function createExercise(data: {
       data.scenario,
       data.objectives ?? null,
       data.scheduled_at ?? null,
-      data.duration_minutes ?? 60,
+      data.duration_minutes ?? null,
       data.created_by,
     ],
   );

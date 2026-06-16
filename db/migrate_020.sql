@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS tabletop_exercises (
   objectives TEXT,
   status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','ready','active','completed','archived')),
   scheduled_at TIMESTAMPTZ,
-  duration_minutes INT DEFAULT 60,
+  duration_minutes INT,
   created_by UUID REFERENCES users(id),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()

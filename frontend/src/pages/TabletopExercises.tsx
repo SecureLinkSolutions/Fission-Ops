@@ -36,7 +36,7 @@ export default function TabletopExercises() {
     scenario: '',
     objectives: '',
     scheduled_at: '',
-    duration_minutes: 60,
+    duration_minutes: 0,
   });
 
   const canCreate = ROLE_RANK[user?.role ?? 'analyst'] >= ROLE_RANK['senior_analyst'];
@@ -69,7 +69,7 @@ export default function TabletopExercises() {
     try {
       const res = await apiClient.post<TabletopExercise>('/tabletop/exercises', {
         ...form,
-        duration_minutes: Number(form.duration_minutes),
+        duration_minutes: form.duration_minutes > 0 ? form.duration_minutes : undefined,
         scheduled_at: form.scheduled_at || undefined,
       });
       navigate(`/tabletop/${res.data.id}`);
@@ -209,7 +209,7 @@ export default function TabletopExercises() {
                   </p>
                   <div style={{ display: 'flex', gap: '16px', fontSize: '12px', color: '#484f58' }}>
                     <span>📌 {ex.inject_count ?? 0} injects</span>
-                    <span>⏱ {ex.duration_minutes}m</span>
+                    {ex.duration_minutes ? <span>⏱ {ex.duration_minutes >= 1440 ? `${Math.round(ex.duration_minutes / 1440)}d` : ex.duration_minutes >= 60 ? `${Math.round(ex.duration_minutes / 60)}h` : `${ex.duration_minutes}m`}</span> : null}
                     {ex.scheduled_at && (
                       <span>📅 {new Date(ex.scheduled_at).toLocaleDateString()}</span>
                     )}
@@ -303,12 +303,13 @@ export default function TabletopExercises() {
                     }}
                   />
                 </div>
-                <div style={{ width: '120px' }}>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#8b949e', marginBottom: '4px' }}>Duration (min)</label>
+                <div style={{ width: '150px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#8b949e', marginBottom: '4px' }}>Duration (mins, optional)</label>
                   <input
                     type="number"
-                    min="15"
-                    value={form.duration_minutes}
+                    min="0"
+                    placeholder="e.g. 480"
+                    value={form.duration_minutes || ''}
                     onChange={e => setForm(f => ({ ...f, duration_minutes: Number(e.target.value) }))}
                     style={{
                       width: '100%', boxSizing: 'border-box',
