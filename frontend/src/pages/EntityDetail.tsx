@@ -171,6 +171,7 @@ export default function EntityDetail() {
         {(['overview', 'enrichment', 'checklist', 'custody'] as const).map((tab) => (
           <button
             key={tab}
+            type="button"
             onClick={() => setActiveTab(tab)}
             style={{
               background: 'none',
