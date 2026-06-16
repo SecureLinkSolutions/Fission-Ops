@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS exercise_injects (
 
 CREATE TABLE IF NOT EXISTS exercise_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  exercise_id UUID NOT NULL REFERENCES tabletop_exercises(id),
+  exercise_id UUID NOT NULL REFERENCES tabletop_exercises(id) ON DELETE CASCADE,
   org_id UUID NOT NULL REFERENCES organizations(id),
   facilitator_id UUID REFERENCES users(id),
   status TEXT NOT NULL DEFAULT 'in_progress' CHECK (status IN ('in_progress','completed')),

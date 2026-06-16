@@ -287,5 +287,21 @@ async function runMigrations(): Promise<void> {
     await pool.query(sql022);
     console.log('✅ Migration 022 applied');
   }
+
+  // Migration 023: fix exercise_sessions FK to cascade on exercise delete
+  const needsMigration023 = await pool.query(
+    `SELECT 1 FROM information_schema.referential_constraints rc
+     JOIN information_schema.table_constraints tc ON tc.constraint_name = rc.constraint_name
+     WHERE tc.table_name = 'exercise_sessions'
+       AND rc.constraint_name = 'exercise_sessions_exercise_id_fkey'
+       AND rc.delete_rule = 'CASCADE'`,
+  );
+  if ((needsMigration023.rowCount ?? 0) === 0) {
+    console.log('⚙️  Running migration 023...');
+    const migrationPath023 = join(__dirname, '../../../../db/migrate_023.sql');
+    const sql023 = readFileSync(migrationPath023, 'utf8');
+    await pool.query(sql023);
+    console.log('✅ Migration 023 applied');
+  }
 }
 // Note: migration 014 block is appended below
