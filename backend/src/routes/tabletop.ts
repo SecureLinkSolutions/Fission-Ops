@@ -284,23 +284,36 @@ Create a detailed IR tabletop exercise scenario for a ${scenarioType} incident. 
 
 Include 5-7 injects that progress logically through the incident lifecycle. Use realistic technical details (IP addresses, domain names, file hashes, etc.). Vary inject types across the timeline. trigger_minutes should be cumulative (0, 10, 25, 40, etc.).`;
 
-  const client = new Anthropic({ apiKey });
-  const message = await client.messages.create({
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 4096,
-    messages: [{ role: 'user', content: prompt }],
-  });
+  let text: string;
+  try {
+    const client = new Anthropic({ apiKey });
+    const message = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 4096,
+      messages: [{ role: 'user', content: prompt }],
+    });
+    text = message.content[0].type === 'text' ? message.content[0].text : '{}';
+  } catch (err: unknown) {
+    const msg = (err as Error)?.message ?? 'Anthropic API call failed';
+    console.error('[tabletop/generate-scenario] Anthropic error:', msg);
+    res.status(200).json({ error: `Anthropic API error: ${msg}` });
+    return;
+  }
 
-  const text = message.content[0].type === 'text' ? message.content[0].text : '{}';
   try {
     const parsed = JSON.parse(text);
     res.json(parsed);
   } catch {
-    // Try to extract JSON from response
     const match = text.match(/\{[\s\S]*\}/);
     if (match) {
-      res.json(JSON.parse(match[0]));
+      try {
+        res.json(JSON.parse(match[0]));
+      } catch {
+        console.error('[tabletop/generate-scenario] JSON parse failed, raw text:', text.slice(0, 200));
+        res.status(500).json({ error: 'Failed to parse AI response', code: 'AI_PARSE_ERROR' });
+      }
     } else {
+      console.error('[tabletop/generate-scenario] No JSON found in response:', text.slice(0, 200));
       res.status(500).json({ error: 'Failed to parse AI response', code: 'AI_PARSE_ERROR' });
     }
   }

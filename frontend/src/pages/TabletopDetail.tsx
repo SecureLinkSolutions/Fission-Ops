@@ -368,23 +368,35 @@ export default function TabletopDetail() {
     setGenerating(true);
     setShowScenarioDropdown(false);
     try {
-      const res = await apiClient.post<{
-        title: string;
-        scenario: string;
-        objectives: string;
-        injects: Array<{
+      let res;
+      try {
+        res = await apiClient.post<{
           title: string;
-          description: string;
-          inject_type: string;
-          trigger_minutes: number;
-          expected_actions: string;
-          discussion_prompts: string;
-        }>;
-        error?: string;
-      }>('/tabletop/exercises/generate-scenario', { scenarioType });
+          scenario: string;
+          objectives: string;
+          injects: Array<{
+            title: string;
+            description: string;
+            inject_type: string;
+            trigger_minutes: number;
+            expected_actions: string;
+            discussion_prompts: string;
+          }>;
+          error?: string;
+        }>('/tabletop/exercises/generate-scenario', { scenarioType });
+      } catch (err: unknown) {
+        const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'AI generation request failed. Check that the Anthropic API key is saved in Org Settings.';
+        alert(msg);
+        return;
+      }
 
       if (res.data.error) {
         alert(res.data.error);
+        return;
+      }
+
+      if (!res.data.title || !res.data.injects?.length) {
+        alert('AI returned an empty response. Please try again.');
         return;
       }
 
@@ -401,6 +413,8 @@ export default function TabletopDetail() {
         await apiClient.post(`/tabletop/exercises/${exercise.id}/injects`, inject);
       }
       await loadExercise();
+    } catch (err: unknown) {
+      alert('Failed to save generated content: ' + ((err as Error)?.message ?? 'unknown error'));
     } finally {
       setGenerating(false);
     }
