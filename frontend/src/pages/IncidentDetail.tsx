@@ -141,6 +141,7 @@ export default function IncidentDetail() {
 
   const [commentPanelOpen, setCommentPanelOpen] = useState(false);
   const [tabHover, setTabHover] = useState<string | null>(null);
+  const [entitySectionCollapsed, setEntitySectionCollapsed] = useState(true);
   const tabStyle = (active: boolean, key: string): React.CSSProperties => ({
     padding: '10px 16px', cursor: 'pointer', border: 'none',
     background: 'transparent',
@@ -330,7 +331,17 @@ export default function IncidentDetail() {
 
       <div style={{ display: activeTab === 'entities' ? undefined : 'none' }}>
         <EntityForm incidentId={id!} onCreated={refetchEntities} />
-        {(entities ?? []).map((e) => {
+        <div style={{ marginBottom: '12px' }}>
+          <button
+            type="button"
+            onClick={() => setEntitySectionCollapsed((c) => !c)}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 0', color: '#c9d1d9' }}
+          >
+            <span style={{ fontSize: '11px', color: '#8b949e' }}>{entitySectionCollapsed ? '▶' : '▼'}</span>
+            <span style={{ fontSize: '13px', fontWeight: 600 }}>Entities ({entities?.length ?? 0})</span>
+          </button>
+        </div>
+        {!entitySectionCollapsed && (entities ?? []).map((e) => {
           const ext = e as Entity & { ioc_status?: string; enrichment_status?: string; enrichment_data?: { verdict?: string } };
           const ioc = ext.ioc_status ? IOC_STATUS_DISPLAY[ext.ioc_status] : null;
           const isFlagged = ext.status === 'confirmed_malicious' || ext.ioc_status === 'confirmed';
@@ -378,7 +389,7 @@ export default function IncidentDetail() {
             </div>
           );
         })}
-        {entities?.length === 0 && <div style={{ color: '#8b949e', fontSize: '14px' }}>No entities added yet.</div>}
+        {!entitySectionCollapsed && entities?.length === 0 && <div style={{ color: '#8b949e', fontSize: '14px' }}>No entities added yet.</div>}
       </div>
 
       <div style={{ display: activeTab === 'killchain' ? undefined : 'none' }}>
