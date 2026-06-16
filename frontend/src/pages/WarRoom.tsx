@@ -108,9 +108,10 @@ export default function WarRoom() {
   }, [fetchAll]);
 
   useEffect(() => {
+    if (incident?.status === 'closed') return;
     const interval = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [incident?.status]);
 
   useEffect(() => {
     const handler = () => setIsFullscreen(!!document.fullscreenElement);
@@ -145,7 +146,9 @@ export default function WarRoom() {
   const confirmedIOC = entities.filter((e) => e.ioc_status === 'confirmed').length;
   const suspectedIOC = entities.filter((e) => e.ioc_status === 'suspected').length;
   const totalEntities = entities.length;
-  const duration = incident ? now - new Date(incident.created_at).getTime() : 0;
+  const isClosed = incident?.status === 'closed';
+  const durationEnd = isClosed && incident?.updated_at ? new Date(incident.updated_at).getTime() : now;
+  const duration = incident ? durationEnd - new Date(incident.created_at).getTime() : 0;
 
   const kcStages = killChain?.stages ?? [];
   const totalStages = kcStages.length;
