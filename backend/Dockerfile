@@ -1,4 +1,6 @@
 FROM node:24-alpine AS builder
+# Upgrade Alpine packages to patch openssl and other vulnerabilities
+RUN apk upgrade --no-cache
 WORKDIR /app
 COPY backend/package*.json ./
 RUN npm ci
@@ -7,6 +9,8 @@ COPY backend/src ./src
 RUN npm run build
 
 FROM node:24-alpine
+# Upgrade Alpine packages to patch openssl and other vulnerabilities
+RUN apk upgrade --no-cache
 WORKDIR /app
 COPY backend/package*.json ./
 RUN npm ci --omit=dev
