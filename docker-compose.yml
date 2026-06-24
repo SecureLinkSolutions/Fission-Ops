@@ -1,0 +1,82 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: fission_ops
+      POSTGRES_USER: fission
+      POSTGRES_PASSWORD: fission_secret
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fission -d fission_ops"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "5432:5432"
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://fission:fission_secret@postgres:5432/fission_ops
+      JWT_SECRET: dev_secret_minimum_32_characters_long
+      PORT: 3001
+      FRONTEND_URL: http://localhost:3000
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    ports:
+      - "3001:3001"
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    environment:
+      VITE_API_URL: http://localhost:3001/api/v1
+    ports:
+      - "3000:80"
+
+  license-db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: fission_license
+      POSTGRES_USER: license_user
+      POSTGRES_PASSWORD: license_secret
+    volumes:
+      - license_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U license_user -d fission_license"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "5433:5432"
+
+  license-server:
+    build:
+      context: ./fission-license-server
+      dockerfile: Dockerfile
+    depends_on:
+      license-db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://license_user:license_secret@license-db:5432/fission_license
+      PORT: 3002
+      ADMIN_API_KEY: dev_admin_api_key_change_me
+      NODE_ENV: development
+    ports:
+      - "3002:3002"
+    volumes:
+      - license_keys:/app/keys
+
+volumes:
+  postgres_data:
+  license_db_data:
+  license_keys:

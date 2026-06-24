@@ -1,0 +1,120 @@
+version: '3.9'
+
+services:
+  traefik:
+    image: traefik:v3.0
+    command:
+      - "--api.insecure=false"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.email=${SSL_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - letsencrypt:/letsencrypt
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      JWT_SECRET: ${JWT_SECRET}
+      PORT: 3001
+      FRONTEND_URL: https://${DOMAIN}
+      NODE_ENV: production
+      OIDC_AZURE_CLIENT_ID: ${OIDC_AZURE_CLIENT_ID}
+      OIDC_AZURE_CLIENT_SECRET: ${OIDC_AZURE_CLIENT_SECRET}
+      OIDC_AZURE_TENANT_ID: ${OIDC_AZURE_TENANT_ID}
+      OIDC_OKTA_CLIENT_ID: ${OIDC_OKTA_CLIENT_ID}
+      OIDC_OKTA_CLIENT_SECRET: ${OIDC_OKTA_CLIENT_SECRET}
+      OIDC_OKTA_DOMAIN: ${OIDC_OKTA_DOMAIN}
+      SSO_REDIRECT_BASE_URL: https://${DOMAIN}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`${DOMAIN}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.backend.loadbalancer.server.port=3001"
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
+    restart: unless-stopped
+
+  license-db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: fission_license
+      POSTGRES_USER: license_user
+      POSTGRES_PASSWORD: ${LICENSE_DB_PASSWORD}
+    volumes:
+      - license_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U license_user -d fission_license"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  license-server:
+    build:
+      context: ./fission-license-server
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql://license_user:${LICENSE_DB_PASSWORD}@license-db:5432/fission_license
+      PORT: 3002
+      ADMIN_API_KEY: ${LICENSE_ADMIN_API_KEY}
+      NODE_ENV: production
+    depends_on:
+      license-db:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.license.rule=Host(`${DOMAIN}`) && PathPrefix(`/license-admin`)"
+      - "traefik.http.routers.license.entrypoints=websecure"
+      - "traefik.http.routers.license.tls.certresolver=letsencrypt"
+      - "traefik.http.services.license.loadbalancer.server.port=3002"
+    restart: unless-stopped
+    volumes:
+      - license_keys:/app/keys
+
+volumes:
+  postgres_data:
+  letsencrypt:
+  license_db_data:
+  license_keys:
