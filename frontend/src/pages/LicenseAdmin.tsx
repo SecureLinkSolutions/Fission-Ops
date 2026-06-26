@@ -192,7 +192,7 @@ export default function LicenseAdmin() {
             }}
           />
         </div>
-        <button
+        <button type="button"
           onClick={handleUpdateLicense}
           disabled={updating}
           style={{

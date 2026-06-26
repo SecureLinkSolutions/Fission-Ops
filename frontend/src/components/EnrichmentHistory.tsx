@@ -107,7 +107,7 @@ export default function EnrichmentHistory({ entityId }: Props) {
     <div style={{ background: '#161b22', border: '1px solid #30363d', borderRadius: '8px', padding: '20px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <div style={{ fontWeight: 600, fontSize: '11px', color: '#8b949e', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Enrichment History</div>
-        <button
+        <button type="button"
           onClick={handleRunEnrichment}
           disabled={running}
           style={{
@@ -180,7 +180,7 @@ export default function EnrichmentHistory({ entityId }: Props) {
 
                   {entry.raw_result && (
                     <div>
-                      <button
+                      <button type="button"
                         onClick={() => toggleRaw(entry.id)}
                         style={{ background: 'none', border: 'none', color: '#58a6ff', fontSize: '12px', cursor: 'pointer', padding: '0' }}
                       >

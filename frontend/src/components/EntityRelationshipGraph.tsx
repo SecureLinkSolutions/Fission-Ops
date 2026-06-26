@@ -153,7 +153,7 @@ function DirectionalEdge({
             </div>
           )}
           {selected && (
-            <button
+            <button type="button"
               onClick={(e) => { e.stopPropagation(); _onDeleteEdge?.(id); }}
               title="Remove relationship"
               style={{
@@ -238,7 +238,7 @@ function SidePanel({ entity, onClose }: SidePanelProps) {
           </div>
           <div style={{ fontFamily: 'monospace', fontSize: '16px', fontWeight: 700, color: '#e6edf3' }}>{entity.value}</div>
         </div>
-        <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#8b949e', fontSize: '18px', cursor: 'pointer', padding: '0 4px' }}>✕</button>
+        <button type="button" onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#8b949e', fontSize: '18px', cursor: 'pointer', padding: '0 4px' }}>✕</button>
       </div>
 
       {e.status && (
@@ -342,7 +342,7 @@ function AddRelationshipForm({ entities, incidentId, onCreated, onClose, presetS
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <div style={{ color: '#e6edf3', fontWeight: 600, fontSize: '14px' }}>Add Relationship</div>
-        <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#8b949e', fontSize: '16px', cursor: 'pointer' }}>✕</button>
+        <button type="button" onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#8b949e', fontSize: '16px', cursor: 'pointer' }}>✕</button>
       </div>
       <div style={{ color: '#8b949e', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', marginBottom: '4px' }}>Source Entity</div>
       <select style={inputStyle} value={source} onChange={(e) => setSource(e.target.value)}>
@@ -373,10 +373,10 @@ function AddRelationshipForm({ entities, incidentId, onCreated, onClose, presetS
       </label>
       {error && <div style={{ color: '#f85149', fontSize: '12px', marginBottom: '10px' }}>{error}</div>}
       <div style={{ display: 'flex', gap: '8px' }}>
-        <button onClick={handleSubmit} disabled={loading} style={{ flex: 1, background: '#238636', border: 'none', borderRadius: '6px', padding: '9px', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+        <button type="button" onClick={handleSubmit} disabled={loading} style={{ flex: 1, background: '#238636', border: 'none', borderRadius: '6px', padding: '9px', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
           {loading ? 'Adding…' : 'Add Relationship'}
         </button>
-        <button onClick={onClose} style={{ background: 'transparent', border: '1px solid #30363d', borderRadius: '6px', padding: '9px 14px', color: '#8b949e', fontSize: '13px', cursor: 'pointer' }}>
+        <button type="button" onClick={onClose} style={{ background: 'transparent', border: '1px solid #30363d', borderRadius: '6px', padding: '9px 14px', color: '#8b949e', fontSize: '13px', cursor: 'pointer' }}>
           Cancel
         </button>
       </div>
@@ -531,13 +531,13 @@ function GraphInner({ incidentId }: GraphInnerProps) {
         @keyframes nodeEntrance { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: scale(1); } }
       `}</style>
       <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', alignItems: 'center', position: 'relative' }}>
-        <button
+        <button type="button"
           onClick={() => { setShowAddForm((v) => !v); setSelectedEntity(null); }}
           style={{ background: '#238636', border: 'none', borderRadius: '6px', padding: '7px 16px', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
         >
           + Add Relationship
         </button>
-        <button
+        <button type="button"
           onClick={autoLayout}
           style={{ background: 'transparent', border: '1px solid #30363d', borderRadius: '6px', padding: '7px 14px', color: '#8b949e', fontSize: '13px', cursor: 'pointer' }}
         >

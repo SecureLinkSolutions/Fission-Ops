@@ -261,9 +261,9 @@ export default function ExecutiveSummary() {
             {incident && <div style={{ color: '#8b949e', fontSize: '14px' }}>{incident.title}</div>}
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
-            <button onClick={() => window.print()} style={s.printBtn}>🖨 Print / Export PDF</button>
+            <button type="button" onClick={() => window.print()} style={s.printBtn}>🖨 Print / Export PDF</button>
             {canEdit && (
-              <button
+              <button type="button"
                 onClick={handleAutoPopulate}
                 disabled={populating}
                 title="Pre-fill all fields from incident entities, kill chain, TTPs and timeline. You can edit before saving."
@@ -272,9 +272,9 @@ export default function ExecutiveSummary() {
                 {populating ? '⏳ Populating…' : '⚡ Auto-populate'}
               </button>
             )}
-            {canEdit && !editing && <button onClick={startEdit} style={s.btn}>Edit</button>}
-            {editing && <button onClick={handleSave} disabled={saving} style={s.btn}>{saving ? 'Saving…' : 'Save'}</button>}
-            {editing && <button onClick={() => setEditing(false)} style={{ ...s.printBtn, marginLeft: 0 }}>Cancel</button>}
+            {canEdit && !editing && <button type="button" onClick={startEdit} style={s.btn}>Edit</button>}
+            {editing && <button type="button" onClick={handleSave} disabled={saving} style={s.btn}>{saving ? 'Saving…' : 'Save'}</button>}
+            {editing && <button type="button" onClick={() => setEditing(false)} style={{ ...s.printBtn, marginLeft: 0 }}>Cancel</button>}
           </div>
         </div>
 

@@ -168,12 +168,12 @@ function TaskCard({ task, teamMembers, availableEntities, onRefresh, canManage, 
           {task.description && <p style={{ color: '#8b949e', fontSize: '12px', margin: '0 0 8px' }}>{task.description}</p>}
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' as const }}>
             {(['open', 'in_progress', 'complete'] as const).map((s) => (
-              <button key={s} onClick={() => handleStatusChange(s)} style={{ background: task.status === s ? '#58a6ff22' : 'transparent', border: `1px solid ${task.status === s ? '#58a6ff' : '#30363d'}`, borderRadius: '4px', padding: '3px 8px', color: task.status === s ? '#58a6ff' : '#8b949e', fontSize: '11px', cursor: 'pointer' }}>
+              <button type="button" key={s} onClick={() => handleStatusChange(s)} style={{ background: task.status === s ? '#58a6ff22' : 'transparent', border: `1px solid ${task.status === s ? '#58a6ff' : '#30363d'}`, borderRadius: '4px', padding: '3px 8px', color: task.status === s ? '#58a6ff' : '#8b949e', fontSize: '11px', cursor: 'pointer' }}>
                 {s.replace(/_/g, ' ')}
               </button>
             ))}
-            {canManage && <button onClick={() => { setSelectedEntityIds((task.entities ?? []).map((e) => e.id)); setEditing(true); }} style={{ background: 'transparent', border: '1px solid #30363d', borderRadius: '4px', padding: '3px 8px', color: '#8b949e', fontSize: '11px', cursor: 'pointer' }}>Edit</button>}
-            {canManage && <button onClick={handleDelete} style={{ background: 'transparent', border: '1px solid #f8514944', borderRadius: '4px', padding: '3px 8px', color: '#f85149', fontSize: '11px', cursor: 'pointer' }}>Delete</button>}
+            {canManage && <button type="button" onClick={() => { setSelectedEntityIds((task.entities ?? []).map((e) => e.id)); setEditing(true); }} style={{ background: 'transparent', border: '1px solid #30363d', borderRadius: '4px', padding: '3px 8px', color: '#8b949e', fontSize: '11px', cursor: 'pointer' }}>Edit</button>}
+            {canManage && <button type="button" onClick={handleDelete} style={{ background: 'transparent', border: '1px solid #f8514944', borderRadius: '4px', padding: '3px 8px', color: '#f85149', fontSize: '11px', cursor: 'pointer' }}>Delete</button>}
           </div>
           {commentsLoaded && (
             <div style={{ marginTop: '10px', borderTop: '1px solid #21262d', paddingTop: '8px' }}>
@@ -201,7 +201,7 @@ function TaskCard({ task, teamMembers, availableEntities, onRefresh, canManage, 
                     }
                   }}
                 />
-                <button
+                <button type="button"
                   onClick={async () => {
                     if (!commentText.trim()) return;
                     await apiClient.post(`/incidents/${task.incident_id}/tasks/${task.id}/comments`, { content: commentText });
@@ -235,8 +235,8 @@ function TaskCard({ task, teamMembers, availableEntities, onRefresh, canManage, 
             <EntityPicker entities={availableEntities} selected={selectedEntityIds} onChange={setSelectedEntityIds} />
           </div>
           <div style={{ display: 'flex', gap: '6px' }}>
-            <button onClick={handleSave} style={{ background: '#238636', border: 'none', borderRadius: '4px', padding: '4px 10px', color: '#fff', fontSize: '12px', cursor: 'pointer' }}>Save</button>
-            <button onClick={() => setEditing(false)} style={{ background: 'transparent', border: '1px solid #30363d', borderRadius: '4px', padding: '4px 10px', color: '#8b949e', fontSize: '12px', cursor: 'pointer' }}>Cancel</button>
+            <button type="button" onClick={handleSave} style={{ background: '#238636', border: 'none', borderRadius: '4px', padding: '4px 10px', color: '#fff', fontSize: '12px', cursor: 'pointer' }}>Save</button>
+            <button type="button" onClick={() => setEditing(false)} style={{ background: 'transparent', border: '1px solid #30363d', borderRadius: '4px', padding: '4px 10px', color: '#8b949e', fontSize: '12px', cursor: 'pointer' }}>Cancel</button>
           </div>
         </div>
       )}
@@ -278,7 +278,7 @@ export default function TaskBoard({ incidentId, tasks, teamMembers = [], availab
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <span style={{ color: '#8b949e', fontSize: '13px' }}>{tasks.filter((t) => t.status === 'complete').length}/{tasks.length} tasks complete</span>
         {canManage && (
-          <button onClick={() => setShowForm(!showForm)} style={{ background: '#238636', border: 'none', borderRadius: '6px', padding: '6px 14px', color: '#fff', fontSize: '13px', cursor: 'pointer' }}>
+          <button type="button" onClick={() => setShowForm(!showForm)} style={{ background: '#238636', border: 'none', borderRadius: '6px', padding: '6px 14px', color: '#fff', fontSize: '13px', cursor: 'pointer' }}>
             + New Task
           </button>
         )}
@@ -303,8 +303,8 @@ export default function TaskBoard({ incidentId, tasks, teamMembers = [], availab
             <EntityPicker entities={availableEntities} selected={selectedEntityIds} onChange={setSelectedEntityIds} />
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
-            <button onClick={handleCreate} style={{ background: '#238636', border: 'none', borderRadius: '6px', padding: '6px 14px', color: '#fff', fontSize: '13px', cursor: 'pointer' }}>Create</button>
-            <button onClick={() => { setShowForm(false); setSelectedEntityIds([]); }} style={{ background: 'transparent', border: '1px solid #30363d', borderRadius: '6px', padding: '6px 14px', color: '#8b949e', fontSize: '13px', cursor: 'pointer' }}>Cancel</button>
+            <button type="button" onClick={handleCreate} style={{ background: '#238636', border: 'none', borderRadius: '6px', padding: '6px 14px', color: '#fff', fontSize: '13px', cursor: 'pointer' }}>Create</button>
+            <button type="button" onClick={() => { setShowForm(false); setSelectedEntityIds([]); }} style={{ background: 'transparent', border: '1px solid #30363d', borderRadius: '6px', padding: '6px 14px', color: '#8b949e', fontSize: '13px', cursor: 'pointer' }}>Cancel</button>
           </div>
         </div>
       )}

@@ -140,9 +140,9 @@ export default function SuperAdmin() {
                     <td style={{ ...s.td, color: '#8b949e' }}>{new Date(org.created_at).toLocaleDateString()}</td>
                     <td style={s.td}>
                       {org.active ? (
-                        <button style={s.btnDanger} onClick={() => handleDeactivate(org.id)}>Deactivate</button>
+                        <button type="button" style={s.btnDanger} onClick={() => handleDeactivate(org.id)}>Deactivate</button>
                       ) : (
-                        <button style={s.btn} onClick={() => handleReactivate(org.id)}>Reactivate</button>
+                        <button type="button" style={s.btn} onClick={() => handleReactivate(org.id)}>Reactivate</button>
                       )}
                     </td>
                   </tr>
@@ -175,7 +175,7 @@ export default function SuperAdmin() {
                 </select>
               </div>
             </div>
-            <button style={s.createBtn} type="submit" disabled={creating}>{creating ? 'Creating…' : 'Create Organization'}</button>
+            <button type="button" style={s.createBtn} type="submit" disabled={creating}>{creating ? 'Creating…' : 'Create Organization'}</button>
           </form>
         </div>
       </div>

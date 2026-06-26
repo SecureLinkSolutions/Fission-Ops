@@ -51,7 +51,7 @@ export default function BoundaryMappingPanel({ entityId, boundaries, mappings, o
               {badge(ZONE_COLORS[m.zone_type] ?? '#8b949e', m.zone_type)}
               <span style={{ color: '#e6edf3', fontSize: '13px', flex: 1 }}>{m.boundary_name}</span>
               {badge(DIRECTION_COLORS[m.direction] ?? '#8b949e', m.direction)}
-              <button style={s.removeBtn} onClick={() => removeMapping(m.id)}>✕</button>
+              <button type="button" style={s.removeBtn} onClick={() => removeMapping(m.id)}>✕</button>
             </div>
           ))}
         </div>
@@ -66,7 +66,7 @@ export default function BoundaryMappingPanel({ entityId, boundaries, mappings, o
           <option value="egress">Egress</option>
           <option value="lateral">Lateral</option>
         </select>
-        <button style={s.addBtn} onClick={addMapping} disabled={!selectedBoundary}>Map</button>
+        <button type="button" style={s.addBtn} onClick={addMapping} disabled={!selectedBoundary}>Map</button>
       </div>
     </div>
   );

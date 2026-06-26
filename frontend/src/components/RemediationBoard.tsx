@@ -166,7 +166,7 @@ function RemediationCard({
 
       <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
         {currentStatusIdx > 0 && (
-          <button
+          <button type="button"
             onClick={movePrev}
             style={{ background: '#21262d', border: '1px solid #30363d', borderRadius: '4px', padding: '3px 8px', color: '#8b949e', fontSize: '11px', cursor: 'pointer' }}
           >
@@ -174,7 +174,7 @@ function RemediationCard({
           </button>
         )}
         {currentStatusIdx < STATUS_ORDER.length - 1 && item.status !== 'completed' && (
-          <button
+          <button type="button"
             onClick={moveNext}
             style={{ background: `${col.color}22`, border: `1px solid ${col.color}44`, borderRadius: '4px', padding: '3px 8px', color: col.color, fontSize: '11px', cursor: 'pointer', fontWeight: 600 }}
           >
@@ -182,7 +182,7 @@ function RemediationCard({
           </button>
         )}
         {item.status === 'completed' && canVerify && (
-          <button
+          <button type="button"
             onClick={moveNext}
             style={{ background: '#3fb95022', border: '1px solid #3fb95044', borderRadius: '4px', padding: '3px 8px', color: '#3fb950', fontSize: '11px', cursor: 'pointer', fontWeight: 600 }}
           >
@@ -263,7 +263,7 @@ export default function RemediationBoard({ incidentId, entities, teamMembers }: 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <div style={{ fontWeight: 600, fontSize: '15px', color: '#e6edf3' }}>Remediation Tracking</div>
         {canCreate && !showForm && (
-          <button
+          <button type="button"
             onClick={() => setShowForm(true)}
             style={{ background: '#21262d', border: '1px solid #30363d', borderRadius: '6px', padding: '6px 14px', color: '#58a6ff', fontSize: '13px', cursor: 'pointer', fontWeight: 600 }}
           >
@@ -311,14 +311,16 @@ export default function RemediationBoard({ incidentId, entities, teamMembers }: 
               ))}
             </select>
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button
+              <button type="button"
+               type="button"
                 type="submit"
                 disabled={submitting}
                 style={{ background: '#238636', border: '1px solid #2ea043', borderRadius: '6px', padding: '7px 16px', color: '#fff', fontSize: '13px', cursor: 'pointer', fontWeight: 600 }}
               >
                 {submitting ? 'Creating…' : 'Create Item'}
               </button>
-              <button
+              <button type="button"
+               type="button"
                 type="button"
                 onClick={() => setShowForm(false)}
                 style={{ background: 'transparent', border: '1px solid #30363d', borderRadius: '6px', padding: '7px 12px', color: '#8b949e', fontSize: '13px', cursor: 'pointer' }}

@@ -161,7 +161,7 @@ function EntityCard({ row, onRemove, onClick }: EntityCardProps) {
             SUSPECTED
           </span>
         )}
-        <button
+        <button type="button"
           onClick={(e) => { e.stopPropagation(); onRemove(row.mapping_id, row.entity_id); }}
           title="Remove from kill chain"
           style={{ background: 'transparent', border: 'none', color: '#484f58', cursor: 'pointer', padding: '0 2px', fontSize: '12px', lineHeight: 1, flexShrink: 0 }}
@@ -344,10 +344,10 @@ function AddEntityModal({ allEntities, stages, onClose, onAdd }: AddEntityModalP
             </select>
           </div>
           <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '8px' }}>
-            <button onClick={onClose} style={{ background: 'transparent', border: '1px solid #30363d', borderRadius: '6px', padding: '7px 16px', color: '#8b949e', fontSize: '13px', cursor: 'pointer' }}>
+            <button type="button" onClick={onClose} style={{ background: 'transparent', border: '1px solid #30363d', borderRadius: '6px', padding: '7px 16px', color: '#8b949e', fontSize: '13px', cursor: 'pointer' }}>
               Cancel
             </button>
-            <button
+            <button type="button"
               onClick={handleSubmit}
               disabled={!entityId || !stageId || loading}
               style={{ background: '#f97316', border: 'none', borderRadius: '6px', padding: '7px 16px', color: '#fff', fontSize: '13px', cursor: 'pointer', opacity: (!entityId || !stageId || loading) ? 0.5 : 1 }}
@@ -399,7 +399,7 @@ function NarrativePanel({ incidentId }: NarrativePanelProps) {
           <span style={{ fontSize: '14px' }}>🤖</span>
           <span style={{ fontSize: '14px', fontWeight: 700, color: '#e6edf3' }}>Attack Narrative</span>
         </div>
-        <button
+        <button type="button"
           onClick={generate}
           disabled={loading}
           style={{
@@ -540,7 +540,7 @@ export default function KillChainFlow({ incidentId }: KillChainFlowProps) {
           const isMitre = fw !== 'lockheed_martin';
           const locked = isMitre && !isFeatureEnabled('mitre_full');
           return (
-            <button
+            <button type="button"
               key={fw}
               onClick={() => !locked && setFramework(fw)}
               title={locked ? 'Requires Professional license' : undefined}
@@ -561,7 +561,7 @@ export default function KillChainFlow({ incidentId }: KillChainFlowProps) {
           );
         })}
         <div style={{ flex: 1 }} />
-        <button
+        <button type="button"
           onClick={() => setShowAddModal(true)}
           style={{ background: '#f97316', border: 'none', borderRadius: '6px', padding: '6px 14px', color: '#fff', fontSize: '12px', cursor: 'pointer', fontWeight: 600 }}
         >
@@ -577,7 +577,7 @@ export default function KillChainFlow({ incidentId }: KillChainFlowProps) {
           const active = stageEntities.length > 0;
           return (
             <div key={stage.id} style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-              <button
+              <button type="button"
                 onClick={() => scrollToStage(stage.id)}
                 style={{
                   background: active ? '#1a1a0e' : 'transparent',

@@ -103,7 +103,7 @@ export default function ToastContainer() {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
               <span style={{ fontWeight: 700, fontSize: '13px', color: '#e6edf3', flex: 1, lineHeight: '1.3' }}>{notif.title}</span>
-              <button
+              <button type="button"
                 onClick={(e) => { e.stopPropagation(); removeToast(notif.id); }}
                 style={{ background: 'transparent', border: 'none', color: '#8b949e', cursor: 'pointer', padding: '0', fontSize: '14px', lineHeight: 1, flexShrink: 0 }}
               >

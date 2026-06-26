@@ -65,7 +65,7 @@ export default function KillChainPanel({ entityId, mappings, onUpdated }: Props)
             <div key={m.id} style={s.row}>
               <span style={{ color: '#e6edf3', fontSize: '13px', flex: 1 }}>{m.stage_name}</span>
               <span style={confidenceBadge(m.confidence)}>{m.confidence}</span>
-              <button style={s.removeBtn} onClick={() => removeMapping(m.id)}>✕</button>
+              <button type="button" style={s.removeBtn} onClick={() => removeMapping(m.id)}>✕</button>
             </div>
           ))}
         </div>
@@ -80,7 +80,7 @@ export default function KillChainPanel({ entityId, mappings, onUpdated }: Props)
           <option value="medium">Medium confidence</option>
           <option value="high">High confidence</option>
         </select>
-        <button style={s.addBtn} onClick={addMapping} disabled={!selectedStage}>Map</button>
+        <button type="button" style={s.addBtn} onClick={addMapping} disabled={!selectedStage}>Map</button>
       </div>
     </div>
   );

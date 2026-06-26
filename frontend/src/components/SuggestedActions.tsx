@@ -254,7 +254,8 @@ function ActionItem({ text, onCreateTask, canCreateTask }: { text: string; canCr
     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '10px 12px', background: '#0d1117', borderRadius: '6px', border: '1px solid #21262d' }}>
       <span style={{ flex: 1, color: '#e6edf3', fontSize: '13px', lineHeight: '1.5' }}>{text}</span>
       <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-        <button
+        <button type="button"
+         type="button"
           type="button"
           onClick={() => canCreateTask && onCreateTask(text)}
           onMouseEnter={() => setAddHover(true)}
@@ -274,7 +275,7 @@ function ActionItem({ text, onCreateTask, canCreateTask }: { text: string; canCr
         >
           ＋ Task
         </button>
-        <button
+        <button type="button"
           onClick={handleCopy}
           onMouseEnter={() => setCopyHover(true)}
           onMouseLeave={() => setCopyHover(false)}
@@ -310,7 +311,7 @@ function ActionSection({
   const [collapsed, setCollapsed] = useState(false);
   return (
     <div style={{ marginBottom: '12px' }}>
-      <button
+      <button type="button"
         onClick={() => setCollapsed(c => !c)}
         style={{
           display: 'flex', alignItems: 'center', gap: '8px', width: '100%',

@@ -97,7 +97,7 @@ export default function TabletopExercises() {
           </p>
         </div>
         {canCreate && (
-          <button
+          <button type="button"
             onClick={() => setShowModal(true)}
             style={{
               background: '#238636',
@@ -118,7 +118,7 @@ export default function TabletopExercises() {
       {/* Tabs */}
       <div style={{ display: 'flex', gap: '4px', marginBottom: '20px', borderBottom: '1px solid #30363d', paddingBottom: '0' }}>
         {STATUS_TABS.map(tab => (
-          <button
+          <button type="button"
             key={tab}
             onClick={() => setActiveTab(tab)}
             style={{
@@ -152,7 +152,7 @@ export default function TabletopExercises() {
           <div style={{ fontSize: '16px', fontWeight: 600, color: '#e6edf3', marginBottom: '8px' }}>No exercises yet</div>
           <div style={{ fontSize: '13px', marginBottom: '20px' }}>Create your first tabletop exercise to get started</div>
           {canCreate && (
-            <button
+            <button type="button"
               onClick={() => setShowModal(true)}
               style={{
                 background: '#238636',
@@ -217,7 +217,7 @@ export default function TabletopExercises() {
                   </div>
                 </div>
                 {ROLE_RANK[user?.role ?? 'analyst'] >= ROLE_RANK['incident_commander'] && (
-                  <button
+                  <button type="button"
                     onClick={(e) => handleDelete(e, ex.id)}
                     disabled={deletingId === ex.id}
                     style={{ background: '#f8514922', border: '1px solid #f8514944', borderRadius: '6px', padding: '5px 12px', color: '#f85149', fontSize: '12px', cursor: 'pointer', flexShrink: 0, alignSelf: 'center' }}
@@ -321,7 +321,8 @@ export default function TabletopExercises() {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' }}>
-                <button
+                <button type="button"
+                 type="button"
                   type="button"
                   onClick={() => setShowModal(false)}
                   style={{
@@ -332,7 +333,8 @@ export default function TabletopExercises() {
                 >
                   Cancel
                 </button>
-                <button
+                <button type="button"
+                 type="button"
                   type="submit"
                   disabled={creating}
                   style={{

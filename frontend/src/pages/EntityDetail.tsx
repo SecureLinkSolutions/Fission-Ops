@@ -169,7 +169,8 @@ export default function EntityDetail() {
       {/* Tab Bar */}
       <div style={{ display: 'flex', gap: '0', borderBottom: '1px solid #30363d', marginBottom: '24px' }}>
         {(['overview', 'enrichment', 'checklist', 'custody'] as const).map((tab) => (
-          <button
+          <button type="button"
+            type="button"
             key={tab}
             type="button"
             onClick={() => setActiveTab(tab)}
@@ -208,7 +209,7 @@ export default function EntityDetail() {
         <div style={{ fontWeight: 600, fontSize: '11px', color: '#8b949e', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>Entity Status</div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           {Object.entries(ENTITY_STATUS_CONFIG).map(([s, cfg]) => (
-            <button
+            <button type="button"
               key={s}
               onClick={() => handleSetEntityStatus(s)}
               disabled={statusChanging || entity.status === s}
@@ -246,7 +247,7 @@ export default function EntityDetail() {
           style={{ width: '100%', background: '#0d1117', border: '1px solid #30363d', borderRadius: '6px', padding: '8px', color: '#e6edf3', fontSize: '13px', fontFamily: 'inherit', resize: 'vertical', minHeight: '48px', boxSizing: 'border-box', marginBottom: '8px' }}
         />
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <button
+          <button type="button"
             onClick={() => handleSetIOC('suspected')}
             disabled={settingIOC}
             style={{ background: '#d2992222', border: '1px solid #d2992244', borderRadius: '6px', padding: '6px 14px', color: '#d29922', fontSize: '13px', cursor: 'pointer' }}
@@ -255,14 +256,14 @@ export default function EntityDetail() {
           </button>
           {canConfirmIOC && (
             <>
-              <button
+              <button type="button"
                 onClick={() => handleSetIOC('confirmed')}
                 disabled={settingIOC}
                 style={{ background: '#f8514922', border: '1px solid #f8514944', borderRadius: '6px', padding: '6px 14px', color: '#f85149', fontSize: '13px', cursor: 'pointer' }}
               >
                 💀 Confirm IOC
               </button>
-              <button
+              <button type="button"
                 onClick={() => handleSetIOC('cleared')}
                 disabled={settingIOC}
                 style={{ background: '#3fb95022', border: '1px solid #3fb95044', borderRadius: '6px', padding: '6px 14px', color: '#3fb950', fontSize: '13px', cursor: 'pointer' }}
@@ -297,7 +298,7 @@ export default function EntityDetail() {
                 {entity.enrichment_status}
               </span>
             )}
-            <button
+            <button type="button"
               onClick={handleReenrich}
               onMouseEnter={() => setReenrichHover(true)}
               onMouseLeave={() => setReenrichHover(false)}

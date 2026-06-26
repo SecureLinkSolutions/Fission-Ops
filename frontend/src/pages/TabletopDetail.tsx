@@ -552,7 +552,7 @@ export default function TabletopDetail() {
       `}</style>
       {/* Header */}
       <div style={{ marginBottom: '24px' }}>
-        <button
+        <button type="button"
           onClick={() => navigate('/tabletop')}
           style={{ background: 'transparent', border: 'none', color: '#8b949e', cursor: 'pointer', fontSize: '13px', padding: '0 0 8px', display: 'flex', alignItems: 'center', gap: '4px' }}
         >
@@ -572,17 +572,17 @@ export default function TabletopDetail() {
           </div>
           <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
             {exercise.status === 'draft' && canEdit && (
-              <button onClick={() => handleStatusChange('ready')} style={{ background: '#1f6feb', border: '1px solid #388bfd', color: '#e6edf3', padding: '7px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>
+              <button type="button" onClick={() => handleStatusChange('ready')} style={{ background: '#1f6feb', border: '1px solid #388bfd', color: '#e6edf3', padding: '7px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>
                 Mark Ready
               </button>
             )}
             {exercise.status === 'ready' && canEdit && !session && (
-              <button onClick={handleStartSession} style={{ background: '#238636', border: '1px solid #2ea043', color: '#e6edf3', padding: '7px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>
+              <button type="button" onClick={handleStartSession} style={{ background: '#238636', border: '1px solid #2ea043', color: '#e6edf3', padding: '7px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>
                 ▶ Start Session
               </button>
             )}
             {exercise.status === 'completed' && canCommand && (
-              <button onClick={() => handleStatusChange('archived')} style={{ background: 'transparent', border: '1px solid #30363d', color: '#8b949e', padding: '7px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>
+              <button type="button" onClick={() => handleStatusChange('archived')} style={{ background: 'transparent', border: '1px solid #30363d', color: '#8b949e', padding: '7px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>
                 Archive
               </button>
             )}
@@ -593,7 +593,7 @@ export default function TabletopDetail() {
       {/* Tabs */}
       <div style={{ display: 'flex', gap: '4px', marginBottom: '20px', borderBottom: '1px solid #30363d' }}>
         {(['Build', 'Run'] as const).map(tab => (
-          <button
+          <button type="button"
             key={tab}
             onClick={() => setActiveTab(tab)}
             style={{
@@ -618,7 +618,7 @@ export default function TabletopDetail() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
               <h3 style={{ margin: 0, fontSize: '14px', color: '#8b949e', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Scenario</h3>
               {canEdit && !editingScenario && (
-                <button
+                <button type="button"
                   onClick={() => { setScenarioForm({ title: exercise.title, scenario: exercise.scenario, objectives: exercise.objectives ?? '' }); setEditingScenario(true); }}
                   style={{ background: 'transparent', border: '1px solid #30363d', color: '#8b949e', padding: '4px 12px', borderRadius: '5px', cursor: 'pointer', fontSize: '12px' }}
                 >
@@ -660,10 +660,10 @@ export default function TabletopDetail() {
                   />
                 </div>
                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                  <button type="button" onClick={() => setEditingScenario(false)} style={{ background: 'transparent', border: '1px solid #30363d', color: '#8b949e', padding: '7px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>
+                  <button type="button" type="button" onClick={() => setEditingScenario(false)} style={{ background: 'transparent', border: '1px solid #30363d', color: '#8b949e', padding: '7px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>
                     Cancel
                   </button>
-                  <button type="submit" disabled={savingScenario} style={{ background: '#238636', border: '1px solid #2ea043', color: '#e6edf3', padding: '7px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', opacity: savingScenario ? 0.6 : 1 }}>
+                  <button type="button" type="submit" disabled={savingScenario} style={{ background: '#238636', border: '1px solid #2ea043', color: '#e6edf3', padding: '7px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', opacity: savingScenario ? 0.6 : 1 }}>
                     {savingScenario ? 'Saving…' : 'Save'}
                   </button>
                 </div>
@@ -723,7 +723,7 @@ export default function TabletopDetail() {
                     <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
                   ))}
                 </select>
-                <button
+                <button type="button"
                   onClick={() => { if (addParticipantId) { handleAddParticipant(addParticipantId); setAddParticipantId(''); } }}
                   disabled={!addParticipantId}
                   style={{ background: '#238636', border: 'none', borderRadius: '6px', padding: '7px 14px', color: '#fff', fontSize: '13px', cursor: addParticipantId ? 'pointer' : 'not-allowed', opacity: addParticipantId ? 1 : 0.5 }}
@@ -739,7 +739,7 @@ export default function TabletopDetail() {
                     <div key={p.user_id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 10px', background: '#0d1117', borderRadius: '6px', border: '1px solid #21262d' }}>
                       <span style={{ flex: 1, color: '#e6edf3', fontSize: '13px' }}>{p.user_name}</span>
                       <span style={{ color: '#8b949e', fontSize: '12px' }}>{p.user_email}</span>
-                      <button onClick={() => handleRemoveParticipant(p.user_id)} style={{ background: 'transparent', border: '1px solid #30363d', borderRadius: '4px', padding: '3px 8px', color: '#f85149', fontSize: '11px', cursor: 'pointer' }}>Remove</button>
+                      <button type="button" onClick={() => handleRemoveParticipant(p.user_id)} style={{ background: 'transparent', border: '1px solid #30363d', borderRadius: '4px', padding: '3px 8px', color: '#f85149', fontSize: '11px', cursor: 'pointer' }}>Remove</button>
                     </div>
                   ))}
                 </div>
@@ -753,7 +753,7 @@ export default function TabletopDetail() {
             {canEdit && (
               <div style={{ display: 'flex', gap: '8px', position: 'relative' }}>
                 <div style={{ position: 'relative' }}>
-                  <button
+                  <button type="button"
                     onClick={() => setShowScenarioDropdown(d => !d)}
                     disabled={generating}
                     style={{
@@ -771,7 +771,7 @@ export default function TabletopDetail() {
                       zIndex: 100, minWidth: '160px',
                     }}>
                       {SCENARIO_TYPES.map(st => (
-                        <button
+                        <button type="button"
                           key={st.value}
                           onClick={() => handleGenerateScenario(st.value)}
                           style={{
@@ -788,7 +788,7 @@ export default function TabletopDetail() {
                     </div>
                   )}
                 </div>
-                <button
+                <button type="button"
                   onClick={() => { setShowInjectForm(true); setEditingInjectId(null); setInjectForm(emptyInjectForm); }}
                   style={{
                     background: '#238636', border: '1px solid #2ea043',
@@ -809,7 +809,7 @@ export default function TabletopDetail() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <span style={{ color: '#58a6ff', fontSize: '13px' }}>🔗 {exercise.incident_title ?? exercise.incident_id}</span>
                   <a href={`/incidents/${exercise.incident_id}`} target="_blank" rel="noreferrer" style={{ color: '#8b949e', fontSize: '12px', textDecoration: 'underline' }}>Open Incident</a>
-                  <button onClick={() => handleLinkIncident(null)} style={{ background: 'transparent', border: '1px solid #f8514944', color: '#f85149', padding: '3px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>Unlink</button>
+                  <button type="button" onClick={() => handleLinkIncident(null)} style={{ background: 'transparent', border: '1px solid #f8514944', color: '#f85149', padding: '3px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>Unlink</button>
                 </div>
               ) : (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -861,7 +861,7 @@ export default function TabletopDetail() {
                   </div>
                   {canEdit && (
                     <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-                      <button
+                      <button type="button"
                         onClick={() => {
                           setEditingInjectId(inject.id);
                           setInjectForm({
@@ -878,7 +878,7 @@ export default function TabletopDetail() {
                       >
                         Edit
                       </button>
-                      <button
+                      <button type="button"
                         onClick={() => handleDeleteInject(inject.id)}
                         style={{ background: 'transparent', border: '1px solid #30363d', color: '#f85149', padding: '4px 10px', borderRadius: '5px', cursor: 'pointer', fontSize: '12px' }}
                       >
@@ -913,7 +913,7 @@ export default function TabletopDetail() {
               <div style={{ fontSize: '15px', color: '#e6edf3', marginBottom: '8px' }}>No active session</div>
               <div style={{ fontSize: '13px', marginBottom: '20px' }}>Start a session from the Build tab to run this exercise</div>
               {canEdit && exercise.status === 'ready' && (
-                <button onClick={() => { setActiveTab('Build'); }} style={{ background: 'transparent', border: '1px solid #30363d', color: '#8b949e', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>
+                <button type="button" onClick={() => { setActiveTab('Build'); }} style={{ background: 'transparent', border: '1px solid #30363d', color: '#8b949e', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>
                   Go to Build tab
                 </button>
               )}
@@ -981,7 +981,7 @@ export default function TabletopDetail() {
                           </div>
                         </div>
                         {session.status === 'in_progress' && canEdit && !isReleased && (
-                          <button
+                          <button type="button"
                             onClick={() => handleReleaseInject(inject.id)}
                             style={{
                               background: '#1f6feb22',
@@ -994,7 +994,7 @@ export default function TabletopDetail() {
                           </button>
                         )}
                         {(isReleased || session.status === 'completed' || saved) && (
-                          <button
+                          <button type="button"
                             onClick={() => toggleInject(inject.id)}
                             style={{
                               background: isExpanded ? '#21262d' : 'transparent',
@@ -1053,7 +1053,7 @@ export default function TabletopDetail() {
                                   placeholder="Any gaps in process, tooling, or knowledge…"
                                 />
                               </div>
-                              <button
+                              <button type="button"
                                 onClick={() => handleSaveResponse(inject.id)}
                                 disabled={!resp.response_text}
                                 style={{
@@ -1093,7 +1093,7 @@ export default function TabletopDetail() {
               {/* Complete session button */}
               {session.status === 'in_progress' && canEdit && (
                 <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <button
+                  <button type="button"
                     onClick={handleCompleteSession}
                     disabled={completing}
                     style={{
@@ -1113,7 +1113,7 @@ export default function TabletopDetail() {
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
                     <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>After Action Review (AAR)</h2>
                     {canCommand && !editingAAR && (
-                      <button
+                      <button type="button"
                         onClick={() => setEditingAAR(true)}
                         style={{ background: 'transparent', border: '1px solid #30363d', color: '#8b949e', padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}
                       >
@@ -1144,7 +1144,8 @@ export default function TabletopDetail() {
                         <label style={labelStyle}>Overall Rating</label>
                         <div style={{ display: 'flex', gap: '8px' }}>
                           {[1, 2, 3, 4, 5].map(n => (
-                            <button
+                            <button type="button"
+                              type="button"
                               key={n}
                               type="button"
                               onClick={() => setAARForm(f => ({ ...f, overall_rating: n }))}
@@ -1162,10 +1163,10 @@ export default function TabletopDetail() {
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-                        <button type="button" onClick={() => setEditingAAR(false)} style={{ background: 'transparent', border: '1px solid #30363d', color: '#8b949e', padding: '7px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>
+                        <button type="button" type="button" onClick={() => setEditingAAR(false)} style={{ background: 'transparent', border: '1px solid #30363d', color: '#8b949e', padding: '7px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>
                           Cancel
                         </button>
-                        <button type="submit" disabled={savingAAR} style={{ background: '#238636', border: '1px solid #2ea043', color: '#e6edf3', padding: '7px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>
+                        <button type="button" type="submit" disabled={savingAAR} style={{ background: '#238636', border: '1px solid #2ea043', color: '#e6edf3', padding: '7px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>
                           {savingAAR ? 'Saving…' : 'Save AAR'}
                         </button>
                       </div>
@@ -1245,10 +1246,10 @@ export default function TabletopDetail() {
                 <textarea value={injectForm.discussion_prompts} onChange={e => setInjectForm(f => ({ ...f, discussion_prompts: e.target.value }))} rows={3} style={{ ...inputStyle, resize: 'vertical' }} placeholder="What should the team prioritize?&#10;Who needs to be notified?&#10;What evidence should be collected?" />
               </div>
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-                <button type="button" onClick={() => { setShowInjectForm(false); setEditingInjectId(null); }} style={{ background: 'transparent', border: '1px solid #30363d', color: '#8b949e', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>
+                <button type="button" type="button" onClick={() => { setShowInjectForm(false); setEditingInjectId(null); }} style={{ background: 'transparent', border: '1px solid #30363d', color: '#8b949e', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>
                   Cancel
                 </button>
-                <button type="submit" disabled={savingInject} style={{ background: '#238636', border: '1px solid #2ea043', color: '#e6edf3', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', opacity: savingInject ? 0.6 : 1 }}>
+                <button type="button" type="submit" disabled={savingInject} style={{ background: '#238636', border: '1px solid #2ea043', color: '#e6edf3', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', opacity: savingInject ? 0.6 : 1 }}>
                   {savingInject ? 'Saving…' : editingInjectId ? 'Save Changes' : 'Add Inject'}
                 </button>
               </div>

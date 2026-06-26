@@ -265,8 +265,8 @@ export default function OrgSettings() {
         <div style={s.sub}>Manage your organization configuration and view usage statistics.</div>
 
         <div style={s.tabBar}>
-          <button style={tabStyle(activeTab === 'general')} onClick={() => setActiveTab('general')}>General</button>
-          {canEdit && <button style={tabStyle(activeTab === 'integrations')} onClick={() => setActiveTab('integrations')}>Integrations</button>}
+          <button type="button" style={tabStyle(activeTab === 'general')} onClick={() => setActiveTab('general')}>General</button>
+          {canEdit && <button type="button" style={tabStyle(activeTab === 'integrations')} onClick={() => setActiveTab('integrations')}>Integrations</button>}
         </div>
 
         {activeTab === 'general' && (
@@ -282,13 +282,13 @@ export default function OrgSettings() {
                 {editing && canEdit ? (
                   <form onSubmit={handleSave} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <input style={s.input} value={editName} onChange={(e) => setEditName(e.target.value)} required />
-                    <button style={s.btn} type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
-                    <button type="button" style={{ ...s.btn, background: 'transparent', border: '1px solid #30363d', color: '#8b949e' }} onClick={() => setEditing(false)}>Cancel</button>
+                    <button type="button" style={s.btn} type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
+                    <button type="button" type="button" style={{ ...s.btn, background: 'transparent', border: '1px solid #30363d', color: '#8b949e' }} onClick={() => setEditing(false)}>Cancel</button>
                   </form>
                 ) : (
                   <span style={{ ...s.fieldValue, display: 'flex', alignItems: 'center', gap: '10px' }}>
                     {org.name}
-                    {canEdit && <button onClick={() => setEditing(true)} style={{ ...s.btn, padding: '4px 10px', fontSize: '12px', background: '#21262d', border: '1px solid #30363d', color: '#8b949e' }}>Edit</button>}
+                    {canEdit && <button type="button" onClick={() => setEditing(true)} style={{ ...s.btn, padding: '4px 10px', fontSize: '12px', background: '#21262d', border: '1px solid #30363d', color: '#8b949e' }}>Edit</button>}
                   </span>
                 )}
               </div>
@@ -373,8 +373,8 @@ export default function OrgSettings() {
                   <div style={{ background: '#1f6feb22', border: '1px solid #1f6feb66', borderRadius: '6px', padding: '12px 14px', fontSize: '13px', color: '#e6edf3', marginBottom: '14px' }}>
                     <div style={{ marginBottom: '10px' }}>Platform admins will have access for <strong>7 days</strong>. You can revoke access at any time.</div>
                     <div style={{ display: 'flex', gap: '8px' }}>
-                      <button style={{ ...s.btn, background: '#1f6feb' }} onClick={() => doTogglePlatformAdminAccess(true)}>Confirm</button>
-                      <button style={{ ...s.btn, background: 'transparent', border: '1px solid #30363d', color: '#8b949e' }} onClick={() => setShowGrantConfirm(false)}>Cancel</button>
+                      <button type="button" style={{ ...s.btn, background: '#1f6feb' }} onClick={() => doTogglePlatformAdminAccess(true)}>Confirm</button>
+                      <button type="button" style={{ ...s.btn, background: 'transparent', border: '1px solid #30363d', color: '#8b949e' }} onClick={() => setShowGrantConfirm(false)}>Cancel</button>
                     </div>
                   </div>
                 )}
@@ -395,7 +395,7 @@ export default function OrgSettings() {
                 </label>
                 {platformAdminSaving && <div style={{ color: '#8b949e', fontSize: '12px', marginTop: '8px' }}>Saving…</div>}
                 <div style={{ marginTop: '14px' }}>
-                  <button
+                  <button type="button"
                     style={{ background: 'transparent', border: 'none', color: '#58a6ff', fontSize: '12px', cursor: 'pointer', padding: 0 }}
                     onClick={handleToggleAccessLog}
                   >
@@ -488,7 +488,8 @@ export default function OrgSettings() {
                           value={keyInputs[service] ?? ''}
                           onChange={(e) => setKeyInputs((prev) => ({ ...prev, [service]: e.target.value }))}
                         />
-                        <button
+                        <button type="button"
+                         type="button"
                           type="button"
                           onClick={() => setShowKey((prev) => ({ ...prev, [service]: !prev[service] }))}
                           style={{ position: 'absolute' as const, right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#8b949e', cursor: 'pointer', fontSize: '14px', padding: '0' }}
@@ -496,7 +497,7 @@ export default function OrgSettings() {
                           👁
                         </button>
                       </div>
-                      <button
+                      <button type="button"
                         style={s.btn}
                         onClick={() => handleSaveKey(service)}
                         disabled={keySaving[service] || !keyInputs[service]?.trim()}
@@ -505,14 +506,14 @@ export default function OrgSettings() {
                       </button>
                       {keyInfo.has_key && (
                         <>
-                          <button
+                          <button type="button"
                             style={{ ...s.btn, background: '#1f6feb', border: '1px solid #1f6feb' }}
                             onClick={() => handleTestKey(service)}
                             disabled={keyTesting[service]}
                           >
                             {keyTesting[service] ? 'Testing…' : 'Test'}
                           </button>
-                          <button
+                          <button type="button"
                             style={{ ...s.btn, background: '#6e1a1a' }}
                             onClick={() => handleDeleteKey(service)}
                           >
@@ -573,7 +574,7 @@ export default function OrgSettings() {
                   </span>
                 </label>
               </div>
-              <button style={s.btn} onClick={handleSaveThreatMode} disabled={threatModeSaving}>
+              <button type="button" style={s.btn} onClick={handleSaveThreatMode} disabled={threatModeSaving}>
                 {threatModeSaving ? 'Saving…' : 'Save Mode'}
               </button>
             </div>

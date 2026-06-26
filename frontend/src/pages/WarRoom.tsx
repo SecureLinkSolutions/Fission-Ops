@@ -203,7 +203,7 @@ export default function WarRoom() {
           >
             EXIT
           </Link>
-          <button
+          <button type="button"
             onClick={toggleFullscreen}
             title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
             style={{ background: 'transparent', border: '1px solid #30363d', borderRadius: '6px', padding: '6px 10px', color: '#8b949e', fontSize: '16px', cursor: 'pointer' }}

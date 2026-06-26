@@ -62,7 +62,7 @@ export default function CustodyLog({ entityId }: Props) {
         <h3 style={{ margin: 0, color: '#e6edf3', fontSize: '14px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           Chain of Custody
         </h3>
-        <button
+        <button type="button"
           onClick={refetch}
           style={{
             background: '#21262d',
@@ -175,7 +175,7 @@ export default function CustodyLog({ entityId }: Props) {
                     {/* Details toggle */}
                     {hasDetails && (
                       <div style={{ marginTop: '8px' }}>
-                        <button
+                        <button type="button"
                           onClick={() => toggleDetails(entry.id)}
                           style={{
                             background: 'none',

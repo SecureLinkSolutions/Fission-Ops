@@ -98,7 +98,7 @@ export default function NotificationBell() {
 
   return (
     <div ref={dropdownRef} style={{ position: 'relative' }}>
-      <button
+      <button type="button"
         onClick={handleOpen}
         style={{
           background: 'transparent',
@@ -155,7 +155,7 @@ export default function NotificationBell() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #30363d' }}>
             <span style={{ fontWeight: 600, fontSize: '14px', color: '#e6edf3' }}>Notifications</span>
             {unreadCount > 0 && (
-              <button
+              <button type="button"
                 onClick={handleMarkAllRead}
                 style={{ background: 'transparent', border: 'none', color: '#58a6ff', fontSize: '12px', cursor: 'pointer' }}
               >

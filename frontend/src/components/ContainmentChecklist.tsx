@@ -118,7 +118,7 @@ export default function ContainmentChecklist({ entityId }: Props) {
               )}
             </div>
             {item.is_custom && isSeniorAnalyst && (
-              <button
+              <button type="button"
                 onClick={() => handleDelete(item.id)}
                 title="Remove custom item"
                 style={{ background: 'transparent', border: 'none', color: '#f85149', fontSize: '13px', cursor: 'pointer', padding: '0 2px', flexShrink: 0, lineHeight: 1 }}
@@ -144,7 +144,7 @@ export default function ContainmentChecklist({ entityId }: Props) {
             onKeyDown={(e) => { if (e.key === 'Enter') handleAddItem(); }}
             style={{ flex: 1, background: '#0d1117', border: '1px solid #30363d', borderRadius: '6px', padding: '6px 10px', color: '#e6edf3', fontSize: '13px', fontFamily: 'inherit' }}
           />
-          <button
+          <button type="button"
             onClick={handleAddItem}
             disabled={adding || !newItemText.trim()}
             style={{ background: '#238636', border: '1px solid #3fb95044', borderRadius: '6px', padding: '6px 14px', color: '#fff', fontSize: '13px', cursor: 'pointer', opacity: adding || !newItemText.trim() ? 0.5 : 1 }}

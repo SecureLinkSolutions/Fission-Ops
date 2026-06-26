@@ -50,11 +50,11 @@ export default function Login() {
           <input style={s.input} type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           <label style={s.label}>Password</label>
           <input style={s.input} type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-          <button style={s.btn} type="submit" disabled={loading}>{loading ? 'Signing in…' : 'Sign in'}</button>
+          <button type="button" style={s.btn} type="submit" disabled={loading}>{loading ? 'Signing in…' : 'Sign in'}</button>
         </form>
         <div style={s.divider}><span style={s.dividerText}>OR</span></div>
-        <button style={s.ssoBtn} onClick={() => { window.location.href = `${import.meta.env.VITE_API_URL || '/api/v1'}/auth/sso/azure`; }}>Sign in with Azure AD</button>
-        <button style={s.ssoBtn} onClick={() => { window.location.href = `${import.meta.env.VITE_API_URL || '/api/v1'}/auth/sso/okta`; }}>Sign in with Okta</button>
+        <button type="button" style={s.ssoBtn} onClick={() => { window.location.href = `${import.meta.env.VITE_API_URL || '/api/v1'}/auth/sso/azure`; }}>Sign in with Azure AD</button>
+        <button type="button" style={s.ssoBtn} onClick={() => { window.location.href = `${import.meta.env.VITE_API_URL || '/api/v1'}/auth/sso/okta`; }}>Sign in with Okta</button>
       </div>
     </div>
   );

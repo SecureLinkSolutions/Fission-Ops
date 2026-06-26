@@ -87,7 +87,7 @@ export default function TTPSuggestionPanel({
               {s.technique_id}
             </span>
             <span style={{ flex: 1, fontSize: '12px', color: '#c9d1d9' }}>{s.name}</span>
-            <button
+            <button type="button"
               onClick={() => accept(s)}
               style={{
                 background: '#23863622', border: '1px solid #23863644',
@@ -98,7 +98,7 @@ export default function TTPSuggestionPanel({
             >
               ＋ Add
             </button>
-            <button
+            <button type="button"
               onClick={() => dismissOne(s)}
               style={{
                 background: 'transparent', border: 'none',
@@ -114,7 +114,7 @@ export default function TTPSuggestionPanel({
       </div>
 
       <div style={{ textAlign: 'right', marginTop: '8px' }}>
-        <button
+        <button type="button"
           onClick={dismissAll}
           style={{ background: 'transparent', border: 'none', color: '#484f58', fontSize: '11px', cursor: 'pointer' }}
         >

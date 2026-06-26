@@ -117,7 +117,7 @@ export default function AffectedAssets({ incidentId, incidentTitle, entities }: 
       {/* Header row */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <div style={{ fontSize: '15px', fontWeight: 700, color: '#e6edf3' }}>Affected Asset Inventory</div>
-        <button
+        <button type="button"
           onClick={exportCsv}
           style={{
             background: '#21262d',
@@ -160,10 +160,10 @@ export default function AffectedAssets({ incidentId, incidentTitle, entities }: 
 
       {/* Filter bar */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', alignItems: 'center' }}>
-        <button style={pillBtn(filter === 'all')} onClick={() => setFilter('all')}>
+        <button type="button" style={pillBtn(filter === 'all')} onClick={() => setFilter('all')}>
           All Entities ({extEntities.length})
         </button>
-        <button style={pillBtn(filter === 'ioc')} onClick={() => setFilter('ioc')}>
+        <button type="button" style={pillBtn(filter === 'ioc')} onClick={() => setFilter('ioc')}>
           Confirmed &amp; Suspected IOC only ({confirmedCount + suspectedCount})
         </button>
       </div>
@@ -180,7 +180,7 @@ export default function AffectedAssets({ incidentId, incidentTitle, entities }: 
 
         return (
           <div key={group.label} style={{ marginBottom: '16px', background: '#161b22', border: '1px solid #30363d', borderRadius: '8px', overflow: 'hidden' }}>
-            <button
+            <button type="button"
               onClick={() => toggleGroup(group.label)}
               style={{
                 width: '100%',

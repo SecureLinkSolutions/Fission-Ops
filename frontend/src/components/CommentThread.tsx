@@ -147,8 +147,8 @@ export default function CommentThread({ incidentId, entityId, teamMembers = [], 
                 style={{ width: '100%', background: '#0d1117', border: '1px solid #30363d', borderRadius: '6px', padding: '8px', color: '#e6edf3', fontSize: '13px', fontFamily: 'inherit', resize: 'vertical', minHeight: '60px', boxSizing: 'border-box' }}
               />
               <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
-                <button onClick={() => handleEdit(c.id)} style={{ background: '#238636', border: 'none', borderRadius: '4px', padding: '4px 10px', color: '#fff', fontSize: '12px', cursor: 'pointer' }}>Save</button>
-                <button onClick={() => setEditingId(null)} style={{ background: 'transparent', border: '1px solid #30363d', borderRadius: '4px', padding: '4px 10px', color: '#8b949e', fontSize: '12px', cursor: 'pointer' }}>Cancel</button>
+                <button type="button" onClick={() => handleEdit(c.id)} style={{ background: '#238636', border: 'none', borderRadius: '4px', padding: '4px 10px', color: '#fff', fontSize: '12px', cursor: 'pointer' }}>Save</button>
+                <button type="button" onClick={() => setEditingId(null)} style={{ background: 'transparent', border: '1px solid #30363d', borderRadius: '4px', padding: '4px 10px', color: '#8b949e', fontSize: '12px', cursor: 'pointer' }}>Cancel</button>
               </div>
             </div>
           ) : (
@@ -161,7 +161,7 @@ export default function CommentThread({ incidentId, entityId, teamMembers = [], 
           {editingId !== c.id && (
             <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
               {user?.id === c.author_id && (
-                <button
+                <button type="button"
                   onClick={() => { setEditingId(c.id); setEditBody(c.body); }}
                   style={{ background: 'transparent', border: 'none', color: '#8b949e', fontSize: '11px', cursor: 'pointer', padding: 0 }}
                 >
@@ -169,7 +169,7 @@ export default function CommentThread({ incidentId, entityId, teamMembers = [], 
                 </button>
               )}
               {(user?.id === c.author_id || ROLE_RANK[user?.role ?? ''] >= ROLE_RANK['incident_commander']) && (
-                <button
+                <button type="button"
                   onClick={() => handleDelete(c.id)}
                   style={{ background: 'transparent', border: 'none', color: '#f85149', fontSize: '11px', cursor: 'pointer', padding: 0 }}
                 >
@@ -205,7 +205,7 @@ export default function CommentThread({ incidentId, entityId, teamMembers = [], 
             ))}
           </div>
         )}
-        <button
+        <button type="button"
           onClick={handleSubmit}
           disabled={submitting || !body.trim()}
           style={{ marginTop: '8px', background: '#238636', border: 'none', borderRadius: '6px', padding: '6px 14px', color: '#fff', fontSize: '13px', cursor: 'pointer', opacity: submitting || !body.trim() ? 0.5 : 1 }}

@@ -125,9 +125,9 @@ export default function AuditLog() {
 
       {totalPages > 1 && (
         <div style={{ display: 'flex', gap: '8px', marginTop: '16px', justifyContent: 'center', alignItems: 'center' }}>
-          <button disabled={page <= 1} onClick={() => setPage(page - 1)} style={{ background: '#21262d', border: '1px solid #30363d', color: '#e6edf3', padding: '6px 14px', borderRadius: '6px', cursor: page > 1 ? 'pointer' : 'not-allowed', opacity: page <= 1 ? 0.5 : 1 }}>Prev</button>
+          <button type="button" disabled={page <= 1} onClick={() => setPage(page - 1)} style={{ background: '#21262d', border: '1px solid #30363d', color: '#e6edf3', padding: '6px 14px', borderRadius: '6px', cursor: page > 1 ? 'pointer' : 'not-allowed', opacity: page <= 1 ? 0.5 : 1 }}>Prev</button>
           <span style={{ color: '#8b949e', fontSize: '13px' }}>Page {page} of {totalPages} ({total} total)</span>
-          <button disabled={page >= totalPages} onClick={() => setPage(page + 1)} style={{ background: '#21262d', border: '1px solid #30363d', color: '#e6edf3', padding: '6px 14px', borderRadius: '6px', cursor: page < totalPages ? 'pointer' : 'not-allowed', opacity: page >= totalPages ? 0.5 : 1 }}>Next</button>
+          <button type="button" disabled={page >= totalPages} onClick={() => setPage(page + 1)} style={{ background: '#21262d', border: '1px solid #30363d', color: '#e6edf3', padding: '6px 14px', borderRadius: '6px', cursor: page < totalPages ? 'pointer' : 'not-allowed', opacity: page >= totalPages ? 0.5 : 1 }}>Next</button>
         </div>
       )}
     </div>

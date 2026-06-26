@@ -108,11 +108,11 @@ export default function IncidentList() {
 
       <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
         {['', 'open', 'contained', 'closed'].map((v) => (
-          <button key={v} onClick={() => setStatusFilter(v)} style={filterBtn(statusFilter === v)}>{v || 'All status'}</button>
+          <button type="button" key={v} onClick={() => setStatusFilter(v)} style={filterBtn(statusFilter === v)}>{v || 'All status'}</button>
         ))}
         <span style={{ width: '1px', background: '#30363d', margin: '0 4px' }} />
         {['', 'low', 'medium', 'high', 'critical'].map((v) => (
-          <button key={v} onClick={() => setSeverityFilter(v)} style={filterBtn(severityFilter === v)}>{v || 'All severity'}</button>
+          <button type="button" key={v} onClick={() => setSeverityFilter(v)} style={filterBtn(severityFilter === v)}>{v || 'All severity'}</button>
         ))}
       </div>
 

@@ -103,7 +103,7 @@ export default function LicenseActivation() {
                 onBlur={(e) => e.target.style.borderColor = '#30363d'}
               />
             </div>
-            <button
+            <button type="button"
               onClick={handleActivate}
               disabled={loading}
               style={{
@@ -123,7 +123,7 @@ export default function LicenseActivation() {
               {loading ? 'Activating…' : 'Activate License'}
             </button>
             <div style={{ marginTop: '16px', textAlign: 'center' }}>
-              <button
+              <button type="button"
                 onClick={() => navigate('/login')}
                 style={{ background: 'none', border: 'none', color: '#58a6ff', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline' }}
               >
@@ -176,7 +176,7 @@ export default function LicenseActivation() {
                 ))}
               </div>
             </div>
-            <button
+            <button type="button"
               onClick={() => navigate('/register')}
               style={{
                 width: '100%',

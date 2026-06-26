@@ -53,8 +53,8 @@ export default function IncidentNew() {
           <option value="high">High</option>
           <option value="critical">Critical</option>
         </select>
-        <button style={s.btn} type="submit" disabled={loading}>{loading ? 'Creating…' : 'Create Incident'}</button>
-        <button style={s.cancel} type="button" onClick={() => navigate(-1)}>Cancel</button>
+        <button type="button" style={s.btn} type="submit" disabled={loading}>{loading ? 'Creating…' : 'Create Incident'}</button>
+        <button type="button" style={s.cancel} type="button" onClick={() => navigate(-1)}>Cancel</button>
       </form>
     </div>
   );

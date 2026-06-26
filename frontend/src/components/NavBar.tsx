@@ -255,7 +255,7 @@ export default function NavBar({ connectionState }: NavBarProps) {
 
       {/* Footer - sign out only */}
       <div style={{ padding: '12px 16px', borderTop: '1px solid #30363d' }}>
-        <button
+        <button type="button"
           onClick={() => { logout(); navigate('/login'); }}
           style={{
             background: 'transparent',

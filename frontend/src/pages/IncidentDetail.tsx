@@ -188,7 +188,7 @@ export default function IncidentDetail() {
             {badge(STATUS_COLORS[incident.status], incident.status)}
             {!showStatusDropdown && (
               canChangeIncidentStatus ? (
-                <button
+                <button type="button"
                   onClick={() => setShowStatusDropdown(true)}
                   disabled={incidentStatusChanging}
                   style={{ background: 'transparent', border: '1px solid #30363d', borderRadius: '8px', padding: '2px 6px 2px 2px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
@@ -204,7 +204,7 @@ export default function IncidentDetail() {
             {showStatusDropdown && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                 {Object.entries(INCIDENT_STATUS_CONFIG).map(([s, cfg]) => (
-                  <button
+                  <button type="button"
                     key={s}
                     onClick={() => handleIncidentStatusChange(s)}
                     style={{
@@ -217,11 +217,11 @@ export default function IncidentDetail() {
                     {cfg.label}
                   </button>
                 ))}
-                <button onClick={() => setShowStatusDropdown(false)} style={{ background: 'transparent', border: '1px solid #30363d', borderRadius: '6px', padding: '2px 8px', color: '#8b949e', fontSize: '11px', cursor: 'pointer' }}>✕</button>
+                <button type="button" onClick={() => setShowStatusDropdown(false)} style={{ background: 'transparent', border: '1px solid #30363d', borderRadius: '6px', padding: '2px 8px', color: '#8b949e', fontSize: '11px', cursor: 'pointer' }}>✕</button>
               </div>
             )}
             {canChangeStatusField && (
-              <button
+              <button type="button"
                 onClick={async () => {
                   const newStatus = incident.status === 'closed' ? 'open' : 'closed';
                   await apiClient.patch(`/incidents/${id}`, { status: newStatus });
@@ -272,7 +272,7 @@ export default function IncidentDetail() {
             ⚡ War Room
           </Link>
           {isFeatureEnabled('pdf_export') ? (
-            <button
+            <button type="button"
               onClick={() => window.open(`${API_BASE}/incidents/${id}/report`, '_blank')}
               style={{
                 background: '#21262d', border: '1px solid #30363d', borderRadius: '6px',
@@ -283,7 +283,7 @@ export default function IncidentDetail() {
               Export Report
             </button>
           ) : (
-            <button
+            <button type="button"
               title="PDF Export requires Professional license"
               onClick={() => {}}
               style={{
@@ -309,7 +309,7 @@ export default function IncidentDetail() {
           ['assets', `Assets (${entities?.length ?? 0})`],
           ['remediation', 'Remediation'],
         ] as [Tab, string][]).map(([key, label]) => (
-          <button
+          <button type="button"
             key={key}
             style={tabStyle(activeTab === key, key)}
             onClick={() => switchTab(key)}
@@ -332,7 +332,8 @@ export default function IncidentDetail() {
       <div style={{ display: activeTab === 'entities' ? undefined : 'none' }}>
         <EntityForm incidentId={id!} onCreated={refetchEntities} />
         <div style={{ marginBottom: '12px' }}>
-          <button
+          <button type="button"
+           type="button"
             type="button"
             onClick={() => setEntitySectionCollapsed((c) => !c)}
             style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 0', color: '#c9d1d9' }}
@@ -535,7 +536,7 @@ export default function IncidentDetail() {
       )}
 
       {/* Floating comment toggle button */}
-      <button
+      <button type="button"
         onClick={() => setCommentPanelOpen((v) => !v)}
         title={commentPanelOpen ? 'Close discussion' : 'Open discussion'}
         style={{
@@ -592,7 +593,7 @@ export default function IncidentDetail() {
             <span style={{ fontSize: '15px' }}>💬</span>
             <span style={{ fontWeight: 600, fontSize: '14px', color: '#e6edf3' }}>Discussion</span>
           </div>
-          <button
+          <button type="button"
             onClick={() => setCommentPanelOpen(false)}
             style={{ background: 'transparent', border: 'none', color: '#8b949e', fontSize: '16px', cursor: 'pointer', padding: '2px 6px', borderRadius: '4px' }}
             title="Close"

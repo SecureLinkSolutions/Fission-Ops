@@ -166,7 +166,7 @@ export default function UserManagement() {
             <div style={{ color: '#8b949e', fontSize: '11px', marginBottom: '4px', textTransform: 'uppercase' }}>Password</div>
             <input style={inputStyle} type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} minLength={STANDARD_MIN} required />
           </div>
-          <button type="submit" style={btnStyle} disabled={createLoading}>{createLoading ? 'Creating…' : 'Create'}</button>
+          <button type="button" type="submit" style={btnStyle} disabled={createLoading}>{createLoading ? 'Creating…' : 'Create'}</button>
         </form>
       </div>
 
@@ -196,16 +196,16 @@ export default function UserManagement() {
                 <td style={{ padding: '10px 16px' }}>
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                     {u.deactivated_at ? (
-                      <button style={{ ...smallBtnStyle, color: '#3fb950' }} onClick={() => reactivate(u.id)}>Reactivate</button>
+                      <button type="button" style={{ ...smallBtnStyle, color: '#3fb950' }} onClick={() => reactivate(u.id)}>Reactivate</button>
                     ) : (
-                      <button style={{ ...smallBtnStyle, color: '#f85149' }} onClick={() => deactivate(u.id)}>Deactivate</button>
+                      <button type="button" style={{ ...smallBtnStyle, color: '#f85149' }} onClick={() => deactivate(u.id)}>Deactivate</button>
                     )}
                     <select style={{ ...smallBtnStyle, background: '#21262d' }} value={u.role} onChange={(e) => changeRole(u.id, e.target.value as UserRole)}>
                       <option value="analyst">Analyst</option>
                       <option value="senior_analyst">Senior Analyst</option>
                       <option value="incident_commander">Incident Commander</option>
                     </select>
-                    <button style={smallBtnStyle} onClick={() => resetPassword(u.id, u.role)}>Reset PW</button>
+                    <button type="button" style={smallBtnStyle} onClick={() => resetPassword(u.id, u.role)}>Reset PW</button>
                   </div>
                 </td>
               </tr>
@@ -232,7 +232,7 @@ export default function UserManagement() {
                   <option key={u.id} value={u.id}>{u.email} ({u.role})</option>
                 ))}
               </select>
-              <button style={btnStyle} onClick={assignUser} disabled={!assignUserId}>Assign</button>
+              <button type="button" style={btnStyle} onClick={assignUser} disabled={!assignUserId}>Assign</button>
             </>
           )}
         </div>
@@ -244,7 +244,7 @@ export default function UserManagement() {
                 <span style={{ color: '#8b949e', fontSize: '12px' }}>{a.user_name}</span>
                 {roleBadge(a.user_role)}
                 <span style={{ color: '#8b949e', fontSize: '11px' }}>{formatDate(a.assigned_at)}</span>
-                <button style={{ ...smallBtnStyle, color: '#f85149' }} onClick={() => removeAssignment(a.user_id)}>Remove</button>
+                <button type="button" style={{ ...smallBtnStyle, color: '#f85149' }} onClick={() => removeAssignment(a.user_id)}>Remove</button>
               </div>
             ))}
             {(assignments ?? []).length === 0 && (

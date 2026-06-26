@@ -32,7 +32,7 @@ export default class ErrorBoundary extends Component<Props, State> {
                 {this.state.error.stack}
               </pre>
             </details>
-            <button
+            <button type="button"
               onClick={() => { this.setState({ error: null }); window.location.reload(); }}
               style={{ background: '#238636', border: 'none', borderRadius: '6px', padding: '8px 16px', color: '#fff', fontSize: '13px', cursor: 'pointer' }}
             >

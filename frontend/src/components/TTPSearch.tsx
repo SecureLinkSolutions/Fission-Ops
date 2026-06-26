@@ -100,7 +100,7 @@ export default function TTPSearch({ mappingId, entityId, entityValue, onUpdated,
             <div style={{ fontSize: '15px', fontWeight: 700, color: '#e6edf3' }}>Assign TTPs</div>
             <div style={{ fontSize: '12px', color: '#8b949e', marginTop: '2px' }}>{entityValue}</div>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#8b949e', cursor: 'pointer', fontSize: '18px', padding: '4px 8px' }}>✕</button>
+          <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', color: '#8b949e', cursor: 'pointer', fontSize: '18px', padding: '4px 8px' }}>✕</button>
         </div>
 
         {/* Assigned TTPs */}
@@ -118,7 +118,7 @@ export default function TTPSearch({ mappingId, entityId, entityValue, onUpdated,
                   }}>
                     <span style={{ fontFamily: 'monospace', fontSize: '11px', color, fontWeight: 700 }}>{a.technique_id}</span>
                     <span style={{ fontSize: '11px', color: '#e6edf3' }}>{a.name}</span>
-                    <button onClick={() => remove(a.entity_stage_ttp_id)} style={{ background: 'none', border: 'none', color: '#8b949e', cursor: 'pointer', fontSize: '12px', padding: '0', lineHeight: 1 }}>✕</button>
+                    <button type="button" onClick={() => remove(a.entity_stage_ttp_id)} style={{ background: 'none', border: 'none', color: '#8b949e', cursor: 'pointer', fontSize: '12px', padding: '0', lineHeight: 1 }}>✕</button>
                   </div>
                 );
               })}

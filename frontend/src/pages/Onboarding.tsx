@@ -64,8 +64,8 @@ export default function Onboarding() {
           <>
             <div style={s.title}>Welcome to Fission Ops{user?.org_id ? '' : ''}! 🎉</div>
             <div style={s.sub}>Your organization is ready. Let&apos;s set up your first incident so you can see the platform in action.</div>
-            <button style={s.btnPrimary} onClick={() => setStep(2)}>Get Started →</button>
-            <button style={s.btnSecondary} onClick={() => navigate('/incidents')}>Skip setup</button>
+            <button type="button" style={s.btnPrimary} onClick={() => setStep(2)}>Get Started →</button>
+            <button type="button" style={s.btnSecondary} onClick={() => navigate('/incidents')}>Skip setup</button>
           </>
         )}
 
@@ -85,8 +85,8 @@ export default function Onboarding() {
                 <option value="critical">Critical</option>
               </select>
               <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                <button style={s.btnPrimary} type="submit" disabled={loading}>{loading ? 'Creating…' : 'Create Incident →'}</button>
-                <button style={s.btnSecondary} type="button" onClick={() => setStep(3)}>Skip</button>
+                <button type="button" style={s.btnPrimary} type="submit" disabled={loading}>{loading ? 'Creating…' : 'Create Incident →'}</button>
+                <button type="button" style={s.btnSecondary} type="button" onClick={() => setStep(3)}>Skip</button>
               </div>
             </form>
           </>
@@ -106,7 +106,7 @@ export default function Onboarding() {
               <Link to="/settings/org" style={s.successLink}>→ Organization settings</Link>
               <Link to="/incidents" style={s.successLink}>→ Go to incident dashboard</Link>
             </div>
-            <button style={s.btnPrimary} onClick={() => navigate('/incidents')}>Go to Dashboard</button>
+            <button type="button" style={s.btnPrimary} onClick={() => navigate('/incidents')}>Go to Dashboard</button>
           </>
         )}
       </div>

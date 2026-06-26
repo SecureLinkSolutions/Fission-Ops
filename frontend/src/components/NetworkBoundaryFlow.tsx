@@ -170,8 +170,8 @@ function TraversalModal({ boundaries, onConfirm, onClose }: TraversalModalProps)
           </div>
         </div>
         <div style={{ display: 'flex', gap: '8px', marginTop: '20px', justifyContent: 'flex-end' }}>
-          <button onClick={onClose} style={{ background: 'transparent', border: '1px solid #30363d', borderRadius: '6px', padding: '8px 16px', color: '#8b949e', cursor: 'pointer', fontSize: '13px' }}>Cancel</button>
-          <button
+          <button type="button" onClick={onClose} style={{ background: 'transparent', border: '1px solid #30363d', borderRadius: '6px', padding: '8px 16px', color: '#8b949e', cursor: 'pointer', fontSize: '13px' }}>Cancel</button>
+          <button type="button"
             onClick={() => { if (sourceId && targetId) onConfirm(sourceId, targetId, label); }}
             disabled={!sourceId || !targetId}
             style={{ background: '#238636', border: 'none', borderRadius: '6px', padding: '8px 16px', color: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: 600, opacity: (!sourceId || !targetId) ? 0.5 : 1 }}
@@ -362,14 +362,14 @@ function NetworkBoundaryFlowInner({ incidentId }: NetworkBoundaryFlowInnerProps)
         <select style={{ ...inputStyle, width: '120px' }} value={newBoundaryZone} onChange={(e) => setNewBoundaryZone(e.target.value)}>
           {['IT', 'OT', 'trusted', 'untrusted', 'dmz'].map((z) => <option key={z} value={z}>{z}</option>)}
         </select>
-        <button
+        <button type="button"
           onClick={handleAddBoundary}
           disabled={saving || !newBoundaryName}
           style={{ background: '#238636', border: 'none', borderRadius: '6px', padding: '7px 14px', color: '#fff', fontSize: '12px', fontWeight: 600, cursor: 'pointer', opacity: (!newBoundaryName || saving) ? 0.5 : 1 }}
         >
           Add Boundary
         </button>
-        <button
+        <button type="button"
           onClick={() => setShowTraversalModal(true)}
           style={{ background: '#21262d', border: '1px solid #30363d', borderRadius: '6px', padding: '7px 14px', color: '#8b949e', fontSize: '12px', cursor: 'pointer' }}
         >

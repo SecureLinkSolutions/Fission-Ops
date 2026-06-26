@@ -330,7 +330,7 @@ export default function ActivityHeatMap({ incidentId }: Props) {
               >
                 {selectedBucket.count} events
               </span>
-              <button
+              <button type="button"
                 onClick={() => setSelectedBucket(null)}
                 style={{
                   background: 'transparent',
