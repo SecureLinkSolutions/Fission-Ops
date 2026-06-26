@@ -255,8 +255,8 @@ function ActionItem({ text, onCreateTask, canCreateTask }: { text: string; canCr
       <span style={{ flex: 1, color: '#e6edf3', fontSize: '13px', lineHeight: '1.5' }}>{text}</span>
       <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
         <button type="button"
-         type="button"
-          type="button"
+         
+          
           onClick={() => canCreateTask && onCreateTask(text)}
           onMouseEnter={() => setAddHover(true)}
           onMouseLeave={() => setAddHover(false)}

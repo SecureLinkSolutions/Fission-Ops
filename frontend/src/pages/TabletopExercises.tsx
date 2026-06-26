@@ -322,8 +322,8 @@ export default function TabletopExercises() {
               </div>
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' }}>
                 <button type="button"
-                 type="button"
-                  type="button"
+                 
+                  
                   onClick={() => setShowModal(false)}
                   style={{
                     background: 'transparent', border: '1px solid #30363d',
@@ -333,8 +333,8 @@ export default function TabletopExercises() {
                 >
                   Cancel
                 </button>
-                <button type="button"
-                 type="button"
+                <button
+                 
                   type="submit"
                   disabled={creating}
                   style={{

@@ -333,8 +333,8 @@ export default function IncidentDetail() {
         <EntityForm incidentId={id!} onCreated={refetchEntities} />
         <div style={{ marginBottom: '12px' }}>
           <button type="button"
-           type="button"
-            type="button"
+           
+            
             onClick={() => setEntitySectionCollapsed((c) => !c)}
             style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 0', color: '#c9d1d9' }}
           >

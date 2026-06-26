@@ -211,7 +211,7 @@ export default function EntityForm({ incidentId, onCreated }: Props) {
         )}
 
         {error && <div style={s.error}>{error}</div>}
-        <button type="button" style={{ ...s.btn, marginTop: '12px' }} type="submit" disabled={loading}>{loading ? 'Adding…' : 'Add Entity'}</button>
+        <button style={{ ...s.btn, marginTop: '12px' }} type="submit" disabled={loading}>{loading ? 'Adding…' : 'Add Entity'}</button>
       </form>
     </div>
   );

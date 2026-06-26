@@ -311,8 +311,8 @@ export default function RemediationBoard({ incidentId, entities, teamMembers }: 
               ))}
             </select>
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button type="button"
-               type="button"
+              <button
+               
                 type="submit"
                 disabled={submitting}
                 style={{ background: '#238636', border: '1px solid #2ea043', borderRadius: '6px', padding: '7px 16px', color: '#fff', fontSize: '13px', cursor: 'pointer', fontWeight: 600 }}
@@ -320,8 +320,8 @@ export default function RemediationBoard({ incidentId, entities, teamMembers }: 
                 {submitting ? 'Creating…' : 'Create Item'}
               </button>
               <button type="button"
-               type="button"
-                type="button"
+               
+                
                 onClick={() => setShowForm(false)}
                 style={{ background: 'transparent', border: '1px solid #30363d', borderRadius: '6px', padding: '7px 12px', color: '#8b949e', fontSize: '13px', cursor: 'pointer' }}
               >

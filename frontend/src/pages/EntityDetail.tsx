@@ -170,9 +170,9 @@ export default function EntityDetail() {
       <div style={{ display: 'flex', gap: '0', borderBottom: '1px solid #30363d', marginBottom: '24px' }}>
         {(['overview', 'enrichment', 'checklist', 'custody'] as const).map((tab) => (
           <button type="button"
-            type="button"
+            
             key={tab}
-            type="button"
+            
             onClick={() => setActiveTab(tab)}
             style={{
               background: 'none',

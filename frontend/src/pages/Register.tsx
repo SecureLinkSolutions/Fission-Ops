@@ -87,7 +87,7 @@ export default function Register() {
             </div>
           </div>
           {error && <div style={{ background: '#f8514922', border: '1px solid #f8514944', borderRadius: '6px', padding: '10px 14px', color: '#f85149', fontSize: '13px' }}>{error}</div>}
-          <button type="button" type="submit" disabled={loading} style={{ padding: '12px', background: '#238636', border: 'none', borderRadius: '6px', color: '#fff', fontSize: '14px', fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}>
+          <button type="submit" disabled={loading} style={{ padding: '12px', background: '#238636', border: 'none', borderRadius: '6px', color: '#fff', fontSize: '14px', fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}>
             {loading ? 'Creating account…' : 'Create Organization'}
           </button>
           <div style={{ textAlign: 'center', color: '#8b949e', fontSize: '13px' }}>

@@ -282,8 +282,8 @@ export default function OrgSettings() {
                 {editing && canEdit ? (
                   <form onSubmit={handleSave} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <input style={s.input} value={editName} onChange={(e) => setEditName(e.target.value)} required />
-                    <button type="button" style={s.btn} type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
-                    <button type="button" type="button" style={{ ...s.btn, background: 'transparent', border: '1px solid #30363d', color: '#8b949e' }} onClick={() => setEditing(false)}>Cancel</button>
+                    <button style={s.btn} type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
+                    <button type="button"  style={{ ...s.btn, background: 'transparent', border: '1px solid #30363d', color: '#8b949e' }} onClick={() => setEditing(false)}>Cancel</button>
                   </form>
                 ) : (
                   <span style={{ ...s.fieldValue, display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -489,8 +489,8 @@ export default function OrgSettings() {
                           onChange={(e) => setKeyInputs((prev) => ({ ...prev, [service]: e.target.value }))}
                         />
                         <button type="button"
-                         type="button"
-                          type="button"
+                         
+                          
                           onClick={() => setShowKey((prev) => ({ ...prev, [service]: !prev[service] }))}
                           style={{ position: 'absolute' as const, right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#8b949e', cursor: 'pointer', fontSize: '14px', padding: '0' }}
                         >

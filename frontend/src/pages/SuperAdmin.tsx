@@ -175,7 +175,7 @@ export default function SuperAdmin() {
                 </select>
               </div>
             </div>
-            <button type="button" style={s.createBtn} type="submit" disabled={creating}>{creating ? 'Creating…' : 'Create Organization'}</button>
+            <button style={s.createBtn} type="submit" disabled={creating}>{creating ? 'Creating…' : 'Create Organization'}</button>
           </form>
         </div>
       </div>

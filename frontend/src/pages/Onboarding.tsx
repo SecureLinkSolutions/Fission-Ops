@@ -85,8 +85,8 @@ export default function Onboarding() {
                 <option value="critical">Critical</option>
               </select>
               <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                <button type="button" style={s.btnPrimary} type="submit" disabled={loading}>{loading ? 'Creating…' : 'Create Incident →'}</button>
-                <button type="button" style={s.btnSecondary} type="button" onClick={() => setStep(3)}>Skip</button>
+                <button style={s.btnPrimary} type="submit" disabled={loading}>{loading ? 'Creating…' : 'Create Incident →'}</button>
+                <button type="button" style={s.btnSecondary}  onClick={() => setStep(3)}>Skip</button>
               </div>
             </form>
           </>

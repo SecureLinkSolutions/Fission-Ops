@@ -166,7 +166,7 @@ export default function UserManagement() {
             <div style={{ color: '#8b949e', fontSize: '11px', marginBottom: '4px', textTransform: 'uppercase' }}>Password</div>
             <input style={inputStyle} type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} minLength={STANDARD_MIN} required />
           </div>
-          <button type="button" type="submit" style={btnStyle} disabled={createLoading}>{createLoading ? 'Creating…' : 'Create'}</button>
+          <button type="submit" style={btnStyle} disabled={createLoading}>{createLoading ? 'Creating…' : 'Create'}</button>
         </form>
       </div>
 

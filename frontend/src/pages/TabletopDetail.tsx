@@ -660,10 +660,10 @@ export default function TabletopDetail() {
                   />
                 </div>
                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                  <button type="button" type="button" onClick={() => setEditingScenario(false)} style={{ background: 'transparent', border: '1px solid #30363d', color: '#8b949e', padding: '7px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>
+                  <button type="button"  onClick={() => setEditingScenario(false)} style={{ background: 'transparent', border: '1px solid #30363d', color: '#8b949e', padding: '7px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>
                     Cancel
                   </button>
-                  <button type="button" type="submit" disabled={savingScenario} style={{ background: '#238636', border: '1px solid #2ea043', color: '#e6edf3', padding: '7px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', opacity: savingScenario ? 0.6 : 1 }}>
+                  <button type="submit" disabled={savingScenario} style={{ background: '#238636', border: '1px solid #2ea043', color: '#e6edf3', padding: '7px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', opacity: savingScenario ? 0.6 : 1 }}>
                     {savingScenario ? 'Saving…' : 'Save'}
                   </button>
                 </div>
@@ -1145,9 +1145,9 @@ export default function TabletopDetail() {
                         <div style={{ display: 'flex', gap: '8px' }}>
                           {[1, 2, 3, 4, 5].map(n => (
                             <button type="button"
-                              type="button"
+                              
                               key={n}
-                              type="button"
+                              
                               onClick={() => setAARForm(f => ({ ...f, overall_rating: n }))}
                               style={{
                                 width: '36px', height: '36px', borderRadius: '6px',
@@ -1163,10 +1163,10 @@ export default function TabletopDetail() {
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-                        <button type="button" type="button" onClick={() => setEditingAAR(false)} style={{ background: 'transparent', border: '1px solid #30363d', color: '#8b949e', padding: '7px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>
+                        <button type="button"  onClick={() => setEditingAAR(false)} style={{ background: 'transparent', border: '1px solid #30363d', color: '#8b949e', padding: '7px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>
                           Cancel
                         </button>
-                        <button type="button" type="submit" disabled={savingAAR} style={{ background: '#238636', border: '1px solid #2ea043', color: '#e6edf3', padding: '7px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>
+                        <button type="submit" disabled={savingAAR} style={{ background: '#238636', border: '1px solid #2ea043', color: '#e6edf3', padding: '7px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>
                           {savingAAR ? 'Saving…' : 'Save AAR'}
                         </button>
                       </div>
@@ -1246,10 +1246,10 @@ export default function TabletopDetail() {
                 <textarea value={injectForm.discussion_prompts} onChange={e => setInjectForm(f => ({ ...f, discussion_prompts: e.target.value }))} rows={3} style={{ ...inputStyle, resize: 'vertical' }} placeholder="What should the team prioritize?&#10;Who needs to be notified?&#10;What evidence should be collected?" />
               </div>
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-                <button type="button" type="button" onClick={() => { setShowInjectForm(false); setEditingInjectId(null); }} style={{ background: 'transparent', border: '1px solid #30363d', color: '#8b949e', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>
+                <button type="button"  onClick={() => { setShowInjectForm(false); setEditingInjectId(null); }} style={{ background: 'transparent', border: '1px solid #30363d', color: '#8b949e', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>
                   Cancel
                 </button>
-                <button type="button" type="submit" disabled={savingInject} style={{ background: '#238636', border: '1px solid #2ea043', color: '#e6edf3', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', opacity: savingInject ? 0.6 : 1 }}>
+                <button type="submit" disabled={savingInject} style={{ background: '#238636', border: '1px solid #2ea043', color: '#e6edf3', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', opacity: savingInject ? 0.6 : 1 }}>
                   {savingInject ? 'Saving…' : editingInjectId ? 'Save Changes' : 'Add Inject'}
                 </button>
               </div>
