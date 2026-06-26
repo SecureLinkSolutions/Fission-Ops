@@ -379,9 +379,14 @@ export default function IncidentDetail() {
                   <SuggestedActions
                     entity={{ id: e.id, type: e.type, value: e.value, status: e.status, ioc_status: ext.ioc_status }}
                     incidentId={id!}
+                    canCreateTask={canChangeIncidentStatus}
                     onCreateTask={async (title) => {
-                      await apiClient.post(`/incidents/${id}/tasks`, { title, priority: 'high' }).catch(() => {});
-                      refetchTasks();
+                      try {
+                        await apiClient.post(`/incidents/${id}/tasks`, { title, priority: 'high' });
+                        refetchTasks();
+                      } catch {
+                        alert('Failed to create task. Senior Analyst role or above is required.');
+                      }
                     }}
                   />
                 </div>

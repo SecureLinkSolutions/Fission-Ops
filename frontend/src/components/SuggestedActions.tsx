@@ -11,6 +11,7 @@ interface EntityProp {
 interface Props {
   entity: EntityProp;
   incidentId: string;
+  canCreateTask?: boolean;
   onCreateTask: (title: string) => void;
 }
 
@@ -238,7 +239,7 @@ const RESPOND_TEMPLATES: Record<string, string[]> = {
   ],
 };
 
-function ActionItem({ text, onCreateTask }: { text: string; onCreateTask: (title: string) => void }) {
+function ActionItem({ text, onCreateTask, canCreateTask }: { text: string; canCreateTask: boolean; onCreateTask: (title: string) => void }) {
   const [copied, setCopied] = useState(false);
   const [addHover, setAddHover] = useState(false);
   const [copyHover, setCopyHover] = useState(false);
@@ -254,18 +255,20 @@ function ActionItem({ text, onCreateTask }: { text: string; onCreateTask: (title
       <span style={{ flex: 1, color: '#e6edf3', fontSize: '13px', lineHeight: '1.5' }}>{text}</span>
       <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
         <button
-          onClick={() => onCreateTask(text)}
+          type="button"
+          onClick={() => canCreateTask && onCreateTask(text)}
           onMouseEnter={() => setAddHover(true)}
           onMouseLeave={() => setAddHover(false)}
-          title="Add as task"
+          disabled={!canCreateTask}
+          title={canCreateTask ? 'Add as task' : 'Requires Senior Analyst role to create tasks'}
           style={{
-            background: addHover ? '#238636' : '#23863622',
-            border: '1px solid #23863644',
+            background: !canCreateTask ? 'transparent' : addHover ? '#238636' : '#23863622',
+            border: `1px solid ${canCreateTask ? '#23863644' : '#30363d'}`,
             borderRadius: '4px',
             padding: '4px 8px',
-            color: addHover ? '#fff' : '#3fb950',
+            color: !canCreateTask ? '#484f58' : addHover ? '#fff' : '#3fb950',
             fontSize: '11px',
-            cursor: 'pointer',
+            cursor: canCreateTask ? 'pointer' : 'not-allowed',
             fontWeight: 600,
           }}
         >
@@ -295,12 +298,13 @@ function ActionItem({ text, onCreateTask }: { text: string; onCreateTask: (title
 }
 
 function ActionSection({
-  title, color, icon, actions, onCreateTask,
+  title, color, icon, actions, onCreateTask, canCreateTask,
 }: {
   title: string;
   color: string;
   icon: string;
   actions: string[];
+  canCreateTask: boolean;
   onCreateTask: (title: string) => void;
 }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -325,7 +329,7 @@ function ActionSection({
       {!collapsed && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           {actions.map((action, i) => (
-            <ActionItem key={i} text={action} onCreateTask={onCreateTask} />
+            <ActionItem key={i} text={action} onCreateTask={onCreateTask} canCreateTask={canCreateTask} />
           ))}
         </div>
       )}
@@ -333,7 +337,7 @@ function ActionSection({
   );
 }
 
-export default function SuggestedActions({ entity, onCreateTask }: Props) {
+export default function SuggestedActions({ entity, onCreateTask, canCreateTask = true }: Props) {
   const isConfirmed = entity.status === 'confirmed_malicious' || entity.ioc_status === 'confirmed';
   const isSuspected = entity.ioc_status === 'suspected' || entity.status === 'under_investigation';
 
@@ -380,6 +384,7 @@ export default function SuggestedActions({ entity, onCreateTask }: Props) {
         icon="🔍"
         actions={investigateActions}
         onCreateTask={onCreateTask}
+        canCreateTask={canCreateTask}
       />
 
       {/* Response actions only shown once confirmed */}
@@ -390,6 +395,7 @@ export default function SuggestedActions({ entity, onCreateTask }: Props) {
           icon="🛡"
           actions={respondActions}
           onCreateTask={onCreateTask}
+          canCreateTask={canCreateTask}
         />
       )}
     </div>

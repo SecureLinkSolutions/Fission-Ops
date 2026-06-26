@@ -277,8 +277,13 @@ export default function EntityDetail() {
       <SuggestedActions
         entity={{ id: entity.id, type: entity.type, value: entity.value, status: entity.status, ioc_status: entity.ioc_status }}
         incidentId={id!}
+        canCreateTask={ROLE_RANK[user?.role ?? ''] >= ROLE_RANK['senior_analyst']}
         onCreateTask={async (title) => {
-          await apiClient.post(`/incidents/${entity.incident_id}/tasks`, { title, priority: 'high' }).catch(() => {});
+          try {
+            await apiClient.post(`/incidents/${entity.incident_id}/tasks`, { title, priority: 'high' });
+          } catch {
+            alert('Failed to create task. You may not have permission (Senior Analyst or above required).');
+          }
         }}
       />
 
