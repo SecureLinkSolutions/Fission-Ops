@@ -303,5 +303,17 @@ async function runMigrations(): Promise<void> {
     await pool.query(sql023);
     console.log('✅ Migration 023 applied');
   }
+
+  // Migration 024: extend entity_type enum with file, process, registry, certificate, url, custom
+  const needsMigration024 = await pool.query(
+    `SELECT 1 FROM pg_enum e JOIN pg_type t ON t.oid = e.enumtypid WHERE t.typname = 'entity_type' AND e.enumlabel = 'file'`,
+  );
+  if ((needsMigration024.rowCount ?? 0) === 0) {
+    console.log('⚙️  Running migration 024...');
+    const migrationPath024 = join(__dirname, '../../../../db/migrate_024.sql');
+    const sql024 = readFileSync(migrationPath024, 'utf8');
+    await pool.query(sql024);
+    console.log('✅ Migration 024 applied');
+  }
 }
 // Note: migration 014 block is appended below
