@@ -136,6 +136,7 @@ export default function TabletopDetail() {
   const [editingInjectId, setEditingInjectId] = useState<string | null>(null);
   const [savingInject, setSavingInject] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [generatingStep, setGeneratingStep] = useState('');
   const [showScenarioDropdown, setShowScenarioDropdown] = useState(false);
 
   // Run tab state
@@ -384,6 +385,7 @@ export default function TabletopDetail() {
 
   async function handleGenerateScenario(scenarioType: string) {
     setGenerating(true);
+    setGeneratingStep('Sending request to AI…');
     setShowScenarioDropdown(false);
     try {
       let res;
@@ -419,6 +421,7 @@ export default function TabletopDetail() {
       }
 
       if (!exercise) return;
+      setGeneratingStep('Saving scenario…');
       // Update exercise with generated content
       await apiClient.put(`/tabletop/exercises/${exercise.id}`, {
         title: res.data.title,
@@ -427,6 +430,7 @@ export default function TabletopDetail() {
       });
 
       const validInjectTypes = ['information', 'decision', 'complication', 'escalation', 'resolution'];
+      setGeneratingStep(`Saving ${res.data.injects.length} injects…`);
       // Add all injects
       for (const inject of res.data.injects) {
         const normalised = {
@@ -437,11 +441,13 @@ export default function TabletopDetail() {
         };
         await apiClient.post(`/tabletop/exercises/${exercise.id}/injects`, normalised);
       }
+      setGeneratingStep('Finalising…');
       await loadExercise();
     } catch (err: unknown) {
       alert('Failed to save generated content: ' + ((err as Error)?.message ?? 'unknown error'));
     } finally {
       setGenerating(false);
+      setGeneratingStep('');
     }
   }
 
@@ -508,6 +514,42 @@ export default function TabletopDetail() {
 
   return (
     <div style={{ padding: '32px', background: '#0d1117', minHeight: '100vh', color: '#e6edf3' }}>
+      {generating && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1000,
+          background: 'rgba(1,4,9,0.85)', backdropFilter: 'blur(4px)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          gap: '24px',
+        }}>
+          <div style={{ position: 'relative', width: '64px', height: '64px' }}>
+            <div style={{
+              position: 'absolute', inset: 0, borderRadius: '50%',
+              border: '3px solid #21262d',
+            }} />
+            <div style={{
+              position: 'absolute', inset: 0, borderRadius: '50%',
+              border: '3px solid transparent',
+              borderTopColor: '#58a6ff',
+              animation: 'tabletop-spin 0.9s linear infinite',
+            }} />
+            <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>✨</span>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '18px', fontWeight: 600, color: '#e6edf3', marginBottom: '8px' }}>
+              Generating with AI
+            </div>
+            <div style={{ fontSize: '13px', color: '#8b949e' }}>{generatingStep}</div>
+          </div>
+          <div style={{ fontSize: '12px', color: '#484f58', maxWidth: '300px', textAlign: 'center', lineHeight: 1.6 }}>
+            This may take 20–40 seconds. The AI is building your scenario and all injects from scratch.
+          </div>
+        </div>
+      )}
+      <style>{`
+        @keyframes tabletop-spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
       {/* Header */}
       <div style={{ marginBottom: '24px' }}>
         <button
