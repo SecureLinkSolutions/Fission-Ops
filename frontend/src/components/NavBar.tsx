@@ -253,8 +253,28 @@ export default function NavBar({ connectionState }: NavBarProps) {
         )}
       </div>
 
-      {/* Footer - sign out only */}
+      {/* Footer - profile + sign out */}
       <div style={{ padding: '12px 16px', borderTop: '1px solid #30363d' }}>
+        <button type="button"
+          onClick={() => navigate('/profile')}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: '#8b949e',
+            padding: '4px 0 8px',
+            cursor: 'pointer',
+            fontSize: '12px',
+            width: '100%',
+            textAlign: 'left',
+            display: 'block',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+          title={user?.email}
+        >
+          👤 {user?.email}
+        </button>
         <button type="button"
           onClick={() => { logout(); navigate('/login'); }}
           style={{
