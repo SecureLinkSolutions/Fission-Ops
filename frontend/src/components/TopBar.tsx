@@ -1,4 +1,4 @@
-import { useLocation, Link, useParams } from 'react-router-dom';
+import { useLocation, Link, useNavigate, useParams } from 'react-router-dom';
 import NotificationBell from './NotificationBell';
 import { useAuth } from '../context/AuthContext';
 
@@ -21,6 +21,7 @@ function useBreadcrumb(): { label: string; href?: string }[] {
 export default function TopBar() {
   const { user } = useAuth();
   const crumbs = useBreadcrumb();
+  const navigate = useNavigate();
 
   return (
     <div style={{
@@ -62,7 +63,11 @@ export default function TopBar() {
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <NotificationBell />
         <div style={{ width: '1px', height: '20px', background: '#30363d' }} />
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div
+          style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+          onClick={() => navigate('/profile')}
+          title="View profile"
+        >
           <div style={{
             width: '28px', height: '28px', borderRadius: '50%',
             background: '#f9731622', border: '1px solid #f9731644',
@@ -72,7 +77,7 @@ export default function TopBar() {
             {(user?.email?.[0] ?? '?').toUpperCase()}
           </div>
           <div>
-            <div style={{ color: '#e6edf3', fontSize: '12px', fontWeight: 500, lineHeight: 1.2 }}>{user?.email}</div>
+            <div style={{ color: '#58a6ff', fontSize: '12px', fontWeight: 500, lineHeight: 1.2 }}>{user?.email}</div>
             <div style={{ color: '#6e7681', fontSize: '10px', lineHeight: 1.2, textTransform: 'capitalize' }}>{user?.role?.replace(/_/g, ' ')}</div>
           </div>
         </div>

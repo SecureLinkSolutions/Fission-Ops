@@ -1,5 +1,5 @@
 import { useState, FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const s: Record<string, React.CSSProperties> = {
@@ -50,6 +50,9 @@ export default function Login() {
           <input style={s.input} type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           <label style={s.label}>Password</label>
           <input style={s.input} type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <div style={{ textAlign: 'right', marginTop: '-14px', marginBottom: '20px' }}>
+            <Link to="/forgot-password" style={{ color: '#58a6ff', fontSize: '12px', textDecoration: 'none' }}>Forgot password?</Link>
+          </div>
           <button style={s.btn} type="submit" disabled={loading}>{loading ? 'Signing in…' : 'Sign in'}</button>
         </form>
         <div style={s.divider}><span style={s.dividerText}>OR</span></div>

@@ -1,10 +1,13 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { loginSchema } from '../schemas/auth';
 import { findUserByEmail, findUserById } from '../repositories/userRepository';
 import { config } from '../config';
 import { pool } from '../db/pool';
+import { sendEmail } from '../services/emailService';
+import { standardPasswordSchema } from '../utils/passwordPolicy';
 
 // openid-client v6 API
 import {
@@ -248,6 +251,98 @@ router.get('/sso/callback', async (req: Request, res: Response) => {
     const errMsg = encodeURIComponent('SSO authentication failed');
     res.redirect(`${config.FRONTEND_URL}/sso-callback?error=${errMsg}`);
   }
+});
+
+router.post('/forgot-password', async (req: Request, res: Response) => {
+  const { email } = req.body as { email?: string };
+  const NEUTRAL_MSG = 'If that email is registered, a reset link has been sent.';
+
+  if (!email || typeof email !== 'string') {
+    res.json({ message: NEUTRAL_MSG });
+    return;
+  }
+
+  const user = await findUserByEmail(email.toLowerCase().trim());
+
+  if (user) {
+    // Invalidate existing unused tokens
+    await pool.query(
+      `UPDATE password_reset_tokens SET used_at = NOW()
+       WHERE user_id = $1 AND used_at IS NULL`,
+      [user.id],
+    );
+
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+    await pool.query(
+      `INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
+       VALUES ($1, $2, NOW() + INTERVAL '1 hour')`,
+      [user.id, tokenHash],
+    );
+
+    const frontendUrl = config.FRONTEND_URL.split(',')[0].trim();
+    const resetLink = `${frontendUrl}/reset-password?token=${rawToken}`;
+
+    await sendEmail(
+      user.email,
+      '[Fission Ops] Password Reset Request',
+      `You requested a password reset for your Fission Ops account.\n\nClick the link below to set a new password. This link expires in 1 hour.\n\n${resetLink}\n\nIf you did not request this, please ignore this email. Your password will not change.`,
+    );
+  }
+
+  res.json({ message: NEUTRAL_MSG });
+});
+
+router.post('/reset-password', async (req: Request, res: Response) => {
+  const { token, password } = req.body as { token?: string; password?: string };
+
+  if (!token || typeof token !== 'string' || !password || typeof password !== 'string') {
+    res.status(400).json({ error: 'Reset link is invalid or has expired', code: 'INVALID_RESET_TOKEN' });
+    return;
+  }
+
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+  const tokenResult = await pool.query(
+    `SELECT prt.id, prt.user_id, u.role
+     FROM password_reset_tokens prt
+     JOIN users u ON u.id = prt.user_id
+     WHERE prt.token_hash = $1
+       AND prt.used_at IS NULL
+       AND prt.expires_at > NOW()`,
+    [tokenHash],
+  );
+
+  if (tokenResult.rowCount === 0) {
+    res.status(400).json({ error: 'Reset link is invalid or has expired', code: 'INVALID_RESET_TOKEN' });
+    return;
+  }
+
+  const { id: tokenId, user_id: userId, role } = tokenResult.rows[0];
+
+  // Validate new password with role-aware schema
+  const { passwordSchemaForRole } = await import('../utils/passwordPolicy');
+  const schema = passwordSchemaForRole(role);
+  const parsed = schema.safeParse(password);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.errors[0]?.message ?? 'Invalid password', code: 'WEAK_PASSWORD' });
+    return;
+  }
+
+  const passwordHash = await bcrypt.hash(password, 12);
+
+  await pool.query(
+    `UPDATE users SET password_hash = $1, password_reset_required = false WHERE id = $2`,
+    [passwordHash, userId],
+  );
+
+  await pool.query(
+    `UPDATE password_reset_tokens SET used_at = NOW() WHERE id = $1`,
+    [tokenId],
+  );
+
+  res.json({ message: 'Password has been reset successfully.' });
 });
 
 export default router;

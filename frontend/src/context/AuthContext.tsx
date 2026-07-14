@@ -8,6 +8,7 @@ interface AuthContextValue {
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  setUser: (user: User | null) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -15,7 +16,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 function parseToken(token: string): User | null {
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
-    return { id: payload.sub, email: payload.email, name: payload.email, role: payload.role, org_id: payload.org_id };
+    return { id: payload.sub, email: payload.email, name: payload.email, role: payload.role, org_id: payload.org_id, password_reset_required: payload.password_reset_required ?? false };
   } catch {
     return null;
   }
@@ -46,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
-  return <AuthContext.Provider value={{ user, token, login, logout }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ user, token, login, logout, setUser }}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

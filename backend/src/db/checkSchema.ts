@@ -315,5 +315,17 @@ async function runMigrations(): Promise<void> {
     await pool.query(sql024);
     console.log('✅ Migration 024 applied');
   }
+
+  // Migration 025: password_reset_tokens table
+  const needsMigration025 = await pool.query(
+    `SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'password_reset_tokens'`,
+  );
+  if ((needsMigration025.rowCount ?? 0) === 0) {
+    console.log('⚙️  Running migration 025...');
+    const migrationPath025 = join(__dirname, '../../../../db/migrate_025.sql');
+    const sql025 = readFileSync(migrationPath025, 'utf8');
+    await pool.query(sql025);
+    console.log('✅ Migration 025 applied');
+  }
 }
 // Note: migration 014 block is appended below

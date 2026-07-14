@@ -1,6 +1,10 @@
 import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import ChangePassword from './pages/ChangePassword';
+import Profile from './pages/Profile';
 import Onboarding from './pages/Onboarding';
 import OrgSettings from './pages/OrgSettings';
 import SuperAdmin from './pages/SuperAdmin';
@@ -51,6 +55,8 @@ export default function App() {
             <Route path="/activate" element={<LicenseActivation />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/sso-callback" element={<SSOCallback />} />
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
             <Route path="/settings/org" element={<ProtectedRoute><OrgSettings /></ProtectedRoute>} />
@@ -68,6 +74,8 @@ export default function App() {
             <Route path="/search" element={<ProtectedRoute><Search /></ProtectedRoute>} />
             <Route path="/tabletop" element={<ProtectedRoute><TabletopExercises /></ProtectedRoute>} />
             <Route path="/tabletop/:id" element={<ProtectedRoute><TabletopDetail /></ProtectedRoute>} />
+            <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="*" element={<Navigate to={user ? '/incidents' : '/login'} replace />} />
           </Routes>
         </ErrorBoundary>

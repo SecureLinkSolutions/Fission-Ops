@@ -24,6 +24,7 @@ export interface User {
   name: string;
   role: UserRole;
   org_id?: string;
+  password_reset_required?: boolean;
 }
 
 export interface Incident {
