@@ -8,9 +8,11 @@ import * as incidentRepo from '../repositories/incidentRepository';
 import { runEnrichment } from '../services/enrichment/enrichmentService';
 import { getEnrichmentHistory, recordEnrichment } from '../repositories/enrichmentHistoryRepository';
 import * as checklistRepo from '../repositories/checklistRepository';
+import { logAudit } from '../repositories/auditRepository';
 import { emitToIncident } from '../socket';
 import { z } from 'zod';
 import { pool } from '../db/pool';
+import { Entity } from '../types';
 
 const router = Router({ mergeParams: true });
 
@@ -33,6 +35,66 @@ router.post('/', authenticate, requireRole('analyst'), auditLog('entity', 'CREAT
     runEnrichment(entity.id, req.user!.org_id).catch(() => {});
   }
   emitToIncident(req.params.incidentId, 'entity:created', entity);
+});
+
+const MAX_BULK_ENTITIES = 500;
+
+const bulkEntitySchema = z.object({
+  entities: z.array(z.object({
+    type: z.enum(['hostname', 'ip', 'email', 'domain', 'account', 'file', 'process', 'registry', 'certificate', 'url', 'custom']),
+    value: z.string().min(1).max(255),
+    notes: z.string().optional(),
+  })).min(1).max(MAX_BULK_ENTITIES),
+});
+
+router.post('/bulk', authenticate, requireRole('analyst'), async (req: Request, res: Response) => {
+  const incident = await incidentRepo.getIncidentById(req.params.incidentId);
+  if (!incident) {
+    res.status(404).json({ error: 'Incident not found', code: 'NOT_FOUND' });
+    return;
+  }
+
+  const { entities } = bulkEntitySchema.parse(req.body);
+
+  const created: Entity[] = [];
+  const errors: { index: number; value: string; error: string }[] = [];
+
+  for (let i = 0; i < entities.length; i++) {
+    const row = entities[i];
+    try {
+      const entity = await repo.createEntity({
+        type: row.type,
+        value: row.value,
+        notes: row.notes,
+        incident_id: req.params.incidentId,
+        created_by: req.user!.sub,
+      });
+      created.push(entity);
+    } catch (err) {
+      errors.push({ index: i, value: row.value, error: err instanceof Error ? err.message : 'Insert failed' });
+    }
+  }
+
+  res.status(201).json({ created, errors, total: entities.length, succeeded: created.length, failed: errors.length });
+
+  if (created.length > 0) {
+    logAudit({
+      user_id: req.user!.sub,
+      user_email: req.user!.email,
+      action: 'BULK_CREATE',
+      resource_type: 'entity',
+      resource_id: req.params.incidentId,
+      new_values: { count: created.length, entity_ids: created.map((e) => e.id) },
+      ip_address: req.ip,
+    }).catch(() => {});
+
+    if (req.user!.org_id) {
+      for (const entity of created) {
+        runEnrichment(entity.id, req.user!.org_id).catch(() => {});
+      }
+    }
+    emitToIncident(req.params.incidentId, 'entity:bulk_created', { count: created.length });
+  }
 });
 
 

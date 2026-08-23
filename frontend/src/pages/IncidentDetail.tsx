@@ -3,9 +3,11 @@ import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { useFetch } from '../hooks/useFetch';
 import { apiClient } from '../api/client';
 import { Incident, Entity, TimelineEntry } from '../types';
+import { addToast } from '../components/ToastContainer';
 import EntityStatusBadge from '../components/EntityStatusBadge';
 import IncidentStatusBadge, { INCIDENT_STATUS_CONFIG } from '../components/IncidentStatusBadge';
 import EntityForm from '../components/EntityForm';
+import BulkEntityImport from '../components/BulkEntityImport';
 import KillChainFlow from '../components/KillChainFlow';
 import EntityRelationshipGraph from '../components/EntityRelationshipGraph';
 import NetworkBoundaryFlow from '../components/NetworkBoundaryFlow';
@@ -331,16 +333,16 @@ export default function IncidentDetail() {
 
       <div style={{ display: activeTab === 'entities' ? undefined : 'none' }}>
         <EntityForm incidentId={id!} onCreated={refetchEntities} />
-        <div style={{ marginBottom: '12px' }}>
-          <button type="button"
-           
-            
+        <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <button
+            type="button"
             onClick={() => setEntitySectionCollapsed((c) => !c)}
             style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 0', color: '#c9d1d9' }}
           >
             <span style={{ fontSize: '11px', color: '#8b949e' }}>{entitySectionCollapsed ? '▶' : '▼'}</span>
             <span style={{ fontSize: '13px', fontWeight: 600 }}>Entities ({entities?.length ?? 0})</span>
           </button>
+          <BulkEntityImport incidentId={id!} onImported={refetchEntities} />
         </div>
         {!entitySectionCollapsed && (entities ?? []).map((e) => {
           const ext = e as Entity & { ioc_status?: string; enrichment_status?: string; enrichment_data?: { verdict?: string } };
@@ -386,7 +388,7 @@ export default function IncidentDetail() {
                         await apiClient.post(`/incidents/${id}/tasks`, { title, priority: 'high' });
                         refetchTasks();
                       } catch {
-                        alert('Failed to create task. Senior Analyst role or above is required.');
+                        addToast({ id: Date.now().toString(), type: 'error', title: 'Task Creation Failed', body: 'Failed to create task. Senior Analyst role or above is required.', read: false, created_at: new Date().toISOString() });
                       }
                     }}
                   />
