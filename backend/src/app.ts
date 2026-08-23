@@ -30,8 +30,24 @@ import searchRouter from './routes/search';
 import tabletopRouter from './routes/tabletop';
 import { requireFeature } from './middleware/featureGate';
 import { errorHandler, notFound } from './middleware/errorHandler';
+import { pool } from './db/pool';
 
 const app = express();
+
+// Liveness — process is up, no dependency checks
+app.get('/health', (_req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
+// Readiness — confirms DB connectivity, for load balancer / orchestrator probes
+app.get('/ready', async (_req, res) => {
+  try {
+    await pool.query('SELECT 1');
+    res.status(200).json({ status: 'ok', db: 'connected' });
+  } catch {
+    res.status(503).json({ status: 'unavailable', db: 'disconnected' });
+  }
+});
 
 // Security headers
 app.use(helmet({
