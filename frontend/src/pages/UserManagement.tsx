@@ -5,6 +5,7 @@ import { useFetch } from '../hooks/useFetch';
 import { ManagedUser, UserRole, Incident } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { validatePassword, policyHint, STANDARD_MIN } from '../utils/passwordPolicy';
+import { addToast } from '../components/ToastContainer';
 
 const ROLE_COLORS: Record<UserRole, string> = {
   analyst: '#3fb950',
@@ -119,9 +120,9 @@ export default function UserManagement() {
     const pw = window.prompt(`Enter new password (${hint}):`);
     if (!pw) return;
     const check = validatePassword(pw, role);
-    if (!check.valid) { alert(`Password does not meet policy:\n• ${check.errors.join('\n• ')}`); return; }
+    if (!check.valid) { addToast({ id: Date.now().toString(), type: 'error', title: 'Invalid Password', body: `Password does not meet policy:\n• ${check.errors.join('\n• ')}`, read: false, created_at: new Date().toISOString() }); return; }
     await apiClient.patch(`/users/${id}/password`, { password: pw });
-    alert('Password reset. User must reset on next login.');
+    addToast({ id: Date.now().toString(), type: 'info', title: 'Password Reset', body: 'Password reset. User must reset on next login.', read: false, created_at: new Date().toISOString() });
   }
 
   async function assignUser() {

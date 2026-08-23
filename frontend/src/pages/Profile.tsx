@@ -43,6 +43,7 @@ export default function Profile() {
       if (user) setUser({ ...user, name: res.data.name });
       setNameMsg({ type: 'success', text: 'Name updated.' });
     } catch (err: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setNameMsg({ type: 'error', text: (err as any)?.response?.data?.error ?? 'Failed to update name.' });
     } finally {
       setSavingName(false);
@@ -68,6 +69,7 @@ export default function Profile() {
       setConfirmPassword('');
       setPwMsg({ type: 'success', text: 'Password updated successfully.' });
     } catch (err: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setPwMsg({ type: 'error', text: (err as any)?.response?.data?.error ?? 'Failed to update password.' });
     } finally {
       setSavingPw(false);

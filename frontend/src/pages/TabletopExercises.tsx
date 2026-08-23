@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { TabletopExercise } from '../types';
+import { addToast } from '../components/ToastContainer';
 
 const STATUS_COLORS: Record<string, string> = {
   draft: '#8b949e',
@@ -59,7 +60,7 @@ export default function TabletopExercises() {
     try {
       await apiClient.delete(`/tabletop/exercises/${id}`);
       setExercises(prev => prev.filter(ex => ex.id !== id));
-    } catch { alert('Failed to delete exercise.'); }
+    } catch { addToast({ id: Date.now().toString(), type: 'error', title: 'Delete Failed', body: 'Failed to delete exercise.', read: false, created_at: new Date().toISOString() }); }
     finally { setDeletingId(null); }
   }
 

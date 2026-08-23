@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useFetch } from '../hooks/useFetch';
 import { apiClient } from '../api/client';
 import { Entity, NetworkBoundary } from '../types';
+import { addToast } from '../components/ToastContainer';
 import KillChainPanel from '../components/KillChainPanel';
 import BoundaryMappingPanel from '../components/BoundaryMappingPanel';
 import CommentThread from '../components/CommentThread';
@@ -283,7 +284,7 @@ export default function EntityDetail() {
           try {
             await apiClient.post(`/incidents/${entity.incident_id}/tasks`, { title, priority: 'high' });
           } catch {
-            alert('Failed to create task. You may not have permission (Senior Analyst or above required).');
+            addToast({ id: Date.now().toString(), type: 'error', title: 'Task Creation Failed', body: 'Failed to create task. You may not have permission (Senior Analyst or above required).', read: false, created_at: new Date().toISOString() });
           }
         }}
       />

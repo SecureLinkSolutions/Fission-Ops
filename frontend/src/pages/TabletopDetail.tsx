@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { io, Socket } from 'socket.io-client';
 import { apiClient } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { addToast } from '../components/ToastContainer';
 import { TabletopExercise, ExerciseSession, ExerciseInjectResponse, ExerciseAAR, ExerciseParticipant, SessionInjectRelease, ManagedUser, Incident } from '../types';
 
 const SOCKET_URL = (() => {
@@ -406,17 +407,17 @@ export default function TabletopDetail() {
         }>('/tabletop/exercises/generate-scenario', { scenarioType });
       } catch (err: unknown) {
         const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'AI generation request failed. Check that the Anthropic API key is saved in Org Settings.';
-        alert(msg);
+        addToast({ id: Date.now().toString(), type: 'error', title: 'AI Generation Failed', body: msg, read: false, created_at: new Date().toISOString() });
         return;
       }
 
       if (res.data.error) {
-        alert(res.data.error);
+        addToast({ id: Date.now().toString(), type: 'error', title: 'AI Generation Error', body: res.data.error, read: false, created_at: new Date().toISOString() });
         return;
       }
 
       if (!res.data.title || !res.data.injects?.length) {
-        alert('AI returned an empty response. Please try again.');
+        addToast({ id: Date.now().toString(), type: 'error', title: 'Empty AI Response', body: 'AI returned an empty response. Please try again.', read: false, created_at: new Date().toISOString() });
         return;
       }
 
@@ -444,7 +445,7 @@ export default function TabletopDetail() {
       setGeneratingStep('Finalising…');
       await loadExercise();
     } catch (err: unknown) {
-      alert('Failed to save generated content: ' + ((err as Error)?.message ?? 'unknown error'));
+      addToast({ id: Date.now().toString(), type: 'error', title: 'Save Failed', body: 'Failed to save generated content: ' + ((err as Error)?.message ?? 'unknown error'), read: false, created_at: new Date().toISOString() });
     } finally {
       setGenerating(false);
       setGeneratingStep('');
