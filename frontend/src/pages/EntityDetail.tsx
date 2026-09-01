@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useFetch } from '../hooks/useFetch';
 import { apiClient } from '../api/client';
 import { Entity, NetworkBoundary } from '../types';
@@ -64,6 +64,7 @@ interface ExtendedEntity extends Entity {
 
 export default function EntityDetail() {
   const { id, entityId } = useParams<{ id: string; entityId: string }>();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'overview' | 'enrichment' | 'checklist' | 'custody'>('overview');
   const [iocNotes, setIocNotes] = useState('');
@@ -135,6 +136,18 @@ export default function EntityDetail() {
             </span>
           )}
           <EntityStatusBadge status={entity.status ?? 'unreviewed'} />
+          {entity.type === 'file' && (
+            <button
+              type="button"
+              onClick={() => navigate(`/incidents/${id}?tab=yara&fromEntity=${entityId}`)}
+              style={{
+                marginLeft: 'auto', background: '#a371f722', border: '1px solid #a371f744',
+                borderRadius: '6px', padding: '6px 14px', color: '#a371f7', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+              }}
+            >
+              🧬 Generate YARA Rule
+            </button>
+          )}
         </div>
         <div style={{ fontFamily: 'monospace', fontSize: '20px', fontWeight: 700, color: '#e6edf3', marginBottom: '8px' }}>{entity.value}</div>
         {entity.notes && <div style={{ color: '#8b949e', fontSize: '13px', lineHeight: '1.5' }}>{entity.notes}</div>}

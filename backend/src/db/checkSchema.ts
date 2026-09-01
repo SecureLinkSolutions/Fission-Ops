@@ -327,5 +327,17 @@ async function runMigrations(): Promise<void> {
     await pool.query(sql025);
     console.log('✅ Migration 025 applied');
   }
+
+  // Migration 026: yara_rules table
+  const needsMigration026 = await pool.query(
+    `SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'yara_rules'`,
+  );
+  if ((needsMigration026.rowCount ?? 0) === 0) {
+    console.log('⚙️  Running migration 026...');
+    const migrationPath026 = join(__dirname, '../../../../db/migrate_026.sql');
+    const sql026 = readFileSync(migrationPath026, 'utf8');
+    await pool.query(sql026);
+    console.log('✅ Migration 026 applied');
+  }
 }
 // Note: migration 014 block is appended below

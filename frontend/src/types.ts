@@ -54,6 +54,40 @@ export interface Entity {
   boundary_mappings?: BoundaryMappingWithBoundary[];
 }
 
+export interface YaraStringDef {
+  identifier: string;
+  type: 'text' | 'hex' | 'regex';
+  value: string;
+  nocase?: boolean;
+  wide?: boolean;
+  ascii?: boolean;
+  fullword?: boolean;
+}
+
+export interface YaraHashes {
+  md5?: string;
+  sha1?: string;
+  sha256?: string;
+}
+
+export interface YaraRule {
+  id: string;
+  incident_id: string;
+  entity_id: string | null;
+  name: string;
+  description: string | null;
+  author: string | null;
+  reference: string | null;
+  tags: string[];
+  strings: YaraStringDef[];
+  hashes: YaraHashes;
+  condition: string;
+  rule_text: string;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export type KillChainFramework = 'lockheed_martin' | 'mitre_attack' | 'mitre_ics';
 
 export interface KillChainStage {

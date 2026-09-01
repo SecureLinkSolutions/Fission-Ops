@@ -8,6 +8,7 @@ import EntityStatusBadge from '../components/EntityStatusBadge';
 import IncidentStatusBadge, { INCIDENT_STATUS_CONFIG } from '../components/IncidentStatusBadge';
 import EntityForm from '../components/EntityForm';
 import BulkEntityImport from '../components/BulkEntityImport';
+import YaraRules from '../components/YaraRules';
 import KillChainFlow from '../components/KillChainFlow';
 import EntityRelationshipGraph from '../components/EntityRelationshipGraph';
 import NetworkBoundaryFlow from '../components/NetworkBoundaryFlow';
@@ -44,7 +45,7 @@ function badge(color: string, text: string): React.ReactElement {
   return <span style={{ background: `${color}22`, color, border: `1px solid ${color}44`, borderRadius: '20px', padding: '3px 10px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' as const }}>{text}</span>;
 }
 
-type Tab = 'entities' | 'killchain' | 'relationships' | 'network' | 'timeline' | 'tasks' | 'assets' | 'remediation' | 'summary';
+type Tab = 'entities' | 'killchain' | 'relationships' | 'network' | 'timeline' | 'tasks' | 'assets' | 'remediation' | 'yara' | 'summary';
 
 export default function IncidentDetail() {
   const { id } = useParams<{ id: string }>();
@@ -55,16 +56,21 @@ export default function IncidentDetail() {
   const [activeTab, setActiveTab] = useState<Tab>(initialTab);
   const [visitedTabs, setVisitedTabs] = useState<Set<Tab>>(new Set<Tab>([initialTab]));
   const [highlightTaskId, setHighlightTaskId] = useState<string | undefined>(searchParams.get('task') ?? undefined);
+  const [yaraPresetEntityId, setYaraPresetEntityId] = useState<string | null>(searchParams.get('fromEntity'));
 
   useEffect(() => {
     const tab = searchParams.get('tab') as Tab | null;
     const taskParam = searchParams.get('task');
+    const fromEntityParam = searchParams.get('fromEntity');
     if (tab) {
       setActiveTab(tab);
       setVisitedTabs((prev) => { const s = new Set(prev); s.add(tab); return s; });
     }
     if (taskParam) {
       setHighlightTaskId(taskParam);
+    }
+    if (fromEntityParam) {
+      setYaraPresetEntityId(fromEntityParam);
     }
   }, [searchParams]);
 
@@ -310,6 +316,7 @@ export default function IncidentDetail() {
           ['tasks', `Tasks (${tasks?.length ?? 0})`],
           ['assets', `Assets (${entities?.length ?? 0})`],
           ['remediation', 'Remediation'],
+          ['yara', 'YARA Rules'],
         ] as [Tab, string][]).map(([key, label]) => (
           <button type="button"
             key={key}
@@ -509,6 +516,17 @@ export default function IncidentDetail() {
             incidentId={id!}
             entities={entities ?? []}
             teamMembers={teamMembers}
+          />
+        )}
+      </div>
+
+      <div style={{ display: activeTab === 'yara' ? undefined : 'none' }}>
+        {visitedTabs.has('yara') && (
+          <YaraRules
+            incidentId={id!}
+            entities={entities ?? []}
+            presetFromEntityId={yaraPresetEntityId}
+            onPresetConsumed={() => setYaraPresetEntityId(null)}
           />
         )}
       </div>

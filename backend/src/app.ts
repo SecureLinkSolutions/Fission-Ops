@@ -28,6 +28,7 @@ import iocRouter from './routes/ioc';
 import licenseRouter from './routes/license';
 import searchRouter from './routes/search';
 import tabletopRouter from './routes/tabletop';
+import yaraRouter from './routes/yara';
 import { requireFeature } from './middleware/featureGate';
 import { errorHandler, notFound } from './middleware/errorHandler';
 import { pool } from './db/pool';
@@ -106,6 +107,7 @@ v1.use('/', enrichmentRouter);
 v1.use('/', iocRouter);
 v1.use('/search', searchRouter);
 v1.use('/tabletop', tabletopRouter);
+v1.use('/', yaraRouter);
 
 app.use('/api/v1', v1);
 app.use(notFound);
