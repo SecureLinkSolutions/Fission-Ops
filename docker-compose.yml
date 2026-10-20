@@ -76,19 +76,7 @@ services:
     volumes:
       - license_keys:/app/keys
 
-  firewatch:
-    build: ./firewatch
-    environment:
-      FIREWATCH_FULL_INTERVAL_HOURS: 24
-      FIREWATCH_NEWS_INTERVAL_MINUTES: 60
-      NVD_API_KEY: ${NVD_API_KEY:-}
-    ports:
-      - "3004:8787"
-    volumes:
-      - firewatch_data:/var/lib/firewatch
-
 volumes:
   postgres_data:
   license_db_data:
   license_keys:
-  firewatch_data:

@@ -5,7 +5,6 @@ All notable changes to Fission Ops are documented in this file.
 ## [Unreleased]
 
 ### Added
-- **Firewatch** (`firewatch/`): exploited vulnerability watch with Overview, Catalog, Watchlist, CVE detail, Security News, Threat Intel, Coverage, Library, Content Updates, Data Health, Feedback, Licences, and Privacy pages; ingest pipeline over CISA KEV, FIRST EPSS, MITRE ATT&CK, NVD, Metasploit, Exploit-DB, Nuclei, GitHub Advisory Database, Debian/OSV, seven detection platforms, and 31 news feeds; atomic snapshot publishing with per-source fallback; scheduled refresh server; Docker Compose service
 - **License Key Service** (`fission-license-server`): Standalone Node.js/Express/TypeScript microservice with RSA-signed JWT license keys, PostgreSQL-backed storage, and endpoints for validate/activate/revoke/status
 - **Deployment Fingerprinting**: Stable per-deployment identity derived from a DB-persisted seed, hostname, and DATABASE_URL hash; stored in `deployment_config` table
 - **License Validation Service**: Startup + 24h periodic validation against license server; 7-day offline cache with grace mode that restricts enterprise features without full lockout; never crashes the main app

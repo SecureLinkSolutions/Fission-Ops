@@ -51,13 +51,6 @@ Developed by **NullVector Security**.
 - **PDF Report Export** — Server-side incident report generation with pdfmake
 - **Global Search** — Debounced full-text search across incidents and entities from the NavBar; results link directly to the relevant incident or entity page
 
-### Firewatch — Exploited Vulnerability Watch
-- **Standalone service** (`firewatch/`) — which vulnerabilities are being exploited now (CISA KEV + FIRST EPSS), which published SIEM detections cover them, and where your platform has gaps
-- **Detection index** — rules from Microsoft Sentinel, Splunk, Elastic, Sigma, Cortex XSIAM/XSOAR, and Emerging Threats Open, shown verbatim with source links; ATT&CK technique gap analysis per platform
-- **How to find** — open-source package advisories (GitHub, Debian), Nuclei network checks, Metasploit and Exploit-DB, appliance flags
-- **Threat news** — 31 government, vendor research, and news feeds, clustered into stories
-- **Data Health** — per-source freshness, fallbacks, and ingest warnings; see [`firewatch/README.md`](firewatch/README.md)
-
 ### Security & Administration
 - **JWT Authentication** — Local email/password login; minimum 32-character secret enforced at startup; bcrypt cost factor 12
 - **SSO** — Azure AD and Okta OIDC via `openid-client` v6; new users auto-provisioned as `analyst`
@@ -124,7 +117,6 @@ docker compose up --build
 
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:3001/api/v1
-- Firewatch: http://localhost:3004 (first data ingest runs on startup and takes a few minutes)
 
 ### Demo Accounts
 

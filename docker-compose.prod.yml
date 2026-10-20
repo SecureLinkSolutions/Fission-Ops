@@ -113,25 +113,8 @@ services:
     volumes:
       - license_keys:/app/keys
 
-  firewatch:
-    build: ./firewatch
-    environment:
-      FIREWATCH_FULL_INTERVAL_HOURS: ${FIREWATCH_FULL_INTERVAL_HOURS:-24}
-      FIREWATCH_NEWS_INTERVAL_MINUTES: ${FIREWATCH_NEWS_INTERVAL_MINUTES:-60}
-      NVD_API_KEY: ${NVD_API_KEY:-}
-    volumes:
-      - firewatch_data:/var/lib/firewatch
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.firewatch.rule=Host(`${FIREWATCH_DOMAIN}`)"
-      - "traefik.http.routers.firewatch.entrypoints=websecure"
-      - "traefik.http.routers.firewatch.tls.certresolver=letsencrypt"
-      - "traefik.http.services.firewatch.loadbalancer.server.port=8787"
-    restart: unless-stopped
-
 volumes:
   postgres_data:
   letsencrypt:
   license_db_data:
   license_keys:
-  firewatch_data:
