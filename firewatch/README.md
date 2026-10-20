@@ -72,3 +72,17 @@ With Docker Compose from the repository root, the `firewatch` service serves on 
 Requires Node.js 22.18 or later, which runs the TypeScript sources directly, and `git`.
 
 Feedback submissions are appended to `var/state/feedback.jsonl`.
+
+## Hosting on GitHub Pages
+
+Firewatch also runs as a static site. `.github/workflows/firewatch-pages.yml` does the ingest in GitHub Actions and publishes the result to Pages. It runs a full ingest daily, refreshes headlines hourly, and also runs on pushes to `main` under `firewatch/`.
+
+One-time setup:
+
+1. **Settings → Pages → Build and deployment → Source: GitHub Actions.** On a private repository this needs a paid plan. The published site is public.
+2. Merge the workflow to the default branch. Scheduled runs only fire from there.
+3. **Actions → Firewatch Pages → Run workflow** (mode `full`) to publish the first snapshot. It takes about 5 to 10 minutes while the rule repositories clone.
+4. Optional: add an `NVD_API_KEY` repository secret to read NVD records from the API instead of the mirror.
+5. Optional: set a `FIREWATCH_FEEDBACK_URL` repository variable. Pages has no server, so the feedback page links out; by default it opens an issue in this repository, which only people with access to the repository can do. A `mailto:` address or a public repository's issue form works for everyone.
+
+On Pages, state that must last between runs is kept in the Actions cache: trends history, Emerging Threats diffs, each source's last good copy, and the clones. If the cache is evicted, trends history is recovered from the live site. A failed ingest fails the job, so the published site stays as it was.

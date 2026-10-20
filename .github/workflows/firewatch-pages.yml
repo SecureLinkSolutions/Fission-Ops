@@ -1,0 +1,171 @@
+# Builds Firewatch as a static site and publishes it to GitHub Pages.
+#
+# - Daily: full ingest (KEV, EPSS, ATT&CK, NVD, exploits, packages, rule repositories, news).
+# - Hourly: headlines only, on top of the last full snapshot.
+# - On push to main under firewatch/, or run by hand from the Actions tab.
+#
+# State that must survive between runs (trends history, ET Open diffs, last-good copies of
+# each source, the last snapshot) is kept in the Actions cache. If the cache is evicted,
+# trends history is recovered from the live site. A failed ingest fails the job, so the
+# site that is already published stays up.
+
+name: Firewatch Pages
+
+on:
+  schedule:
+    - cron: '17 5 * * *' # full ingest, daily
+    - cron: '41 * * * *' # headlines, hourly
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: What to refresh
+        type: choice
+        options: [full, news]
+        default: full
+  push:
+    branches: [main]
+    paths:
+      - 'firewatch/**'
+      - '.github/workflows/firewatch-pages.yml'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  actions: write # delete superseded caches
+
+concurrency:
+  group: firewatch-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: firewatch
+    env:
+      FIREWATCH_VAR: ${{ github.workspace }}/firewatch/var
+      NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+    outputs:
+      mode: ${{ steps.mode.outputs.mode }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: firewatch/package-lock.json
+
+      - id: pages
+        uses: actions/configure-pages@v5
+
+      - name: Choose full or news-only refresh
+        id: mode
+        env:
+          EVENT: ${{ github.event_name }}
+          SCHEDULE: ${{ github.event.schedule }}
+          INPUT_MODE: ${{ inputs.mode }}
+        run: |
+          if [ "$EVENT" = schedule ] && [ "$SCHEDULE" = '41 * * * *' ]; then mode=news
+          elif [ "$EVENT" = workflow_dispatch ] && [ "$INPUT_MODE" = news ]; then mode=news
+          else mode=full; fi
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+          echo "Refresh mode: $mode"
+
+      - name: Restore state and last snapshot
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            firewatch/var/state
+            firewatch/var/data
+          key: firewatch-state-${{ github.run_id }}
+          restore-keys: firewatch-state-
+
+      - name: Restore rule repository clones
+        if: steps.mode.outputs.mode == 'full'
+        uses: actions/cache/restore@v4
+        with:
+          path: firewatch/var/cache
+          key: firewatch-repos-${{ github.run_id }}
+          restore-keys: firewatch-repos-
+
+      - run: npm ci
+
+      - name: Recover trends history from the live site
+        env:
+          SITE: ${{ steps.pages.outputs.base_url }}
+        run: |
+          mkdir -p var/state
+          if [ ! -f var/state/history.json ]; then
+            curl -fsSL "$SITE/data/history.json" -o var/state/history.json && echo "Recovered history from $SITE" || rm -f var/state/history.json
+          fi
+
+      - name: Ingest
+        env:
+          MODE: ${{ steps.mode.outputs.mode }}
+        run: |
+          if [ "$MODE" = news ] && [ -f var/data/snapshot.json ]; then
+            npm run ingest:news
+          else
+            npm run ingest
+          fi
+
+      - name: Build static site
+        env:
+          # Pages has no server, so feedback links out. Override with the FIREWATCH_FEEDBACK_URL
+          # repository variable (e.g. a mailto: address or a public repo's issue form).
+          VITE_FEEDBACK_URL: ${{ vars.FIREWATCH_FEEDBACK_URL || format('https://github.com/{0}/issues/new?title=Firewatch%20feedback', github.repository) }}
+        run: |
+          npm run build
+          npm test
+          rm -rf _site
+          cp -r web/dist _site
+          cp -r var/data _site/data
+          touch _site/.nojekyll
+          echo "Site size: $(du -sh _site | cut -f1), $(find _site -type f | wc -l) files"
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: firewatch/_site
+
+      # Hourly news runs build on the daily state, so only full runs save it.
+      - name: Save state and snapshot
+        if: steps.mode.outputs.mode == 'full'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            firewatch/var/state
+            firewatch/var/data
+          key: firewatch-state-${{ github.run_id }}
+
+      - name: Save rule repository clones
+        if: steps.mode.outputs.mode == 'full'
+        uses: actions/cache/save@v4
+        with:
+          path: firewatch/var/cache
+          key: firewatch-repos-${{ github.run_id }}
+
+      - name: Delete superseded caches
+        if: steps.mode.outputs.mode == 'full'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          KEEP: ${{ github.run_id }}
+        run: |
+          for prefix in firewatch-state- firewatch-repos-; do
+            gh cache list --repo "$GITHUB_REPOSITORY" --key "$prefix" --limit 100 --json key --jq '.[].key' |
+              grep -v -- "-$KEEP\$" |
+              while read -r key; do gh cache delete "$key" --repo "$GITHUB_REPOSITORY" || true; done
+          done
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

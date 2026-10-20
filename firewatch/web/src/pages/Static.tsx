@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Page, Section } from '../components/ui.tsx';
+import { Ext, Page, Section } from '../components/ui.tsx';
 import { Attribution } from './DataHealth.tsx';
 
 export function Licences() {
@@ -31,10 +31,17 @@ export function Privacy() {
           Firewatch serves static snapshot files and sets no cookies. It runs no analytics or third-party scripts. Standard web server request logs may be
           kept by whoever operates this instance.
         </p>
-        <p>
-          If you <Link to="/feedback">send feedback</Link>, the message, the page you were on, and an optional contact address you choose to give are stored
-          on the server so the operator can read them. Nothing else about you is collected.
-        </p>
+        {FEEDBACK_URL ? (
+          <p>
+            This copy is a static site with no server of its own. <Link to="/feedback">Feedback</Link> opens an external page, and what you write there is
+            handled by that service. Nothing else about you is collected.
+          </p>
+        ) : (
+          <p>
+            If you <Link to="/feedback">send feedback</Link>, the message, the page you were on, and an optional contact address you choose to give are
+            stored on the server so the operator can read them. Nothing else about you is collected.
+          </p>
+        )}
       </Section>
       <Section title="Links out" id="links">
         <p>Headlines, advisories, and rule sources link to their publishers. Following a link takes you to that publisher's site and its privacy terms.</p>
@@ -43,7 +50,33 @@ export function Privacy() {
   );
 }
 
+/** On static hosting there is no server to post to, so feedback goes to an external URL (a GitHub issue form or mailto:). */
+const FEEDBACK_URL = import.meta.env.VITE_FEEDBACK_URL;
+
+function feedbackHref(base: string): string {
+  const page = document.referrer || window.location.href;
+  return `${base}${base.includes('?') ? '&' : '?'}body=${encodeURIComponent(`Page: ${page}\n\n`)}`;
+}
+
 export function Feedback() {
+  if (FEEDBACK_URL) {
+    return (
+      <Page title="Send feedback" intro="Report a wrong count, a missing source, or anything else.">
+        <Section title="How to send it" id="external">
+          <p>This copy of Firewatch is a static site, so feedback goes through the link below. Anything you write there is visible to whoever can see that page.</p>
+          <p>
+            <Ext href={feedbackHref(FEEDBACK_URL)} className="btn">
+              Send feedback
+            </Ext>
+          </p>
+        </Section>
+      </Page>
+    );
+  }
+  return <FeedbackForm />;
+}
+
+function FeedbackForm() {
   const [message, setMessage] = useState('');
   const [contact, setContact] = useState('');
   const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
