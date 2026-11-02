@@ -241,13 +241,32 @@ const RESPOND_TEMPLATES: Record<string, string[]> = {
 
 function ActionItem({ text, onCreateTask, canCreateTask }: { text: string; canCreateTask: boolean; onCreateTask: (title: string) => void }) {
   const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
   const [addHover, setAddHover] = useState(false);
   const [copyHover, setCopyHover] = useState(false);
 
   async function handleCopy() {
-    await navigator.clipboard.writeText(text).catch(() => {});
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        // Clipboard API is unavailable (e.g. no secure context) — fall back to the legacy copy command.
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        if (!ok) throw new Error('execCommand copy failed');
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopyFailed(true);
+      setTimeout(() => setCopyFailed(false), 2000);
+    }
   }
 
   return (
@@ -279,19 +298,19 @@ function ActionItem({ text, onCreateTask, canCreateTask }: { text: string; canCr
           onClick={handleCopy}
           onMouseEnter={() => setCopyHover(true)}
           onMouseLeave={() => setCopyHover(false)}
-          title="Copy to clipboard"
+          title={copyFailed ? 'Copy failed — clipboard access unavailable' : 'Copy to clipboard'}
           style={{
             background: copyHover ? '#21262d' : 'transparent',
-            border: '1px solid #30363d',
+            border: `1px solid ${copyFailed ? '#f85149' : '#30363d'}`,
             borderRadius: '4px',
             padding: '4px 8px',
-            color: copied ? '#3fb950' : '#8b949e',
+            color: copyFailed ? '#f85149' : copied ? '#3fb950' : '#8b949e',
             fontSize: '11px',
             cursor: 'pointer',
             fontWeight: 600,
           }}
         >
-          {copied ? '✓' : '📋'}
+          {copyFailed ? '✗' : copied ? '✓' : '📋'}
         </button>
       </div>
     </div>

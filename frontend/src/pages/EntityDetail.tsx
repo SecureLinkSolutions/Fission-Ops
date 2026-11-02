@@ -296,6 +296,7 @@ export default function EntityDetail() {
         onCreateTask={async (title) => {
           try {
             await apiClient.post(`/incidents/${entity.incident_id}/tasks`, { title, priority: 'high' });
+            addToast({ id: Date.now().toString(), type: 'success', title: 'Task Created', body: title, read: false, created_at: new Date().toISOString() });
           } catch {
             addToast({ id: Date.now().toString(), type: 'error', title: 'Task Creation Failed', body: 'Failed to create task. You may not have permission (Senior Analyst or above required).', read: false, created_at: new Date().toISOString() });
           }

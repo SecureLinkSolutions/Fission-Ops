@@ -1,6 +1,7 @@
 import { useState, FormEvent } from 'react';
 import { apiClient } from '../api/client';
 import { EntityType } from '../types';
+import { addToast } from './ToastContainer';
 
 interface Props {
   incidentId: string;
@@ -135,6 +136,7 @@ export default function EntityForm({ incidentId, onCreated }: Props) {
       for (const [k, v] of Object.entries(metaValues)) {
         if (v.trim()) entity_details[k] = v.trim();
       }
+      const submittedValue = value;
       await apiClient.post(`/incidents/${incidentId}/entities`, {
         type,
         value,
@@ -144,6 +146,7 @@ export default function EntityForm({ incidentId, onCreated }: Props) {
       setValue('');
       setNotes('');
       setMetaValues({});
+      addToast({ id: Date.now().toString(), type: 'success', title: 'Entity Added', body: submittedValue, read: false, created_at: new Date().toISOString() });
       onCreated();
     } catch (err: unknown) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -394,6 +394,7 @@ export default function IncidentDetail() {
                       try {
                         await apiClient.post(`/incidents/${id}/tasks`, { title, priority: 'high' });
                         refetchTasks();
+                        addToast({ id: Date.now().toString(), type: 'success', title: 'Task Created', body: title, read: false, created_at: new Date().toISOString() });
                       } catch {
                         addToast({ id: Date.now().toString(), type: 'error', title: 'Task Creation Failed', body: 'Failed to create task. Senior Analyst role or above is required.', read: false, created_at: new Date().toISOString() });
                       }
