@@ -23,6 +23,7 @@ import LicenseAdmin from './pages/LicenseAdmin';
 import Search from './pages/Search';
 import TabletopExercises from './pages/TabletopExercises';
 import TabletopDetail from './pages/TabletopDetail';
+import PcapAnalysis from './pages/PcapAnalysis';
 import ProtectedRoute from './components/ProtectedRoute';
 import NavBar from './components/NavBar';
 import TopBar from './components/TopBar';
@@ -74,6 +75,7 @@ export default function App() {
             <Route path="/search" element={<ProtectedRoute><Search /></ProtectedRoute>} />
             <Route path="/tabletop" element={<ProtectedRoute><TabletopExercises /></ProtectedRoute>} />
             <Route path="/tabletop/:id" element={<ProtectedRoute><TabletopDetail /></ProtectedRoute>} />
+            <Route path="/pcap-analysis" element={<ProtectedRoute><PcapAnalysis /></ProtectedRoute>} />
             <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="*" element={<Navigate to={user ? '/incidents' : '/login'} replace />} />
