@@ -2954,6 +2954,54 @@ function md5(str){
   return out;
 }
 
+/* SHA-256, synchronous, for JA4+ fingerprints (short ASCII strings; crypto.subtle is async
+   and used elsewhere only for file/cert hashing, which can tolerate that — fingerprinting
+   runs inline while parsing and needs a sync result). */
+const SHA256_K = [0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+  0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+  0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+  0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+  0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+  0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+  0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+  0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+const rotr32 = (x, n) => (x >>> n) | (x << (32 - n));
+function sha256Hex(str){
+  const bytes = [];
+  for(let i = 0; i < str.length; i++) bytes.push(str.charCodeAt(i) & 0xff);
+  const n = bytes.length, bitLenHi = Math.floor(n / 0x20000000), bitLenLo = (n * 8) >>> 0;
+  bytes.push(0x80);
+  while(bytes.length % 64 !== 56) bytes.push(0);
+  bytes.push((bitLenHi>>>24)&0xff,(bitLenHi>>>16)&0xff,(bitLenHi>>>8)&0xff,bitLenHi&0xff,
+    (bitLenLo>>>24)&0xff,(bitLenLo>>>16)&0xff,(bitLenLo>>>8)&0xff,bitLenLo&0xff);
+  let h0=0x6a09e667,h1=0xbb67ae85,h2=0x3c6ef372,h3=0xa54ff53a,h4=0x510e527f,h5=0x9b05688c,h6=0x1f83d9ab,h7=0x5be0cd19;
+  const w = new Int32Array(64);
+  for(let off = 0; off < bytes.length; off += 64){
+    for(let i = 0; i < 16; i++){ const j = off + i*4; w[i] = ((bytes[j]<<24)|(bytes[j+1]<<16)|(bytes[j+2]<<8)|bytes[j+3])|0; }
+    for(let i = 16; i < 64; i++){
+      const s0v = w[i-15], s1v = w[i-2];
+      const s0 = rotr32(s0v,7) ^ rotr32(s0v,18) ^ (s0v >>> 3);
+      const s1 = rotr32(s1v,17) ^ rotr32(s1v,19) ^ (s1v >>> 10);
+      w[i] = (w[i-16] + s0 + w[i-7] + s1) | 0;
+    }
+    let a=h0,b=h1,c=h2,d=h3,e=h4,f=h5,g=h6,h=h7;
+    for(let i = 0; i < 64; i++){
+      const S1 = rotr32(e,6) ^ rotr32(e,11) ^ rotr32(e,25);
+      const chf = (e & f) ^ (~e & g);
+      const t1 = (h + S1 + chf + SHA256_K[i] + w[i]) | 0;
+      const S0 = rotr32(a,2) ^ rotr32(a,13) ^ rotr32(a,22);
+      const maj = (a & b) ^ (a & c) ^ (b & c);
+      const t2 = (S0 + maj) | 0;
+      h=g; g=f; f=e; e=(d+t1)|0; d=c; c=b; b=a; a=(t1+t2)|0;
+    }
+    h0=(h0+a)|0; h1=(h1+b)|0; h2=(h2+c)|0; h3=(h3+d)|0; h4=(h4+e)|0; h5=(h5+f)|0; h6=(h6+g)|0; h7=(h7+h)|0;
+  }
+  let out = "";
+  for(const v of [h0,h1,h2,h3,h4,h5,h6,h7]) out += (v >>> 0).toString(16).padStart(8, "0");
+  return out;
+}
+const sha256_12 = s => sha256Hex(s).slice(0, 12);
+
 /* ---------------- name tables ---------------- */
 const LINK_NAME = {0:"Loopback",1:"Ethernet",101:"Raw IP",113:"Linux cooked",228:"Raw IPv4",229:"Raw IPv6",276:"Linux cooked v2"};
 const ICMP_NAME = {0:"echo reply",3:"destination unreachable",4:"source quench",5:"redirect",8:"echo request",
@@ -3145,6 +3193,41 @@ function httpParse(b, o, len){
   r.body = hEnd >= 0 ? head.slice(hEnd + 4, hEnd + 4 + 4096) : "";
   return r;
 }
+/* JA4H (HTTP client fingerprint) — "JA4+", FoxIO License 1.1, see the note above tlsLooks(). */
+function ja4hVersion(h){
+  if(!h.version) return "11";
+  const part = h.version.includes("/") ? h.version.split("/").pop() : h.version;
+  if(part === "2") return "20";
+  const digits = part.replace(".", "");
+  return digits.length === 2 ? digits : (digits + "0").slice(0, 2);
+}
+function ja4hLang(v){
+  if(!v) return "0000";
+  let s = v.replace(/-/g, "").replace(/;/g, ",").toLowerCase().split(",")[0].slice(0, 4);
+  return s + "0".repeat(4 - s.length);
+}
+function ja4h(h){
+  if(h.kind !== "req" || !h.method) return "";
+  const method = h.method.toLowerCase().slice(0, 2);
+  const version = ja4hVersion(h);
+  const cookieFlag = "cookie" in h.h ? "c" : "n";
+  const refererFlag = "referer" in h.h ? "r" : "n";
+  const headers = (h.headers || []).filter(([name]) => name && !name.startsWith(":") &&
+    name.toLowerCase() !== "cookie" && name.toLowerCase() !== "referer");
+  const headerLen = String(Math.min(headers.length, 99)).padStart(2, "0");
+  const lang = ja4hLang(h.h["accept-language"]);
+  const headersHash = sha256_12(headers.map(([name]) => name).join(","));
+  let cookieFieldsHash = "000000000000", cookieValuesHash = "000000000000";
+  if("cookie" in h.h){
+    const pairs = (h.h.cookie || "").split(";").map(s => s.trim()).filter(Boolean).map(s => {
+      const i = s.indexOf("=");
+      return i >= 0 ? [s.slice(0, i).trim(), s] : [s, s];
+    }).sort((a, b) => a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0);
+    cookieFieldsHash = sha256_12(pairs.map(p => p[0]).join(","));
+    cookieValuesHash = sha256_12(pairs.map(p => p[1]).join(","));
+  }
+  return method + version + cookieFlag + refererFlag + headerLen + lang + "_" + headersHash + "_" + cookieFieldsHash + "_" + cookieValuesHash;
+}
 function parseForm(s){
   const out = [];
   for(const part of String(s).split("&").slice(0, 64)){
@@ -3156,6 +3239,21 @@ function parseForm(s){
 }
 
 /* ---------------- TLS ---------------- */
+/* JA4 (TLS client fingerprint) is open-source, BSD 3-Clause, same license family as JA3/JA3S
+   above. JA4S (TLS server) and JA4H (HTTP client), implemented further below, are "JA4+" and
+   licensed by FoxIO under the FoxIO License 1.1: permissive for internal/non-commercial use,
+   but a commercially distributed/monetized product needs an OEM license from FoxIO. Algorithm
+   verified against FoxIO's own reference implementation (github.com/FoxIO-LLC/ja4/python). */
+const JA4_VER = {0x0002:"s2", 0x0300:"s3", 0x0301:"10", 0x0302:"11", 0x0303:"12", 0x0304:"13"};
+const ja4Ver = v => JA4_VER[v] || "00";
+const hx4 = v => (v & 0xffff).toString(16).padStart(4, "0");
+function ja4Alpn(alpn){
+  if(!alpn || !alpn.length || !alpn[0]) return "00";
+  const a = alpn[0];
+  const f = a.charCodeAt(0) >= 128 ? "9" : a[0];
+  const l = a.charCodeAt(a.length - 1) >= 128 ? "9" : a[a.length - 1];
+  return f + l;
+}
 const tlsLooks = (b, o, len) => len >= 5 && b[o] >= 20 && b[o] <= 24 && b[o+1] === 3 && b[o+2] <= 4;
 function tlsRecords(b, o, len){
   const out = [], end = o + len; let p = o;
@@ -3178,7 +3276,7 @@ function tlsHandshakes(b, p, e){
 }
 function tlsClientHello(b, p, e){
   if(p + 38 > e) return null;
-  const r = {legacy:u16(b, p), ciphers:[], exts:[], groups:[], pf:[], alpn:[], sni:"", versions:[]};
+  const r = {legacy:u16(b, p), ciphers:[], exts:[], groups:[], pf:[], alpn:[], sni:"", versions:[], sigAlgs:[]};
   let q = p + 34;
   q += 1 + b[q];
   if(q + 2 > e) return null;
@@ -3198,6 +3296,7 @@ function tlsClientHello(b, p, e){
         else if(t === 11 && l >= 1){ for(let i = 0; i < b[d] && i + 1 < l; i++) r.pf.push(b[d + 1 + i]); }
         else if(t === 16 && l >= 2){ let i = d + 2; const ae = d + l; while(i < ae){ const al = b[i]; if(i + 1 + al > ae) break; r.alpn.push(latin1(b, i + 1, al)); i += 1 + al; } }
         else if(t === 43 && l >= 1){ for(let i = 0; i + 1 < b[d] && i + 2 < l; i += 2) r.versions.push(u16(b, d + 1 + i)); }
+        else if(t === 13 && l >= 2){ const sl = u16(b, d), se = Math.min(d + 2 + sl, d + l); for(let i = d + 2; i + 1 < se; i += 2) r.sigAlgs.push(u16(b, i)); }
       }
     }
   }
@@ -3206,6 +3305,18 @@ function tlsClientHello(b, p, e){
   r.ja3 = md5(r.ja3str);
   const sv = ng(r.versions);
   r.maxVer = sv.length ? Math.max(...sv) : r.legacy;
+
+  const ja4Ciphers = ng(r.ciphers), ja4Exts = ng(r.exts);
+  const ja4a = "t" + ja4Ver(r.maxVer) + (r.exts.includes(0) ? "d" : "i") +
+    String(Math.min(ja4Ciphers.length, 99)).padStart(2, "0") + String(Math.min(ja4Exts.length, 99)).padStart(2, "0") + ja4Alpn(r.alpn);
+  const sortedCiphers = ja4Ciphers.map(hx4).sort();
+  const cipherHash = sortedCiphers.length ? sha256_12(sortedCiphers.join(",")) : "000000000000";
+  const sortedExts = ja4Exts.filter(x => x !== 0 && x !== 16).map(hx4).sort();
+  const hasSigAlg = r.exts.includes(13);
+  let extHashInput = sortedExts.join(",");
+  if(hasSigAlg) extHashInput += "_" + r.sigAlgs.map(hx4).join(",");
+  const extHash = (sortedExts.length || hasSigAlg) ? sha256_12(extHashInput) : "000000000000";
+  r.ja4 = ja4a + "_" + cipherHash + "_" + extHash;
   return r;
 }
 function tlsServerHello(b, p, e){
@@ -3228,6 +3339,12 @@ function tlsServerHello(b, p, e){
   r.version = r.version || r.legacy;
   r.ja3sstr = [r.legacy, r.cipher, r.exts.join("-")].join(",");
   r.ja3s = md5(r.ja3sstr);
+
+  /* JA4S intentionally does not GREASE-filter or exclude SNI/ALPN from the server
+     extension list, and does not sort it — this matches the reference implementation. */
+  const ja4sa = "t" + ja4Ver(r.version) + String(Math.min(r.exts.length, 99)).padStart(2, "0") + ja4Alpn(r.alpn ? [r.alpn] : []);
+  const ja4sExtHash = r.exts.length ? sha256_12(r.exts.map(hx4).join(",")) : "000000000000";
+  r.ja4s = ja4sa + "_" + hx4(r.cipher) + "_" + ja4sExtHash;
   return r;
 }
 function tlsCertList(b, p, e){
@@ -3281,15 +3398,28 @@ function derString(b, n){
   if(n.tag === 0x0c){ try{ return new TextDecoder("utf-8").decode(b.subarray(n.s, n.e)); }catch(e){ /* fall through */ } }
   return latin1(b, n.s, n.e - n.s);
 }
-function x509Name(b, n){
+function x509Name(b, n, oidsOut){
   const parts = [];
   for(const set of derKids(b, n)) for(const atv of derKids(b, set)){
     const k = derKids(b, atv);
     if(k.length < 2 || k[0].tag !== 6) continue;
+    if(oidsOut) oidsOut.push(oidHex(b, k[0]));
     parts.push((X509_ATTR[oidHex(b, k[0])] || oidStr(b, k[0])) + "=" + vis(derString(b, k[1])));
   }
   return parts.join(", ");
 }
+/* JA4X (X.509 certificate fingerprint) is "JA4+", licensed by FoxIO under the FoxIO
+   License 1.1 — see the note above tlsLooks() / ja4Alpn() for JA4S/JA4H: permissive
+   for internal/non-commercial use, an OEM license is needed for a commercially
+   distributed/monetized product. Format: {issuer_hash}_{subject_hash}_{ext_hash}, each
+   a 12-hex-char SHA-256 of the comma-joined, in-encoded-order DER value bytes (as hex,
+   no tag/length) of the Issuer RDN attribute-type OIDs, the Subject RDN attribute-type
+   OIDs, and the certificate's extension OIDs respectively. `oidHex()` above already
+   returns exactly those DER value bytes as hex for any OID node, so no separate
+   dotted-decimal-to-DER encoder is needed here. An empty OID list hashes the empty
+   string (not a literal zero placeholder) — this matches the reference implementation
+   (github.com/FoxIO-LLC/ja4/python/ja4x.py), verified directly, not from memory. */
+const ja4xPart = oids => sha256_12(oids.join(","));
 function derTime(b, n){
   const s = latin1(b, n.s, n.e - n.s); let m;
   if(n.tag === 0x17 && (m = s.match(/^(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)?/))){
@@ -3308,15 +3438,16 @@ function x509Parse(b, p, len){
   const tbs = derKids(b, top[0]); let i = 0;
   const out = {version:1, serial:"", sigAlg:"", issuer:"", subject:"", notBefore:null, notAfter:null,
     keyAlg:"", keyBits:0, curve:"", sans:[], ca:false};
+  const issuerOids = [], subjectOids = [], extOids = [];
   if(tbs[i] && tbs[i].tag === 0xa0){ const v = derKids(b, tbs[i]); if(v[0]) out.version = b[v[0].s] + 1; i++; }
   const ser = tbs[i++];
   if(ser && ser.tag === 2) out.serial = hexStr(b, ser.s, ser.e - ser.s).replace(/^00(?=.)/, "");
   const sa = tbs[i++];
   if(sa){ const k = derKids(b, sa); if(k[0]) out.sigAlg = X509_SIG[oidHex(b, k[0])] || oidStr(b, k[0]); }
-  const iss = tbs[i++]; if(iss) out.issuer = x509Name(b, iss);
+  const iss = tbs[i++]; if(iss) out.issuer = x509Name(b, iss, issuerOids);
   const val = tbs[i++];
   if(val){ const k = derKids(b, val); if(k[0]) out.notBefore = derTime(b, k[0]); if(k[1]) out.notAfter = derTime(b, k[1]); }
-  const sub = tbs[i++]; if(sub) out.subject = x509Name(b, sub);
+  const sub = tbs[i++]; if(sub) out.subject = x509Name(b, sub, subjectOids);
   const spki = tbs[i++];
   if(spki){
     const k = derKids(b, spki), alg = k[0] ? derKids(b, k[0]) : [];
@@ -3343,6 +3474,7 @@ function x509Parse(b, p, len){
       const k = derKids(b, ex);
       if(!k.length || k[0].tag !== 6) continue;
       const id = oidHex(b, k[0]), v = k[k.length - 1];
+      extOids.push(id);
       if(v.tag !== 4) continue;
       const seq = derAt(b, v.s, v.e);
       if(!seq) continue;
@@ -3360,6 +3492,7 @@ function x509Parse(b, p, len){
   }
   out.selfSigned = !!out.subject && out.subject === out.issuer;
   out.cn = (out.subject.match(/(?:^|, )CN=([^,]+)/) || [])[1] || "";
+  out.ja4x = ja4xPart(issuerOids) + "_" + ja4xPart(subjectOids) + "_" + ja4xPart(extOids);
   return out;
 }
 function certMatches(cert, host){
@@ -4206,13 +4339,13 @@ function appDecode(b, info, full){
                 f("Cipher suites (" + d.ch.ciphers.length + ")", d.ch.ciphers.map(c => isGrease(c) ? "GREASE" : cipherName(c)).join("\n"));
                 f("Extensions", d.ch.exts.map(x => isGrease(x) ? "GREASE" : (TLS_EXT[x] || x)).join(", "));
                 f("Groups", d.ch.groups.map(g => isGrease(g) ? "GREASE" : (TLS_GROUPS[g] || g)).join(", "));
-                f("JA3", d.ch.ja3); f("JA3 string", d.ch.ja3str);
+                f("JA3", d.ch.ja3); f("JA3 string", d.ch.ja3str); f("JA4", d.ch.ja4);
               }
             } else if(h.t === 2){
               d.sh = tlsServerHello(b, h.start, h.end);
               parts.push("Server Hello" + (d.sh ? " " + tlsVer(d.sh.version) + " " + cipherName(d.sh.cipher) : ""));
               if(F && d.sh){ f("Negotiated version", tlsVer(d.sh.version)); f("Cipher suite", cipherName(d.sh.cipher) + (weakCipher(d.sh.cipher) ? "  — WEAK" : ""));
-                f("Extensions", d.sh.exts.map(x => TLS_EXT[x] || x).join(", ")); if(d.sh.alpn) f("ALPN", d.sh.alpn); f("JA3S", d.sh.ja3s); f("JA3S string", d.sh.ja3sstr); }
+                f("Extensions", d.sh.exts.map(x => TLS_EXT[x] || x).join(", ")); if(d.sh.alpn) f("ALPN", d.sh.alpn); f("JA3S", d.sh.ja3s); f("JA3S string", d.sh.ja3sstr); f("JA4S", d.sh.ja4s); }
             } else if(h.t === 11){
               d.certAt = h; parts.push("Certificate");
               if(F && h.complete) for(const [cp, cl2] of tlsCertList(b, h.start, h.end)){
@@ -4287,8 +4420,9 @@ class Intel {
   constructor(inv){
     this.inv = inv; this.nextStream = 0;
     this.dns = new Map(); this.dnsLog = []; this.pdns = new Map(); this.hostQ = new Map(); this.resolvers = new Map(); this.mcastQ = new Map();
-    this.http = []; this.httpQ = new Map(); this.agents = new Map();
+    this.http = []; this.httpQ = new Map(); this.agents = new Map(); this.ja4h = new Map();
     this.tls = []; this.tlsServers = []; this.tlsByFlow = new Map(); this.certs = new Map(); this.ja3 = new Map(); this.ja3s = new Map();
+    this.ja4 = new Map(); this.ja4s = new Map();
     this.hostSni = new Map(); this.tlsAlerts = [];
     this.creds = []; this.credKeys = new Map(); this.files = []; this.banners = new Map();
     this.ot = new Map(); this.otCount = 0;
@@ -4567,6 +4701,7 @@ class Intel {
         ctype:h.h["content-type"] || "", clen:h.h["content-length"] || "",
         auth:(h.h.authorization || h.h["proxy-authorization"] || "").split(" ")[0], cookie:(h.h.cookie || "").slice(0, 300),
         xff:h.h["x-forwarded-for"] || "", headers:h.headers.slice(0, 40), body:h.body.slice(0, 1024),
+        ja4h:ja4h(h),
         status:null, reason:"", server:"", rctype:"", rclen:"", location:"", respNo:null, rheaders:null};
       if(this.http.length < CAP.http) this.http.push(rec);
       let q = this.httpQ.get(key); if(!q){ q = []; this.httpQ.set(key, q); }
@@ -4575,6 +4710,11 @@ class Intel {
         let u = this.agents.get(rec.ua);
         if(!u){ u = {ua:rec.ua, count:0, clients:new Set(), no}; this.agents.set(rec.ua, u); }
         u.count++; if(u.clients.size < 64) u.clients.add(info.srcIp);
+      }
+      if(rec.ja4h){
+        let j4 = this.ja4h.get(rec.ja4h);
+        if(!j4){ j4 = {hash:rec.ja4h, count:0, clients:new Set(), no}; this.ja4h.set(rec.ja4h, j4); }
+        j4.count++; if(j4.clients.size < 64) j4.clients.add(info.srcIp);
       }
       this.httpCreds(no, ts, info, h, rec);
       const path = rec.uri.split("?")[0];
@@ -4641,24 +4781,30 @@ class Intel {
       const ch = d.ch;
       const rec = {no, ts, cli:ep(info.srcIp, info.sport), cliIp:info.srcIp, srv:ep(info.dstIp, info.dport), srvIp:info.dstIp,
         sni:ch.sni, offered:ch.maxVer, legacy:ch.legacy, alpn:ch.alpn.join(", "), ciphers:ch.ciphers.filter(c => !isGrease(c)),
-        ja3:ch.ja3, ja3str:ch.ja3str, server:null, certNote:""};
+        ja3:ch.ja3, ja3str:ch.ja3str, ja4:ch.ja4, server:null, certNote:""};
       rec.weakOffered = rec.ciphers.filter(weakCipher);
       if(this.tls.length < CAP.tls) this.tls.push(rec);
       if(f) this.tlsByFlow.set(f, rec);
       let j = this.ja3.get(ch.ja3);
       if(!j){ j = {hash:ch.ja3, str:ch.ja3str, count:0, clients:new Set(), snis:new Set(), no}; this.ja3.set(ch.ja3, j); }
       j.count++; if(j.clients.size < 64) j.clients.add(info.srcIp); if(ch.sni && j.snis.size < 32) j.snis.add(ch.sni);
+      let j4 = this.ja4.get(ch.ja4);
+      if(!j4){ j4 = {hash:ch.ja4, count:0, clients:new Set(), snis:new Set(), no}; this.ja4.set(ch.ja4, j4); }
+      j4.count++; if(j4.clients.size < 64) j4.clients.add(info.srcIp); if(ch.sni && j4.snis.size < 32) j4.snis.add(ch.sni);
       if(ch.sni){ let m = this.hostSni.get(info.srcIp); if(!m){ m = new Map(); this.hostSni.set(info.srcIp, m); } Inventory.bump(m, ch.sni, 1000); }
     }
     if(d.sh){
       const rec = f ? this.tlsByFlow.get(f) : null;
       const sh = {no, ts, srvIp:info.srcIp, srv:ep(info.srcIp, info.sport), cli:ep(info.dstIp, info.dport), version:d.sh.version,
-        cipher:d.sh.cipher, ja3s:d.sh.ja3s, ja3sstr:d.sh.ja3sstr, alpn:d.sh.alpn, sni:rec ? rec.sni : ""};
+        cipher:d.sh.cipher, ja3s:d.sh.ja3s, ja3sstr:d.sh.ja3sstr, ja4s:d.sh.ja4s, alpn:d.sh.alpn, sni:rec ? rec.sni : ""};
       if(rec) rec.server = sh;
       if(this.tlsServers.length < CAP.tls) this.tlsServers.push(sh);
       let j = this.ja3s.get(sh.ja3s);
       if(!j){ j = {hash:sh.ja3s, str:sh.ja3sstr, count:0, servers:new Set(), no}; this.ja3s.set(sh.ja3s, j); }
       j.count++; if(j.servers.size < 64) j.servers.add(sh.srv);
+      let j4s = this.ja4s.get(sh.ja4s);
+      if(!j4s){ j4s = {hash:sh.ja4s, count:0, servers:new Set(), no}; this.ja4s.set(sh.ja4s, j4s); }
+      j4s.count++; if(j4s.servers.size < 64) j4s.servers.add(sh.srv);
       if(f && d.sh.version !== 0x0304){
         const s = this.state(f);
         s.tlsBuf = {dir:info.srcIp + "|" + info.sport, chunks:[b.slice(info.payAt, info.payAt + info.payLen)], size:info.payLen,
@@ -6024,7 +6170,9 @@ function renderHttp(){
     out.push('<tr data-http="' + i + '" style="cursor:pointer"><td class="mono">' + fl(r.no) + '</td><td class="mono wrap sm">' + hostLabel(r.cli) + ' → ' + hostLabel(r.srv) +
       '</td><td class="mono">' + esc(r.method) + '</td><td class="mono wrap sm">' + esc((r.host || "") + r.uri) + '</td><td class="mono">' +
       (r.status === null ? '<span class="muted">no reply</span>' : esc(r.status + " " + r.reason)) + (r.respNo ? " " + fl(r.respNo) : "") +
-      '</td><td class="mono wrap sm">' + mt(r.rctype) + '</td><td class="wrap sm">' + (r.ua ? pvLink("ua", r.ua.toLowerCase(), r.ua) : mt(r.ua)) + '</td><td>' + (flags || '<span class="muted">—</span>') + '</td></tr>');
+      '</td><td class="mono wrap sm">' + mt(r.rctype) + '</td><td class="wrap sm">' + (r.ua ? pvLink("ua", r.ua.toLowerCase(), r.ua) : mt(r.ua)) +
+      (r.ja4h ? '<br><span class="muted sm" title="JA4H">JA4H ' + pvLink("ja4h", r.ja4h, r.ja4h.split("_")[0]) + '</span>' : "") +
+      '</td><td>' + (flags || '<span class="muted">—</span>') + '</td></tr>');
     if(HTTPV.open.has(i)){
       const kv = (title, list) => '<span class="k">' + title + '</span><span class="v"></span>' + (list || []).map(([k, v]) => '<span class="k">' + esc(k) + '</span><span class="v">' +
         esc(/^(authorization|proxy-authorization)$/i.test(k) ? v.split(" ")[0] + " … (see Credentials)" : vis(v)) + '</span>').join("");
@@ -6054,13 +6202,14 @@ function renderTls(){
   const crows = filterBy(certs, TLSV.filter, c => [c.subject, c.issuer, c.sans.join(" "), [...c.servers].join(" "), [...c.snis].join(" ")].join(" "));
   el("tlscount").textContent = plural(all.length, "handshake") + " · " + plural(certs.length, "certificate");
   el("j-tls").textContent = all.length ? all.length : "";
-  table("tlstable", ["Frame", "Client → server", "Server name (SNI)", "Client offered", "Negotiated", "ALPN", "JA3 / JA3S", "Notes"],
+  table("tlstable", ["Frame", "Client → server", "Server name (SNI)", "Client offered", "Negotiated", "ALPN", "JA3 / JA3S / JA4+", "Notes"],
     rows.slice(0, 2000).map(r => {
       const s = r.server, weak = s && (s.version < 0x0303 || weakCipher(s.cipher));
       const notes = [r.weakOffered.length && r.weakOffered.length + " weak cipher(s) offered", r.certNote, !s && "no ServerHello seen"].filter(Boolean);
       return '<tr><td class="mono">' + fl(r.no) + '</td><td class="mono wrap sm">' + hostLabel(r.cli) + ' → ' + hostLabel(r.srv) + '</td><td class="mono wrap">' + (r.sni ? pvLink("domain", r.sni.toLowerCase(), r.sni) : mt(r.sni)) +
         '</td><td class="mono">' + esc(tlsVer(r.offered)) + '</td><td class="mono wrap sm">' + (s ? (weak ? '<span class="secret">' : "") + esc(tlsVer(s.version) + "\n" + cipherName(s.cipher)) + (weak ? "</span>" : "") : '<span class="muted">—</span>') +
         '</td><td class="mono sm">' + mt(r.alpn || (s && s.alpn)) + '</td><td class="mono sm" title="' + esc(r.ja3str) + '">' + pvLink("ja3", r.ja3) + (s ? "<br>" + pvLink("ja3s", s.ja3s) : "") +
+        (r.ja4 ? "<br>" + pvLink("ja4", r.ja4) : "") + (s && s.ja4s ? "<br>" + pvLink("ja4s", s.ja4s) : "") +
         '</td><td class="wrap sm">' + (notes.length ? notes.map(esc).join("<br>") : '<span class="muted">—</span>') + '</td></tr>';
     }), all.length ? "No handshakes match." : "No TLS handshakes in this capture.");
   table("certtable", ["Subject", "Issuer", "Valid", "Key / signature", "Names (SAN)", "Seen on", "Problems", "Frame", "Fingerprint"],
@@ -6071,7 +6220,7 @@ function renderTls(){
         esc(c.keyAlg + " " + (c.keyBits || "") + (c.curve ? " " + c.curve : "")) + "<br>" + esc(c.sigAlg) + '</td><td class="mono wrap sm">' + mt(c.sans.join("\n")) +
         '</td><td class="mono wrap sm">' + esc([...c.servers].join(" ")) + (c.snis.size ? '<br><span class="muted">SNI ' + esc([...c.snis].join(", ")) + '</span>' : "") +
         '</td><td class="wrap sm">' + (f.length ? f.map(x => '<span class="tg t-alarm">' + esc(x) + '</span>').join(" ") : '<span class="muted">none found</span>') +
-        '</td><td class="mono">' + fl(c.no) + '</td><td class="mono sm" style="word-break:break-all;min-width:200px">' + (c.sha256 ? "SHA-256 " + esc(c.sha256) + "<br>SHA-1 " + esc(c.sha1) : '<span class="muted">computing…</span>') + '</td></tr>';
+        '</td><td class="mono">' + fl(c.no) + '</td><td class="mono sm" style="word-break:break-all;min-width:200px">' + (c.sha256 ? "SHA-256 " + esc(c.sha256) + "<br>SHA-1 " + esc(c.sha1) : '<span class="muted">computing…</span>') + (c.ja4x ? "<br>JA4X " + esc(c.ja4x) : "") + '</td></tr>';
     }), certs.length ? "No certificates match." : "No certificates were readable (TLS 1.3 encrypts them, and a certificate split across lost segments cannot be rebuilt).");
 }
 const FILEV = {filter:""};
@@ -6276,6 +6425,9 @@ function collectIocs(){
   add("User agents", [...I.agents.values()].sort((a, b) => b.count - a.count).map(u => [u.ua, u.count + "× from " + [...u.clients].slice(0, 3).join(", ")]));
   add("JA3 client fingerprints", [...I.ja3.values()].map(j => [j.hash, [...j.snis].slice(0, 3).join(", ") || [...j.clients].slice(0, 3).join(", ")]));
   add("JA3S server fingerprints", [...I.ja3s.values()].map(j => [j.hash, [...j.servers].slice(0, 3).join(", ")]));
+  add("JA4 client fingerprints", [...I.ja4.values()].map(j => [j.hash, [...j.snis].slice(0, 3).join(", ") || [...j.clients].slice(0, 3).join(", ")]));
+  add("JA4S server fingerprints", [...I.ja4s.values()].map(j => [j.hash, [...j.servers].slice(0, 3).join(", ")]));
+  add("JA4H HTTP client fingerprints", [...I.ja4h.values()].map(j => [j.hash, [...j.clients].slice(0, 3).join(", ")]));
   add("Certificates", [...I.certs.values()].map(c => [c.sha256 || c.subject, (c.sha256 ? c.subject + " · " : "") + "issuer " + c.issuer]));
   const emails = new Set();
   for(const f of I.files) if(f.proto === "SMTP" && f.path) emails.add(f.path);
@@ -6620,14 +6772,14 @@ const credsCsv = () => csvRows([["protocol","client","server","user","secret","s
   .concat(INTEL.creds.map(c => [c.proto, c.cli, c.srv, c.user, c.secret, c.decoded || "", c.kind, c.result, c.count, c.no, c.lastNo, tsUs(c.ts), c.note])));
 const dnsCsv = () => csvRows([["frame","time","protocol","source","destination","kind","id","rcode","questions","answers"]]
   .concat(INTEL.dnsLog.map(d => [d.no, tsUs(d.ts), d.proto, d.src, d.dst, d.qr ? "response" : "query", "0x" + d.id.toString(16).padStart(4, "0"), DNS_RCODE[d.rcode] || d.rcode, d.q, d.a])));
-const httpCsv = () => csvRows([["frame","time","client","server","method","host","uri","version","user_agent","referer","content_type","status","reason","server_header","response_content_type","response_length","location","auth_scheme","cookie","x_forwarded_for","response_frame"]]
-  .concat(INTEL.http.map(r => [r.no, tsUs(r.ts), r.cli, r.srv, r.method, r.host, r.uri, r.version, r.ua, r.referer, r.ctype, r.status, r.reason, r.server, r.rctype, r.rclen, r.location, r.auth, r.cookie, r.xff, r.respNo])));
-const tlsCsv = () => csvRows([["frame","time","client","server","sni","client_max_version","negotiated_version","cipher","alpn","ja3","ja3_string","ja3s","ja3s_string","weak_ciphers_offered","note"]]
+const httpCsv = () => csvRows([["frame","time","client","server","method","host","uri","version","user_agent","referer","content_type","status","reason","server_header","response_content_type","response_length","location","auth_scheme","cookie","x_forwarded_for","response_frame","ja4h"]]
+  .concat(INTEL.http.map(r => [r.no, tsUs(r.ts), r.cli, r.srv, r.method, r.host, r.uri, r.version, r.ua, r.referer, r.ctype, r.status, r.reason, r.server, r.rctype, r.rclen, r.location, r.auth, r.cookie, r.xff, r.respNo, r.ja4h])));
+const tlsCsv = () => csvRows([["frame","time","client","server","sni","client_max_version","negotiated_version","cipher","alpn","ja3","ja3_string","ja3s","ja3s_string","ja4","ja4s","weak_ciphers_offered","note"]]
   .concat(INTEL.tls.map(r => [r.no, tsUs(r.ts), r.cli, r.srv, r.sni, tlsVer(r.offered), r.server ? tlsVer(r.server.version) : "", r.server ? cipherName(r.server.cipher) : "", r.alpn, r.ja3, r.ja3str,
-    r.server ? r.server.ja3s : "", r.server ? r.server.ja3sstr : "", r.weakOffered.map(cipherName).join(" "), r.certNote])));
-const certsCsv = () => csvRows([["subject","issuer","serial","not_before","not_after","key","signature","subject_alt_names","servers","sni","chain_position","problems","sha256","sha1","frame"]]
+    r.server ? r.server.ja3s : "", r.server ? r.server.ja3sstr : "", r.ja4, r.server ? r.server.ja4s : "", r.weakOffered.map(cipherName).join(" "), r.certNote])));
+const certsCsv = () => csvRows([["subject","issuer","serial","not_before","not_after","key","signature","subject_alt_names","servers","sni","chain_position","problems","sha256","sha1","ja4x","frame"]]
   .concat([...INTEL.certs.values()].map(c => [c.subject, c.issuer, c.serial, tsIso(c.notBefore), tsIso(c.notAfter), c.keyAlg + " " + c.keyBits + (c.curve ? " " + c.curve : ""), c.sigAlg,
-    c.sans.join(" "), [...c.servers].join(" "), [...c.snis].join(" "), c.pos, certFlags(c).join("; "), c.sha256, c.sha1, c.no])));
+    c.sans.join(" "), [...c.servers].join(" "), [...c.snis].join(" "), c.pos, certFlags(c).join("; "), c.sha256, c.sha1, c.ja4x, c.no])));
 const filesCsv = () => csvRows([["frame","time","protocol","client","server","action","path","result","note"]]
   .concat(INTEL.files.map(f => [f.no, tsUs(f.ts), f.proto, f.cli, f.srv, f.action, f.path, f.result, f.note])));
 const bannersCsv = () => csvRows([["host","port","source","text","count","frame","register_name"]]
@@ -6694,9 +6846,9 @@ function analystReport(){
     credentials:I.creds.map(c => ({protocol:c.proto, client:c.cli, server:c.srv, user:c.user, secret:c.secret, secret_base64_decoded:c.decoded ?? null,
       kind:c.kind, result:c.result, count:c.count, first_frame:c.no, note:c.note})),
     dns:[...I.dns.values()].map(r => ({name:r.name, protocol:r.proto, types:[...r.types], answers:[...r.answers], queries:r.queries, responses:r.responses, failures:[...r.rcodes], clients:[...r.clients], resolvers:[...r.servers], first_frame:r.firstNo})),
-    http:I.http.map(r => ({frame:r.no, time:tsIso(r.ts), client:r.cli, server:r.srv, method:r.method, host:r.host, uri:r.uri, user_agent:r.ua, status:r.status, reason:r.reason, server_header:r.server, response_content_type:r.rctype, request_headers:r.headers, response_headers:r.rheaders})),
-    tls:I.tls.map(r => ({frame:r.no, client:r.cli, server:r.srv, sni:r.sni, client_max_version:tlsVer(r.offered), negotiated:r.server ? tlsVer(r.server.version) : null, cipher:r.server ? cipherName(r.server.cipher) : null, ja3:r.ja3, ja3_string:r.ja3str, ja3s:r.server ? r.server.ja3s : null})),
-    certificates:[...I.certs.values()].map(c => ({subject:c.subject, issuer:c.issuer, serial:c.serial, not_before:tsIso(c.notBefore), not_after:tsIso(c.notAfter), key:c.keyAlg + " " + c.keyBits, signature:c.sigAlg, sans:c.sans, servers:[...c.servers], problems:certFlags(c), sha256:c.sha256, sha1:c.sha1, frame:c.no})),
+    http:I.http.map(r => ({frame:r.no, time:tsIso(r.ts), client:r.cli, server:r.srv, method:r.method, host:r.host, uri:r.uri, user_agent:r.ua, status:r.status, reason:r.reason, server_header:r.server, response_content_type:r.rctype, request_headers:r.headers, response_headers:r.rheaders, ja4h:r.ja4h})),
+    tls:I.tls.map(r => ({frame:r.no, client:r.cli, server:r.srv, sni:r.sni, client_max_version:tlsVer(r.offered), negotiated:r.server ? tlsVer(r.server.version) : null, cipher:r.server ? cipherName(r.server.cipher) : null, ja3:r.ja3, ja3_string:r.ja3str, ja3s:r.server ? r.server.ja3s : null, ja4:r.ja4, ja4s:r.server ? r.server.ja4s : null})),
+    certificates:[...I.certs.values()].map(c => ({subject:c.subject, issuer:c.issuer, serial:c.serial, not_before:tsIso(c.notBefore), not_after:tsIso(c.notAfter), key:c.keyAlg + " " + c.keyBits, signature:c.sigAlg, sans:c.sans, servers:[...c.servers], problems:certFlags(c), sha256:c.sha256, sha1:c.sha1, ja4x:c.ja4x, frame:c.no})),
     file_activity:I.files.map(f => ({frame:f.no, time:tsIso(f.ts), protocol:f.proto, client:f.cli, server:f.srv, action:f.action, path:f.path, result:f.result, note:f.note})),
     banners:[...I.banners.values()].map(b => ({host:b.ip, port:b.port, source:b.kind, text:b.text, frame:b.no})),
     ot_operations:[...I.ot.values()].map(r => ({class:r.cls, protocol:r.proto, source:r.src, destination:r.dst, operation:r.name, detail:r.detail, count:r.count, first_frame:r.firstNo, last_frame:r.lastNo})),
@@ -8394,7 +8546,9 @@ const isIp6 = s => s.includes(":") && !MACRE.test(s) && (s.includes("::") || s.s
 const isIpStr = s => /^\d{1,3}(\.\d{1,3}){3}$/.test(s) || isIp6(s);
 const ek = (t, v) => t + ":" + String(v).toLowerCase();
 const ekParts = k => { const i = k.indexOf(":"); return [k.slice(0, i), k.slice(i + 1)]; };
-const ENT_LABEL = {ip:"IP address", domain:"Domain", url:"URL", ja3:"JA3 client fingerprint", ja3s:"JA3S server fingerprint", ua:"User agent", hash:"Hash", user:"Account", mac:"MAC address", email:"Email", port:"Service"};
+const ENT_LABEL = {ip:"IP address", domain:"Domain", url:"URL", ja3:"JA3 client fingerprint", ja3s:"JA3S server fingerprint",
+  ja4:"JA4 client fingerprint", ja4s:"JA4S server fingerprint", ja4h:"JA4H HTTP client fingerprint", ja4x:"JA4X certificate fingerprint",
+  ua:"User agent", hash:"Hash", user:"Account", mac:"MAC address", email:"Email", port:"Service"};
 const tlsFlowKey = f => f ? f.key : "";
 
 /* ---------------- MITRE ATT&CK (indicative mapping) ----------------
@@ -8505,6 +8659,32 @@ const KNOWN_BAD = [
   ["ja3:4d7a28d6f2263ed61de88ca66eb011e3", "Emotet loader — client TLS fingerprint", "NVISO JA3 reference list"],
   ["ja3:72a589da586844d7f0818ce684948eea", "Cobalt Strike, default/unmodified Malleable C2 profile — also seen from other tools using an unaltered Java TLS stack, so corroborate before treating as conclusive", "community-published Cobalt Strike JA3 detections"],
   ["ja3s:ae4edc6faf64d08308082ad26be60767", "Cobalt Strike, default team server — server-side TLS fingerprint", "community-published Cobalt Strike JA3S detections"],
+  // JA4+ starter entries from FoxIO's own ja4plus-mapping.csv reference file (the user
+  // uploaded this same file). JA4 (TLS client) is BSD-3-Clause; JA4S/JA4H/JA4X ("JA4+")
+  // are licensed by FoxIO under the FoxIO License 1.1 — permissive for internal/
+  // non-commercial use, but a commercially distributed/monetized product needs an OEM
+  // license from FoxIO. Only genuinely malicious tooling from that CSV is listed here —
+  // the CSV's many benign reference rows (browsers, libraries, legitimate devices) are
+  // deliberately excluded so ordinary traffic isn't misclassified as malicious.
+  ["ja4:t13d190900_9dc949149365_97f8aa674fd9", "Sliver C2 agent (GoLang) — client TLS fingerprint", "FoxIO JA4+ mapping reference (ja4plus-mapping.csv)"],
+  ["ja4:t13i190800_9dc949149365_97f8aa674fd9", "Sliver C2 agent (GoLang) — client TLS fingerprint", "FoxIO JA4+ mapping reference (ja4plus-mapping.csv)"],
+  ["ja4s:t130200_1301_a56c5b993250", "Sliver C2 agent (GoLang) — server TLS fingerprint", "FoxIO JA4+ mapping reference (ja4plus-mapping.csv)"],
+  ["ja4x:000000000000_4f24da86fad6_bf0f0589fc03", "Sliver/Havoc C2 server — certificate fingerprint (JA4X matching not yet implemented in this tool)", "FoxIO JA4+ mapping reference (ja4plus-mapping.csv)"],
+  ["ja4x:000000000000_7c32fa18c13e_bf0f0589fc03", "Sliver/Havoc C2 server — certificate fingerprint (JA4X matching not yet implemented in this tool)", "FoxIO JA4+ mapping reference (ja4plus-mapping.csv)"],
+  ["ja4h:ge11cn020000_9ed1ff1f7b03_cd8dafe26982", "IcedID dropper — HTTP client fingerprint", "FoxIO JA4+ mapping reference (ja4plus-mapping.csv)"],
+  ["ja4:t13d201100_2b729b4bf6f3_9e7b989ebec8", "IcedID — client TLS fingerprint", "FoxIO JA4+ mapping reference (ja4plus-mapping.csv)"],
+  ["ja4s:t120300_c030_5e2616a54c73", "IcedID — server TLS fingerprint", "FoxIO JA4+ mapping reference (ja4plus-mapping.csv)"],
+  ["ja4x:2166164053c1_2166164053c1_30d204a01551", "Cobalt Strike Cat C2 — certificate fingerprint (JA4X matching not yet implemented in this tool)", "FoxIO JA4+ mapping reference (ja4plus-mapping.csv)"],
+  ["ja4h:ge11cn060000_4e59edc1297a_4da5efaf0cb", "Cobalt Strike beacon — HTTP client fingerprint", "FoxIO JA4+ mapping reference (ja4plus-mapping.csv)"],
+  ["ja4x:2bab15409345_af684594efb4_000000000000", "Qakbot C2 — certificate fingerprint (JA4X matching not yet implemented in this tool)", "FoxIO JA4+ mapping reference (ja4plus-mapping.csv)"],
+  ["ja4x:1a59268f55e5_1a59268f55e5_795797892f9c", "Pikabot C2 — certificate fingerprint, historically confused with the Aegir loader in some references but this is Pikabot (JA4X matching not yet implemented in this tool)", "FoxIO JA4+ mapping reference (ja4plus-mapping.csv)"],
+  ["ja4h:po10nn060000_cdb958d032b0", "Darkgate client — HTTP client fingerprint", "FoxIO JA4+ mapping reference (ja4plus-mapping.csv)"],
+  ["ja4h:po11nn050000_d253db9d024b", "Lumma Stealer client — HTTP client fingerprint", "FoxIO JA4+ mapping reference (ja4plus-mapping.csv)"],
+  ["ja4:t12i190700_d83cc789557e_16bbda4055b2", "Cobalt Strike v4.9.1 beacon over WinINET — client TLS fingerprint", "FoxIO JA4+ mapping reference (ja4plus-mapping.csv)"],
+  ["ja4:t12i210700_76e208dd3e22_16bbda4055b2", "Cobalt Strike v4.9.1 beacon over WinHTTP — client TLS fingerprint", "FoxIO JA4+ mapping reference (ja4plus-mapping.csv)"],
+  ["ja4:t12d190800_d83cc789557e_16bbda4055b2", "Cobalt Strike v4.9.1 beacon over WinINET — client TLS fingerprint", "FoxIO JA4+ mapping reference (ja4plus-mapping.csv)"],
+  ["ja4:t12d210800_76e208dd3e22_16bbda4055b2", "Cobalt Strike v4.9.1 beacon over WinHTTP — client TLS fingerprint", "FoxIO JA4+ mapping reference (ja4plus-mapping.csv)"],
+  ["ja4s:t120300_c030_52d195ce1d92", "Cobalt Strike v4.9.1 beacon — server TLS fingerprint", "FoxIO JA4+ mapping reference (ja4plus-mapping.csv)"],
 ];
 const FEED = {map:new Map(), cidr:[], ua:[], kw:[], n:0, name:"", types:{}};
 const FEED_KEY = "pcapanalysis.feed";
@@ -8523,11 +8703,12 @@ function feedType(v){
 function feedAdd(v, type, src, desc){
   v = refang(v);
   if(!v) return 0;
-  let m = v.match(/^(ua|ja3s?|kw|keyword|user-agent):(.+)$/i);
+  let m = v.match(/^(ua|ja3s?|ja4[shx]?|kw|keyword|user-agent):(.+)$/i);
   if(m){ type = m[1].toLowerCase().replace("user-agent", "ua").replace("keyword", "kw"); v = m[2].trim(); }
   type = String(type || "").toLowerCase().replace(/[^a-z0-9]/g, "");
   const tm = {ipv4:"ip", ipv6:"ip", ipaddr:"ip", ipv4addr:"ip", ipv6addr:"ip", ip:"ip", domainname:"domain", domain:"domain", fqdn:"domain", hostname:"domain", url:"url", uri:"url",
-    md5:"md5", sha1:"sha1", sha256:"sha256", ja3:"ja3", ja3s:"ja3s", useragent:"ua", ua:"ua", email:"email", emailaddr:"email", cidr:"cidr", keyword:"kw", kw:"kw", string:"kw"};
+    md5:"md5", sha1:"sha1", sha256:"sha256", ja3:"ja3", ja3s:"ja3s", ja4:"ja4", ja4s:"ja4s", ja4h:"ja4h", ja4x:"ja4x",
+    useragent:"ua", ua:"ua", email:"email", emailaddr:"email", cidr:"cidr", keyword:"kw", kw:"kw", string:"kw"};
   let t = tm[type] || feedType(v);
   if(t === "keyword") t = "kw";
   const meta = {v, type:t, src:src || FEED.name || "feed", desc:desc || ""};
@@ -8610,6 +8791,17 @@ function matchFeed(){
     else if(t === "hash") m = feedHas(v.length === 64 ? "sha256" : v.length === 40 ? "sha1" : "md5", v);
     else if(t === "ja3") m = feedHas("ja3", v) || feedHas("md5", v);
     else if(t === "ja3s") m = feedHas("ja3s", v) || feedHas("md5", v);
+    else if(t === "ja4") m = feedHas("ja4", v);
+    else if(t === "ja4s") m = feedHas("ja4s", v);
+    else if(t === "ja4x") m = feedHas("ja4x", v);
+    else if(t === "ja4h"){
+      // Several published malware JA4H signatures are truncated to the stable
+      // method+meta+headers-hash prefix, omitting the cookie-value hash (which is
+      // session-specific and not a useful static IOC) — match on either direction's
+      // prefix so a truncated known-bad entry still matches a fully computed value.
+      const mh = FEED.map.get("ja4h");
+      if(mh) for(const [k, meta] of mh) if(v.startsWith(k) || k.startsWith(v)){ m = meta; via = "prefix"; break; }
+    }
     else if(t === "ua"){ m = FEED.ua.find(u => v.includes(u.v)); if(m) via = "substring"; }
     else if(t === "email") m = feedHas("email", v);
     if(!m && FEED.kw.length && (t === "domain" || t === "url" || t === "ua")){ m = FEED.kw.find(k => v.includes(k.v)); if(m) via = "keyword"; }
@@ -8647,15 +8839,15 @@ function buildRaw(){
   for(const r of I.http){
     const host = (r.host || "").replace(/:\d+$/, "").toLowerCase(), url = "http://" + (host || r.srvIp) + r.uri;
     push("http", r.ts, r.no, r.cli, r.srv, r.method + " " + (r.host || r.srvIp) + r.uri + (r.status !== null ? " → " + r.status + " " + r.reason : " (no reply)"),
-      r.exe || r.credRec ? "caution" : "", [dom(host), r.ua ? ek("ua", r.ua) : "", ek("url", url)]);
+      r.exe || r.credRec ? "caution" : "", [dom(host), r.ua ? ek("ua", r.ua) : "", ek("url", url), r.ja4h ? ek("ja4h", r.ja4h) : ""]);
   }
   for(const r of I.tls){
     const weak = r.server && ((r.server.version && r.server.version < 0x0303) || weakCipher(r.server.cipher));
     push("tls", r.ts, r.no, r.cli, r.srv, "TLS " + (r.sni ? "to " + r.sni + " " : "") + (r.server ? tlsVer(r.server.version) + " " + cipherName(r.server.cipher) : "handshake, no ServerHello") + " · JA3 " + r.ja3.slice(0, 8),
-      weak ? "caution" : "", [dom(r.sni), ek("ja3", r.ja3), r.server ? ek("ja3s", r.server.ja3s) : ""]);
+      weak ? "caution" : "", [dom(r.sni), ek("ja3", r.ja3), r.server ? ek("ja3s", r.server.ja3s) : "", ek("ja4", r.ja4), r.server ? ek("ja4s", r.server.ja4s) : ""]);
   }
   for(const c of I.certs.values()){
-    const fl = certFlags(c), ex = [c.sha256 ? ek("hash", c.sha256) : "", c.sha1 ? ek("hash", c.sha1) : "", dom(c.cn)];
+    const fl = certFlags(c), ex = [c.sha256 ? ek("hash", c.sha256) : "", c.sha1 ? ek("hash", c.sha1) : "", dom(c.cn), c.ja4x ? ek("ja4x", c.ja4x) : ""];
     for(const s of c.sans.slice(0, 6)) ex.push(dom(s));
     push("tls", c.ts, c.no, [...c.servers][0] || "", "", "Certificate " + c.subject + (fl.length ? " — " + fl.join(", ") : ""), fl.length ? "caution" : "", ex);
   }
@@ -8822,6 +9014,9 @@ function buildStacks(){
   for(const r of I.tls){ put("TLS server names (SNI)", r.sni, 1, [r.cliIp], r.no, "", "domain"); }
   for(const j of I.ja3.values()) put("JA3 client fingerprints", j.hash, j.count, j.clients, j.no, [...j.snis].slice(0, 2).join(", "), "ja3");
   for(const j of I.ja3s.values()) put("JA3S server fingerprints", j.hash, j.count, [...j.servers], j.no, "", "ja3s");
+  for(const j of I.ja4.values()) put("JA4 client fingerprints", j.hash, j.count, j.clients, j.no, [...j.snis].slice(0, 2).join(", "), "ja4");
+  for(const j of I.ja4s.values()) put("JA4S server fingerprints", j.hash, j.count, [...j.servers], j.no, "", "ja4s");
+  for(const j of I.ja4h.values()) put("JA4H HTTP client fingerprints", j.hash, j.count, j.clients, j.no, "", "ja4h");
   for(const s of I.tlsServers) put("TLS version and cipher", tlsVer(s.version) + " " + cipherName(s.cipher), 1, [s.cli], s.no, "", "");
   for(const r of I.http){ put("HTTP hosts", r.host || r.srvIp, 1, [r.cliIp], r.no, "", "domain"); const ext = (r.uri.split("?")[0].match(/\.([a-z0-9]{1,6})$/i) || [])[1]; put("HTTP URI file types", ext ? "." + ext.toLowerCase() : "(none)", 1, [r.cliIp], r.no, "", ""); }
   for(const u of I.agents.values()) put("HTTP user agents", u.ua, u.count, u.clients, u.no, "", "ua");
@@ -9219,7 +9414,9 @@ const relT = t => (t && INV && INV.stats.first) ? "+" + Math.max(0, t - INV.stat
 const hhmmss = t => t ? tsStr(t).slice(11) : "—";
 const KIND_NAME = {dns:"DNS", http:"HTTP", tls:"TLS", cred:"Login", file:"File", ot:"OT", conn:"Connection", banner:"Banner", carve:"Carved", rule:"Rule", intel:"Intel", alert:"Alert"};
 const entAttr = k => { const [t, v] = ekParts(k); return t + "|" + v; };
-const IOC_PIVOT = {"Public IP addresses":"ip", "Domains":"domain", "URLs":"url", "User agents":"ua", "JA3 client fingerprints":"ja3", "JA3S server fingerprints":"ja3s", "Account names":"user", "Hashes in traffic":"hash", "Decoded base64":""};
+const IOC_PIVOT = {"Public IP addresses":"ip", "Domains":"domain", "URLs":"url", "User agents":"ua", "JA3 client fingerprints":"ja3", "JA3S server fingerprints":"ja3s",
+  "JA4 client fingerprints":"ja4", "JA4S server fingerprints":"ja4s", "JA4H HTTP client fingerprints":"ja4h", "JA4X certificate fingerprints":"ja4x",
+  "Account names":"user", "Hashes in traffic":"hash", "Decoded base64":""};
 
 /* ---------------- pivot drawer ---------------- */
 function guessEntity(q){
@@ -9229,6 +9426,10 @@ function guessEntity(q){
   if(isIpStr(l)) return ["ip", l];
   if(/^[a-f0-9]{64}$|^[a-f0-9]{40}$/.test(l)) return ["hash", l];
   if(/^[a-f0-9]{32}$/.test(l)) return HUNT.ent.has(ek("ja3", l)) ? ["ja3", l] : HUNT.ent.has(ek("ja3s", l)) ? ["ja3s", l] : ["hash", l];
+  if(/^t[a-z0-9]{2}[di]\d{2}\d{2}[a-z0-9]{2}_[0-9a-f]{12}_[0-9a-f]{12}$/.test(l)) return ["ja4", l];
+  if(/^t[a-z0-9]{2}\d{2}[a-z0-9]{2}_[0-9a-f]{4}_[0-9a-f]{12}$/.test(l)) return ["ja4s", l];
+  if(/^[a-z]{2}\d{2}[cn][rn]\d{2}[a-z0-9]{4}_[0-9a-f]{12}_[0-9a-f]{12}_[0-9a-f]{12}$/.test(l)) return ["ja4h", l];
+  if(/^[0-9a-f]{12}_[0-9a-f]{12}_[0-9a-f]{12}$/.test(l)) return ["ja4x", l];
   if(/^https?:\/\//.test(l)) return ["url", l];
   if(/^[a-z0-9_-]+(\.[a-z0-9_-]+)+\.?$/.test(l)) return ["domain", l.replace(/\.$/, "")];
   for(const t of ["user", "domain", "ua", "ip"]) if(HUNT.ent.has(ek(t, l))) return [t, l];
@@ -9299,6 +9500,16 @@ function profileHtml(type, value){
   } else if(type === "ja3" || type === "ja3s"){
     const j = (type === "ja3" ? INTEL.ja3 : INTEL.ja3s).get(value);
     if(j) F.push(["Seen", j.count + " handshake(s)"], [type === "ja3" ? "Clients" : "Servers", [...(j.clients || j.servers)].slice(0, 10).map(c => pvLink("ip", c)).join(" ")], j.snis ? ["Server names", [...j.snis].slice(0, 8).map(s => pvLink("domain", s)).join(" ")] : null, ["Fingerprint string", '<code class="sm">' + esc(j.str) + '</code>']);
+  } else if(type === "ja4" || type === "ja4s" || type === "ja4h"){
+    const jm = type === "ja4" ? INTEL.ja4 : type === "ja4s" ? INTEL.ja4s : INTEL.ja4h;
+    const j = jm.get(value);
+    if(j) F.push(["Seen", j.count + " " + (type === "ja4h" ? "request(s)" : "handshake(s)")],
+      [type === "ja4" ? "Clients" : type === "ja4s" ? "Servers" : "Clients", [...(j.clients || j.servers)].slice(0, 10).map(c => pvLink("ip", c)).join(" ")],
+      j.snis ? ["Server names", [...j.snis].slice(0, 8).map(s => pvLink("domain", s)).join(" ")] : null);
+  } else if(type === "ja4x"){
+    const ce = [...INTEL.certs.values()].filter(c => c.ja4x === value);
+    if(ce.length) F.push(["Seen", ce.length + " certificate(s)"], ["Subjects", ce.slice(0, 10).map(c => esc(c.subject) + " " + fl(c.no)).join("<br>")],
+      ["Servers", [...new Set(ce.flatMap(c => [...c.servers]))].slice(0, 10).map(s => pvLink("ip", s)).join(" ")]);
   } else if(type === "ua"){
     const u = [...INTEL.agents.values()].find(x => x.ua.toLowerCase() === value);
     if(u) F.push(["User agent", esc(u.ua)], ["Requests", u.count], ["Clients", [...u.clients].slice(0, 10).map(c => pvLink("ip", c)).join(" ")], ["First seen", fl(u.no)]);
