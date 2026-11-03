@@ -5,10 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PCAP Analysis</title>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 40'%3E%3Crect width='56' height='40' rx='7' fill='%230d1117'/%3E%3Ctext x='28' y='27' font-family='Archivo,Arial,sans-serif' font-weight='800' font-size='20' fill='%2358a6ff' text-anchor='middle'%3EP%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 40'%3E%3Crect width='56' height='40' rx='7' fill='%230d1117'/%3E%3Ctext x='28' y='27' font-family='Arial,sans-serif' font-weight='800' font-size='20' fill='%2358a6ff' text-anchor='middle'%3EP%3C/text%3E%3C/svg%3E">
 <style>
 /* ============================================================
    PALETTE
@@ -22,9 +19,9 @@
    ============================================================ */
 :root{
   color-scheme:dark;
-  --f-display:"Archivo","Arial",sans-serif;          /* headings, labels, controls */
-  --f-body:"Atkinson Hyperlegible","Segoe UI",-apple-system,sans-serif;
-  --f-mono:"IBM Plex Mono",ui-monospace,"Consolas",monospace;
+  --f-display:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;          /* headings, labels, controls */
+  --f-body:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --f-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   --r:6px;
 
   --void:#0d1117;          /* the working surface */
@@ -124,8 +121,7 @@ a{color:var(--instr)}
 /* ---------- panel lighting switch ---------- */
 .segset{display:flex;align-items:center;gap:0;border:1px solid var(--line);border-radius:var(--r);
   background:var(--engrave);padding:3px 3px 3px 9px;box-shadow:var(--plate-shadow)}
-.segset .seglbl{font-family:var(--f-display);font-size:11px;letter-spacing:.16em;
-  text-transform:uppercase;color:var(--dimmer);margin-right:8px}
+.segset .seglbl{font-family:var(--f-display);font-size:11px;color:var(--dimmer);margin-right:8px}
 .segset button{font-size:11.5px;letter-spacing:.1em;padding:3px 9px;border-radius:2px;
   border-color:transparent;background:transparent;box-shadow:none;color:var(--dim)}
 .segset button:hover{background:var(--panel-3);border-color:transparent;color:var(--text)}
@@ -189,8 +185,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 /* ---------- gauge tiles ---------- */
 .gauges{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
 .gauge{border:1px solid var(--line-soft);border-radius:2px;background:var(--panel-2);padding:9px 11px}
-.gauge .lbl{font-family:var(--f-display);font-size:11px;letter-spacing:.16em;
-  text-transform:uppercase;color:var(--dimmer)}
+.gauge .lbl{font-family:var(--f-display);font-size:11px;color:var(--dimmer)}
 .gauge .val{font-family:var(--f-mono);font-size:19px;font-weight:500;color:var(--text);
   font-variant-numeric:tabular-nums;margin-top:2px;word-break:break-word}
 .gauge .val.sm{font-size:13px;line-height:1.35}
@@ -207,8 +202,8 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .tablewrap{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-size:12.5px}
 th{position:sticky;top:0;z-index:2;background:var(--engrave);color:var(--dim);text-align:left;
-  font-family:var(--f-display);font-weight:600;font-size:11.5px;letter-spacing:.14em;
-  text-transform:uppercase;padding:7px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+  font-family:var(--f-display);font-weight:600;font-size:11.5px;
+  padding:7px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
 th.sortable{cursor:pointer;user-select:none}
 th.sortable:hover{color:var(--instr)}
 th .arrow{color:var(--instr);font-size:10px}
@@ -242,8 +237,7 @@ td.wrap{white-space:normal;min-width:190px}
   background:var(--field);border:1px solid var(--line);border-radius:2px;padding:6px 9px;min-width:190px}
 .controls input[type=search]::placeholder{color:var(--dimmer)}
 .controls .sep{width:1px;height:22px;background:var(--line)}
-.controls label{font-family:var(--f-display);font-size:11.5px;letter-spacing:.14em;
-  text-transform:uppercase;color:var(--dimmer)}
+.controls label{font-family:var(--f-display);font-size:11.5px;color:var(--dimmer)}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
 .chips button{font-size:11.5px;padding:4px 10px;letter-spacing:.1em}
 
@@ -257,8 +251,7 @@ td.wrap{white-space:normal;min-width:190px}
 .host .vl{margin-left:auto;font-family:var(--f-mono);font-size:10.5px;color:var(--dimmer)}
 .host .vn{font-family:var(--f-mono);font-size:10.5px;color:var(--dim);border:1px solid var(--line-soft);border-radius:9px;padding:0 6px}
 .host dl{margin:0;padding:9px 11px;display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:12px}
-.host dt{font-family:var(--f-display);letter-spacing:.12em;text-transform:uppercase;
-  color:var(--dimmer);font-size:11px;padding-top:1px}
+.host dt{font-family:var(--f-display);color:var(--dimmer);font-size:11px;padding-top:1px}
 .host dd{margin:0;font-family:var(--f-mono);font-size:11.5px;word-break:break-word}
 .host .svc{display:flex;flex-wrap:wrap;gap:5px}
 .protos{color:var(--dim);font-family:var(--f-mono);font-size:11px}
@@ -310,8 +303,7 @@ td.wrap{white-space:normal;min-width:190px}
 .assetkey{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--dim)}
 .assetkey b{color:var(--text);font-family:var(--f-mono);font-size:11.5px}
 .assetkey canvas{display:block}
-.atype{font-family:var(--f-display);letter-spacing:.1em;text-transform:uppercase;
-  font-size:12px;color:var(--text)}
+.atype{font-family:var(--f-display);font-size:12px;color:var(--text)}
 .mapsel .atype{margin-left:10px}
 .conf{font-family:var(--f-mono);font-size:10.5px;margin-left:8px;
   padding:1px 6px;border-radius:2px;border:1px solid;text-transform:uppercase;letter-spacing:.06em}
@@ -324,8 +316,7 @@ td.wrap{white-space:normal;min-width:190px}
 .mapsel{margin-top:10px;padding:9px 11px;border:1px solid var(--line-soft);border-radius:2px;
   background:var(--panel-2);font-size:12px}
 .mapsel .ip{font-family:var(--f-mono);font-size:13px;color:var(--instr);font-weight:700}
-.mapsel .l{font-family:var(--f-display);letter-spacing:.14em;text-transform:uppercase;
-  color:var(--dimmer);font-size:11px;margin-right:6px}
+.mapsel .l{font-family:var(--f-display);color:var(--dimmer);font-size:11px;margin-right:6px}
 .mapsel .row2{margin-top:4px;font-family:var(--f-mono);font-size:11.5px;color:var(--dim)}
 
 /* ---------- misc ---------- */
@@ -375,7 +366,7 @@ button.flink,button.flink:hover,button.flink:active{font-family:var(--f-mono);fo
 button.flink:hover{text-decoration-style:solid}
 button.mini{font-size:11px;padding:2px 8px;letter-spacing:.1em}
 .pad{padding:10px 14px;margin:0}
-.subhead{font-family:var(--f-display);font-size:13px;letter-spacing:.18em;text-transform:uppercase;
+.subhead{font-family:var(--f-display);font-size:13px;font-weight:600;
   color:var(--dim);padding:10px 14px 6px;border-top:1px solid var(--line-soft);background:var(--surface-sunk)}
 .subhead:first-child{border-top:0}
 .controls input[type=number]{font-family:var(--f-mono);font-size:12px;color:var(--text);
@@ -504,10 +495,11 @@ tr.sel td{background:var(--sel-bg)}
 /* ============================================================
    PCAP ANALYSIS SKIN
    ------------------------------------------------------------
-   Flat, calm surfaces in the ISA-101 manner: no gloss and no glow,
-   sentence case for headings and controls, small tracked capitals only
-   for column and field labels. Alarm lamps take the ISA-18.2 priority
-   shapes (diamond, triangle, circle), so severity reads without colour.
+   Flat, calm surfaces in the ISA-101 manner: no gloss and no glow.
+   Typography matches the rest of Fission Ops — system font stack,
+   sentence case throughout, no uppercase or tracked labels. Alarm
+   lamps take the ISA-18.2 priority shapes (diamond, triangle, circle),
+   so severity reads without colour.
    ============================================================ */
 body{font-family:var(--f-body);font-size:14.5px;line-height:1.5}
 h1,h2,h3{font-family:var(--f-display);font-weight:700;letter-spacing:-.005em}
@@ -524,7 +516,7 @@ code,.mono,td.mono,th.mono{font-family:var(--f-mono)}
 .rail-sub{font-family:var(--f-body);font-size:13px;letter-spacing:0;text-transform:none;color:var(--dim)}
 .statusblk,.segset{background:var(--panel);box-shadow:none;border-color:var(--line-soft)}
 .statusblk .txt{font-family:var(--f-mono);letter-spacing:.06em}
-.segset .seglbl{font-size:10.5px;letter-spacing:.1em;font-weight:600}
+.segset .seglbl{font-size:10.5px;font-weight:600}
 .segset button{font-size:12.5px;letter-spacing:0;padding:3px 10px}
 .segset button[aria-pressed="true"]{background:var(--btn-on-a);color:var(--btn-on-fg);border-color:var(--btn-pri-bd)}
 .jump a{font-family:var(--f-display);font-size:12.5px;font-weight:600;letter-spacing:0;text-transform:none;
@@ -557,7 +549,7 @@ button.mini,.chips button{font-size:12px;letter-spacing:0;padding:3px 10px}
 
 /* labels and data */
 .gauge{border-radius:var(--r);background:var(--panel-2);border-color:var(--line-soft)}
-.gauge .lbl,th,.host dt,.controls label,.mapsel .l,.segset .seglbl{font-size:10.5px;letter-spacing:.09em;font-weight:600}
+.gauge .lbl,th,.host dt,.controls label,.mapsel .l,.segset .seglbl{font-size:10.5px;font-weight:600}
 .controls label.ck{font-size:12.5px;letter-spacing:0;font-weight:400}
 th{background:var(--surface-sunk);color:var(--dim)}
 .gauge .val{font-family:var(--f-mono);font-weight:500}
@@ -565,7 +557,7 @@ th{background:var(--surface-sunk);color:var(--dim)}
 .host header{background:var(--surface-sunk-2)}
 .host .ip,.mapsel .ip{font-family:var(--f-mono)}
 .host .rn{font-family:var(--f-display);font-size:12.5px;font-weight:600;letter-spacing:0}
-.atype{font-family:var(--f-display);font-weight:700;letter-spacing:.05em;font-size:11.5px}
+.atype{font-family:var(--f-display);font-weight:700;font-size:11.5px}
 .pill,.conf,.tg,.sampleflag{border-radius:3px}
 .alarm{border-radius:var(--r);border-color:var(--line-soft)}
 .alarm .tag{font-family:var(--f-display);font-size:13.5px;font-weight:700;letter-spacing:0;text-transform:none}
@@ -703,7 +695,7 @@ button.pv:hover{text-decoration-style:solid;color:var(--text)}
 .drawer[hidden]{display:none}
 .drawer header{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--line-soft);background:var(--surface-sunk)}
 .drawer .pvt{flex:1 1 auto;min-width:0;font-size:14px;overflow-wrap:anywhere}
-.drawer .pvt .k{font-family:var(--f-display);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dimmer);display:block}
+.drawer .pvt .k{font-family:var(--f-display);font-size:10.5px;font-weight:600;color:var(--dimmer);display:block}
 .drawer .pvt .pvval{font-family:var(--f-mono);font-weight:600;color:var(--text)}
 .drawer .pvnav{display:flex;gap:6px;flex:0 0 auto}
 .pvbody{flex:1 1 auto;overflow:auto;padding:4px 0 24px}
@@ -711,13 +703,13 @@ button.pv:hover{text-decoration-style:solid;color:var(--text)}
 .pv-act{margin-left:auto;display:flex;gap:6px}
 .pv-hit{margin:0 14px 8px;padding:9px 11px;border:1px solid var(--pill-alarm-bd);background:var(--pill-alarm-bg);color:var(--pill-alarm-fg);border-radius:6px;font-size:12.5px}
 .pv-facts{display:grid;grid-template-columns:auto minmax(0,1fr);gap:5px 12px;margin:0;padding:6px 14px 10px;font-size:12.5px}
-.pv-facts dt{font-family:var(--f-display);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--dimmer);padding-top:2px;font-weight:600}
+.pv-facts dt{font-family:var(--f-display);font-size:10.5px;color:var(--dimmer);padding-top:2px;font-weight:600}
 .pv-facts dd{margin:0;overflow-wrap:anywhere}
 .pv-sec{padding:6px 14px 10px;border-top:1px solid var(--line-soft)}
-.pv-sec h4{margin:6px 0 8px;font-family:var(--f-display);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.pv-sec h4{margin:6px 0 8px;font-family:var(--f-display);font-size:11px;font-weight:600;color:var(--dim)}
 .pv-mix{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:5px}
 .pv-rel{margin:4px 0;font-size:12.5px;line-height:1.7}
-.pv-rel .k{display:inline-block;min-width:74px;font-size:10.5px;color:var(--dimmer);font-family:var(--f-display);letter-spacing:.07em;text-transform:uppercase}
+.pv-rel .k{display:inline-block;min-width:74px;font-size:10.5px;color:var(--dimmer);font-family:var(--f-display);font-weight:600}
 .pv-tab{width:100%;font-size:12px}
 .pv-tab td{padding:4px 6px;vertical-align:top;border-bottom:1px solid var(--line-soft)}
 .pv-list{display:grid;gap:2px;font-family:var(--f-mono);font-size:12px;max-height:340px;overflow:auto}
@@ -734,13 +726,13 @@ button.pv:hover{text-decoration-style:solid;color:var(--text)}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(172px,1fr));gap:10px}
 .kpi{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:13px 15px;background:var(--panel-2);border:1px solid var(--line-soft);border-radius:9px;box-shadow:none;text-transform:none;letter-spacing:0;font-weight:400;min-width:0}
 .kpi:hover{border-color:var(--instr);background:var(--panel-3)}
-.kpi .kl{font-family:var(--f-display);font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--dimmer);font-weight:700}
+.kpi .kl{font-family:var(--f-display);font-size:11px;color:var(--dimmer);font-weight:700}
 .kpi .kv{font-family:var(--f-display);font-size:34px;font-weight:800;line-height:1.05;font-stretch:112%;color:var(--text);font-variant-numeric:tabular-nums}
 .kpi .ks{font-size:12px;color:var(--dim)}
 .kpi.alarm{border-color:var(--lamp-alarm);background:var(--alarm-bg)}.kpi.alarm .kv{color:var(--lamp-alarm)}
 .kpi.caution{border-color:var(--pill-warn-bd);background:var(--caution-bg)}.kpi.caution .kv{color:var(--lamp-caution)}
 .hs-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;margin-top:18px}
-.hs-cols h4{font-family:var(--f-display);font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--dim);margin:0 0 8px}
+.hs-cols h4{font-family:var(--f-display);font-size:12px;font-weight:600;color:var(--dim);margin:0 0 8px}
 .hs-actor{margin-bottom:10px}
 .hs-links{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
 .stagepath{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-top:4px}

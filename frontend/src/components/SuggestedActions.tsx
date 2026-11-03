@@ -8,11 +8,18 @@ interface EntityProp {
   ioc_status?: string;
 }
 
+export interface TeamMember {
+  id: string;
+  name?: string;
+  email: string;
+}
+
 interface Props {
   entity: EntityProp;
   incidentId: string;
   canCreateTask?: boolean;
-  onCreateTask: (title: string) => void;
+  teamMembers?: TeamMember[];
+  onCreateTask: (title: string, assigneeId?: string) => void;
 }
 
 // RFC 1918, loopback, link-local, CGNAT, and other non-routable ranges
@@ -239,11 +246,19 @@ const RESPOND_TEMPLATES: Record<string, string[]> = {
   ],
 };
 
-function ActionItem({ text, onCreateTask, canCreateTask }: { text: string; canCreateTask: boolean; onCreateTask: (title: string) => void }) {
+function ActionItem({
+  text, onCreateTask, canCreateTask, teamMembers,
+}: {
+  text: string;
+  canCreateTask: boolean;
+  teamMembers: TeamMember[];
+  onCreateTask: (title: string, assigneeId?: string) => void;
+}) {
   const [copied, setCopied] = useState(false);
   const [copyFailed, setCopyFailed] = useState(false);
   const [addHover, setAddHover] = useState(false);
   const [copyHover, setCopyHover] = useState(false);
+  const [assigneeId, setAssigneeId] = useState('');
 
   async function handleCopy() {
     try {
@@ -272,11 +287,31 @@ function ActionItem({ text, onCreateTask, canCreateTask }: { text: string; canCr
   return (
     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '10px 12px', background: '#0d1117', borderRadius: '6px', border: '1px solid #21262d' }}>
       <span style={{ flex: 1, color: '#e6edf3', fontSize: '13px', lineHeight: '1.5' }}>{text}</span>
-      <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+      <div style={{ display: 'flex', gap: '6px', flexShrink: 0, alignItems: 'center' }}>
+        {canCreateTask && teamMembers.length > 0 && (
+          <select
+            value={assigneeId}
+            onChange={(e) => setAssigneeId(e.target.value)}
+            onClick={(e) => e.stopPropagation()}
+            title="Assign to"
+            style={{
+              background: '#0d1117',
+              border: '1px solid #30363d',
+              borderRadius: '4px',
+              padding: '4px 6px',
+              color: assigneeId ? '#e6edf3' : '#6e7681',
+              fontSize: '11px',
+              maxWidth: '110px',
+            }}
+          >
+            <option value="">Unassigned</option>
+            {teamMembers.map((m) => (
+              <option key={m.id} value={m.id}>{m.name || m.email}</option>
+            ))}
+          </select>
+        )}
         <button type="button"
-         
-          
-          onClick={() => canCreateTask && onCreateTask(text)}
+          onClick={() => canCreateTask && onCreateTask(text, assigneeId || undefined)}
           onMouseEnter={() => setAddHover(true)}
           onMouseLeave={() => setAddHover(false)}
           disabled={!canCreateTask}
@@ -318,14 +353,15 @@ function ActionItem({ text, onCreateTask, canCreateTask }: { text: string; canCr
 }
 
 function ActionSection({
-  title, color, icon, actions, onCreateTask, canCreateTask,
+  title, color, icon, actions, onCreateTask, canCreateTask, teamMembers,
 }: {
   title: string;
   color: string;
   icon: string;
   actions: string[];
   canCreateTask: boolean;
-  onCreateTask: (title: string) => void;
+  teamMembers: TeamMember[];
+  onCreateTask: (title: string, assigneeId?: string) => void;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   return (
@@ -349,7 +385,7 @@ function ActionSection({
       {!collapsed && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           {actions.map((action, i) => (
-            <ActionItem key={i} text={action} onCreateTask={onCreateTask} canCreateTask={canCreateTask} />
+            <ActionItem key={i} text={action} onCreateTask={onCreateTask} canCreateTask={canCreateTask} teamMembers={teamMembers} />
           ))}
         </div>
       )}
@@ -357,7 +393,7 @@ function ActionSection({
   );
 }
 
-export default function SuggestedActions({ entity, onCreateTask, canCreateTask = true }: Props) {
+export default function SuggestedActions({ entity, onCreateTask, canCreateTask = true, teamMembers = [] }: Props) {
   const isConfirmed = entity.status === 'confirmed_malicious' || entity.ioc_status === 'confirmed';
   const isSuspected = entity.ioc_status === 'suspected' || entity.status === 'under_investigation';
 
@@ -405,6 +441,7 @@ export default function SuggestedActions({ entity, onCreateTask, canCreateTask =
         actions={investigateActions}
         onCreateTask={onCreateTask}
         canCreateTask={canCreateTask}
+        teamMembers={teamMembers}
       />
 
       {/* Response actions only shown once confirmed */}
@@ -416,6 +453,7 @@ export default function SuggestedActions({ entity, onCreateTask, canCreateTask =
           actions={respondActions}
           onCreateTask={onCreateTask}
           canCreateTask={canCreateTask}
+          teamMembers={teamMembers}
         />
       )}
     </div>

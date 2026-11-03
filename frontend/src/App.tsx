@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, useParams } from 'react-router-dom';
+import { Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
@@ -43,14 +43,22 @@ function EntityDetailKeyed() {
   return <EntityDetail key={entityId} />;
 }
 
+// Modules that embed a self-contained tool with its own full navigation UI get
+// the whole viewport instead of sitting inside the platform's sidebar + top bar
+// chrome, which would otherwise leave the tool squeezed between two side navs.
+const FULL_BLEED_PREFIXES = ['/pcap-analysis'];
+
 export default function App() {
   const { user } = useAuth();
+  const location = useLocation();
+  const fullBleed = FULL_BLEED_PREFIXES.some((p) => location.pathname.startsWith(p));
+  const showChrome = !!user && !fullBleed;
   return (
     <>
-      {user && <NavBar />}
-      {user && <TopBar />}
+      {showChrome && <NavBar />}
+      {showChrome && <TopBar />}
       <ToastContainer />
-      <div style={user ? { marginLeft: '220px', paddingTop: '48px', minHeight: '100vh' } : undefined}>
+      <div style={showChrome ? { marginLeft: '220px', paddingTop: '48px', minHeight: '100vh' } : undefined}>
         <ErrorBoundary>
           <Routes>
             <Route path="/activate" element={<LicenseActivation />} />

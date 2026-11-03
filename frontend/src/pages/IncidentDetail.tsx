@@ -314,7 +314,7 @@ export default function IncidentDetail() {
           ['network', 'Network Map'],
           ['timeline', 'Timeline'],
           ['tasks', `Tasks (${tasks?.length ?? 0})`],
-          ['assets', `Assets (${entities?.length ?? 0})`],
+          ['assets', `Entity Inventory (${entities?.length ?? 0})`],
           ['remediation', 'Remediation'],
           ['yara', 'YARA Rules'],
         ] as [Tab, string][]).map(([key, label]) => (
@@ -390,11 +390,13 @@ export default function IncidentDetail() {
                     entity={{ id: e.id, type: e.type, value: e.value, status: e.status, ioc_status: ext.ioc_status }}
                     incidentId={id!}
                     canCreateTask={canChangeIncidentStatus}
-                    onCreateTask={async (title) => {
+                    teamMembers={teamMembers}
+                    onCreateTask={async (title, assigneeId) => {
                       try {
-                        await apiClient.post(`/incidents/${id}/tasks`, { title, priority: 'high' });
+                        await apiClient.post(`/incidents/${id}/tasks`, { title, priority: 'high', assignee_id: assigneeId || undefined });
                         refetchTasks();
-                        addToast({ id: Date.now().toString(), type: 'success', title: 'Task Created', body: title, read: false, created_at: new Date().toISOString() });
+                        const assignee = teamMembers.find((m) => m.id === assigneeId);
+                        addToast({ id: Date.now().toString(), type: 'success', title: 'Task Created', body: assignee ? `${title} — assigned to ${assignee.name || assignee.email}` : title, read: false, created_at: new Date().toISOString() });
                       } catch {
                         addToast({ id: Date.now().toString(), type: 'error', title: 'Task Creation Failed', body: 'Failed to create task. Senior Analyst role or above is required.', read: false, created_at: new Date().toISOString() });
                       }

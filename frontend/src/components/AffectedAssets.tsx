@@ -93,7 +93,7 @@ export default function AffectedAssets({ incidentId, incidentTitle, entities }: 
     const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
     const date = new Date().toISOString().slice(0, 10);
     const safeName = incidentTitle.replace(/[^a-z0-9]/gi, '-').toLowerCase();
-    const filename = `assets-${safeName}-${date}.csv`;
+    const filename = `entities-${safeName}-${date}.csv`;
     const uri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
     const a = document.createElement('a');
     a.href = uri;
@@ -116,7 +116,7 @@ export default function AffectedAssets({ incidentId, incidentTitle, entities }: 
     <div style={{ color: '#e6edf3' }}>
       {/* Header row */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-        <div style={{ fontSize: '15px', fontWeight: 700, color: '#e6edf3' }}>Affected Asset Inventory</div>
+        <div style={{ fontSize: '15px', fontWeight: 700, color: '#e6edf3' }}>Entity Inventory</div>
         <button type="button"
           onClick={exportCsv}
           style={{

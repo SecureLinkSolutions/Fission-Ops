@@ -78,6 +78,10 @@ export default function EntityDetail() {
   const { data: boundaries } = useFetch<NetworkBoundary[]>(
     () => apiClient.get(`/incidents/${id}/boundaries`).then((r) => r.data), [id],
   );
+  const { data: assignments } = useFetch<{ user_id: string; user_email: string; user_name: string }[]>(
+    () => apiClient.get(`/incidents/${id}/assignments`).then((r) => r.data), [id],
+  );
+  const teamMembers = (assignments ?? []).map((a) => ({ id: a.user_id, email: a.user_email, name: a.user_name }));
 
   async function handleSetIOC(status: 'suspected' | 'confirmed' | 'cleared') {
     setSettingIOC(true);
@@ -293,10 +297,12 @@ export default function EntityDetail() {
         entity={{ id: entity.id, type: entity.type, value: entity.value, status: entity.status, ioc_status: entity.ioc_status }}
         incidentId={id!}
         canCreateTask={ROLE_RANK[user?.role ?? ''] >= ROLE_RANK['senior_analyst']}
-        onCreateTask={async (title) => {
+        teamMembers={teamMembers}
+        onCreateTask={async (title, assigneeId) => {
           try {
-            await apiClient.post(`/incidents/${entity.incident_id}/tasks`, { title, priority: 'high' });
-            addToast({ id: Date.now().toString(), type: 'success', title: 'Task Created', body: title, read: false, created_at: new Date().toISOString() });
+            await apiClient.post(`/incidents/${entity.incident_id}/tasks`, { title, priority: 'high', assignee_id: assigneeId || undefined });
+            const assignee = teamMembers.find((m) => m.id === assigneeId);
+            addToast({ id: Date.now().toString(), type: 'success', title: 'Task Created', body: assignee ? `${title} — assigned to ${assignee.name || assignee.email}` : title, read: false, created_at: new Date().toISOString() });
           } catch {
             addToast({ id: Date.now().toString(), type: 'error', title: 'Task Creation Failed', body: 'Failed to create task. You may not have permission (Senior Analyst or above required).', read: false, created_at: new Date().toISOString() });
           }
