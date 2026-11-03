@@ -29,6 +29,7 @@ import NavBar from './components/NavBar';
 import TopBar from './components/TopBar';
 import ErrorBoundary from './components/ErrorBoundary';
 import ToastContainer from './components/ToastContainer';
+import PcapAnalysisFrame from './components/PcapAnalysisFrame';
 import { useAuth } from './context/AuthContext';
 
 // Force full remount of IncidentDetail when the incident ID changes.
@@ -53,11 +54,16 @@ export default function App() {
   const location = useLocation();
   const fullBleed = FULL_BLEED_PREFIXES.some((p) => location.pathname.startsWith(p));
   const showChrome = !!user && !fullBleed;
+  const onPcap = location.pathname.startsWith('/pcap-analysis');
   return (
     <>
       {showChrome && <NavBar />}
       {showChrome && <TopBar />}
       <ToastContainer />
+      {/* Mounted once regardless of route, visibility toggled by CSS, so the
+          embedded tool keeps whatever capture an analyst loaded while they
+          step away to the rest of Fission Ops and come back. */}
+      {!!user && <PcapAnalysisFrame visible={onPcap} />}
       <div style={showChrome ? { marginLeft: '220px', paddingTop: '48px', minHeight: '100vh' } : undefined}>
         <ErrorBoundary>
           <Routes>
@@ -83,6 +89,9 @@ export default function App() {
             <Route path="/search" element={<ProtectedRoute><Search /></ProtectedRoute>} />
             <Route path="/tabletop" element={<ProtectedRoute><TabletopExercises /></ProtectedRoute>} />
             <Route path="/tabletop/:id" element={<ProtectedRoute><TabletopDetail /></ProtectedRoute>} />
+            {/* Renders nothing visible — the actual tool is the always-mounted
+                PcapAnalysisFrame above, so this route only needs to exist for
+                auth-gating and so direct links/bookmarks to it work. */}
             <Route path="/pcap-analysis" element={<ProtectedRoute><PcapAnalysis /></ProtectedRoute>} />
             <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
