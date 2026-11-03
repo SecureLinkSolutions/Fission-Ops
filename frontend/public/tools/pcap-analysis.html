@@ -8494,6 +8494,17 @@ const attChip = id => {
    browser only. */
 const KNOWN_BAD = [
   // ["198.51.100.23", "C2 server", "incident 2026-14"],   value, description, source (type is detected)
+  // A small starter set of publicly-documented malicious JA3/JA3S client/server
+  // TLS fingerprints, so a known-bad match raises an alarm even before an
+  // analyst loads their own feed. JA3/JA3S are not unique identifiers — they
+  // fingerprint the TLS stack's default settings, so legitimate software built
+  // on the same library (or a reconfigured malleable profile) can collide with
+  // these. Treat a match as a lead to corroborate, not standalone proof, and
+  // replace/extend this list with your own current threat intel via "Load intel".
+  ["ja3:6734f37431670b3ab4292b8f60f29984", "TrickBot banking trojan — client TLS fingerprint", "Salesforce/NVISO JA3 reference list"],
+  ["ja3:4d7a28d6f2263ed61de88ca66eb011e3", "Emotet loader — client TLS fingerprint", "NVISO JA3 reference list"],
+  ["ja3:72a589da586844d7f0818ce684948eea", "Cobalt Strike, default/unmodified Malleable C2 profile — also seen from other tools using an unaltered Java TLS stack, so corroborate before treating as conclusive", "community-published Cobalt Strike JA3 detections"],
+  ["ja3s:ae4edc6faf64d08308082ad26be60767", "Cobalt Strike, default team server — server-side TLS fingerprint", "community-published Cobalt Strike JA3S detections"],
 ];
 const FEED = {map:new Map(), cidr:[], ua:[], kw:[], n:0, name:"", types:{}};
 const FEED_KEY = "pcapanalysis.feed";
