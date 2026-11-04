@@ -47,12 +47,16 @@ async function buildAutoPopulate(incidentId: string, incident: Incident): Promis
   // --- Attack Timeline ---
   const timelineLines: string[] = [];
   if (timeline.length > 0) {
+    // GET /incidents/:id/timeline returns rows shaped { ts, action_type, user_email, description, ... }
+    // (see TimelineEntry in types.ts) — not event_time/event_type.
     const sorted = [...timeline].sort((a, b) =>
-      new Date(a.event_time as string).getTime() - new Date(b.event_time as string).getTime(),
+      new Date(a.ts as string).getTime() - new Date(b.ts as string).getTime(),
     );
     for (const evt of sorted) {
-      const d = new Date(evt.event_time as string).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
-      timelineLines.push(`[${d}] ${evt.event_type as string}: ${evt.description as string}`);
+      const d = new Date(evt.ts as string).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
+      const actionLabel = (evt.action_type as string)?.replace(/_/g, ' ') ?? 'EVENT';
+      const actor = (evt.user_email as string) ?? 'unknown';
+      timelineLines.push(`[${d}] ${actionLabel} (${actor}): ${evt.description as string}`);
     }
   }
 

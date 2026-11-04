@@ -76,11 +76,12 @@ export default function WarRoom() {
 
   const fetchAll = useCallback(async () => {
     if (!id) return;
-    const [incRes, entRes, tlRes, kcRes] = await Promise.allSettled([
+    const [incRes, entRes, tlRes, kcRes, stagesRes] = await Promise.allSettled([
       apiClient.get(`/incidents/${id}`),
       apiClient.get(`/incidents/${id}/entities`),
       apiClient.get(`/incidents/${id}/timeline`),
       apiClient.get(`/incidents/${id}/kill-chain/matrix`),
+      apiClient.get(`/kill-chain/stages`),
     ]);
     if (incRes.status === 'fulfilled') setIncident(incRes.value.data);
     if (entRes.status === 'fulfilled') setEntities(entRes.value.data ?? []);
@@ -89,7 +90,23 @@ export default function WarRoom() {
       setTimeline(entries.slice(0, 10));
       setTickerItems(entries.slice(0, 5).map((e) => `${e.action_type.replace(/_/g, ' ')} — ${e.description}`));
     }
-    if (kcRes.status === 'fulfilled') setKillChain(kcRes.value.data);
+    // /kill-chain/matrix returns a flat array of entity→stage mapping rows, one
+    // per mapped entity — not { stages: [...] } — and only includes stages that
+    // have at least one mapping. Build per-stage counts against the full stage
+    // list (from /kill-chain/stages) so unmapped stages still show as 0, not
+    // vanish from the total.
+    if (stagesRes.status === 'fulfilled') {
+      const stages: { id: string; name: string }[] = stagesRes.value.data ?? [];
+      const matrixRows: { stage_id: string; entity_id: string }[] = kcRes.status === 'fulfilled' ? (kcRes.value.data ?? []) : [];
+      const countByStage = new Map<string, Set<string>>();
+      for (const row of matrixRows) {
+        if (!countByStage.has(row.stage_id)) countByStage.set(row.stage_id, new Set());
+        countByStage.get(row.stage_id)!.add(row.entity_id);
+      }
+      setKillChain({
+        stages: stages.map((s) => ({ stage_id: s.id, stage_name: s.name, entity_count: countByStage.get(s.id)?.size ?? 0 })),
+      });
+    }
   }, [id]);
 
   const refetchTimeline = useCallback(async () => {
