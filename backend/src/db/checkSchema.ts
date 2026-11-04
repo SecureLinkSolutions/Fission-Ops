@@ -339,5 +339,17 @@ async function runMigrations(): Promise<void> {
     await pool.query(sql026);
     console.log('✅ Migration 026 applied');
   }
+
+  // Migration 027: source_handle/target_handle on entity_relationships
+  const needsMigration027 = await pool.query(
+    `SELECT 1 FROM information_schema.columns WHERE table_name = 'entity_relationships' AND column_name = 'source_handle'`,
+  );
+  if ((needsMigration027.rowCount ?? 0) === 0) {
+    console.log('⚙️  Running migration 027...');
+    const migrationPath027 = join(__dirname, '../../../../db/migrate_027.sql');
+    const sql027 = readFileSync(migrationPath027, 'utf8');
+    await pool.query(sql027);
+    console.log('✅ Migration 027 applied');
+  }
 }
 // Note: migration 014 block is appended below

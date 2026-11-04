@@ -425,6 +425,10 @@ router.get('/:id/activity-heatmap', authenticate, async (req: Request, res: Resp
       FROM entity_relationships er
       WHERE er.incident_id = $1
       UNION ALL
+      SELECT e.ioc_flagged_at, 'IOC_FLAGGED'
+      FROM entities e
+      WHERE e.incident_id = $1 AND e.ioc_flagged_by IS NOT NULL
+      UNION ALL
       SELECT al.created_at, CASE
         WHEN al.action IN ('CREATE', 'UPDATE') THEN 'STATUS_CHANGED'
         ELSE 'OTHER'

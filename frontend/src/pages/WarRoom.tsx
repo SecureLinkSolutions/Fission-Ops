@@ -28,6 +28,7 @@ const ACTION_TYPE_COLORS: Record<string, string> = {
   RELATIONSHIP_CREATED: '#d29922',
   BOUNDARY_TRAVERSAL: '#f0883e',
   COMMENT_CREATED: '#8b949e',
+  IOC_STATUS_CHANGED: '#f85149',
 };
 
 function formatDuration(ms: number): string {

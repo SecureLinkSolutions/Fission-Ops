@@ -112,6 +112,8 @@ export interface EntityRelationship {
   source_type?: string;
   target_value?: string;
   target_type?: string;
+  source_handle?: string | null;
+  target_handle?: string | null;
 }
 
 export interface KillChainMappingWithStage {

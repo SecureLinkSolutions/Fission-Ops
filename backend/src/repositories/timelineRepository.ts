@@ -59,6 +59,13 @@ export async function getIncidentTimeline(
        JOIN network_boundaries sb ON sb.id = bt.source_boundary_id
        JOIN network_boundaries tb ON tb.id = bt.target_boundary_id
        WHERE bt.incident_id = $1
+
+       UNION ALL
+
+       SELECT e.ioc_flagged_at, e.ioc_flagged_by, 'IOC_STATUS_CHANGED', 'entity', e.id::text,
+              ('Marked ' || e.value || ' as ' || e.ioc_status || ' IOC' || COALESCE(' — ' || e.ioc_notes, ''))
+       FROM entities e
+       WHERE e.incident_id = $1 AND e.ioc_flagged_by IS NOT NULL
      ) t
      JOIN users u ON u.id = t.user_id
      WHERE ($2::text IS NULL OR t.action_type = $2::text)

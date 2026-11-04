@@ -7,12 +7,18 @@ import { createError } from '../middleware/errorHandler';
 
 const router = Router({ mergeParams: true });
 
+// One of the 8 connection points on an EntityNode (see EntityRelationshipGraph.tsx):
+// one source + one target handle per side.
+const HANDLE_IDS = ['left-s', 'left-t', 'top-s', 'top-t', 'right-s', 'right-t', 'bottom-s', 'bottom-t'] as const;
+
 const createRelationshipSchema = z.object({
   source_entity_id: z.string().uuid(),
   target_entity_id: z.string().uuid(),
   relationship_type: z.string().min(1).max(100),
   bidirectional: z.boolean().optional(),
   notes: z.string().optional(),
+  source_handle: z.enum(HANDLE_IDS).optional(),
+  target_handle: z.enum(HANDLE_IDS).optional(),
 });
 
 router.get('/', authenticate, async (req: Request, res: Response) => {

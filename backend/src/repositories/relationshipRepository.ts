@@ -14,6 +14,8 @@ export interface EntityRelationship {
   source_type?: string;
   target_value?: string;
   target_type?: string;
+  source_handle?: string | null;
+  target_handle?: string | null;
 }
 
 export async function listRelationships(incidentId: string): Promise<EntityRelationship[]> {
@@ -39,15 +41,18 @@ export async function createRelationship(data: {
   bidirectional?: boolean;
   notes?: string;
   created_by: string;
+  source_handle?: string;
+  target_handle?: string;
 }): Promise<EntityRelationship> {
   const result = await pool.query(
     `INSERT INTO entity_relationships
-       (incident_id, source_entity_id, target_entity_id, relationship_type, bidirectional, notes, created_by)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
+       (incident_id, source_entity_id, target_entity_id, relationship_type, bidirectional, notes, created_by, source_handle, target_handle)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
      ON CONFLICT (source_entity_id, target_entity_id, relationship_type) DO UPDATE
-       SET notes = EXCLUDED.notes, bidirectional = EXCLUDED.bidirectional, created_by = EXCLUDED.created_by
+       SET notes = EXCLUDED.notes, bidirectional = EXCLUDED.bidirectional, created_by = EXCLUDED.created_by,
+           source_handle = EXCLUDED.source_handle, target_handle = EXCLUDED.target_handle
      RETURNING *`,
-    [data.incident_id, data.source_entity_id, data.target_entity_id, data.relationship_type, data.bidirectional ?? false, data.notes ?? null, data.created_by],
+    [data.incident_id, data.source_entity_id, data.target_entity_id, data.relationship_type, data.bidirectional ?? false, data.notes ?? null, data.created_by, data.source_handle ?? null, data.target_handle ?? null],
   );
   return result.rows[0];
 }

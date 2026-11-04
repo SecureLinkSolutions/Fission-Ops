@@ -446,6 +446,7 @@ export default function IncidentDetail() {
               <option value="TTP_ASSIGNED">TTP Assigned</option>
               <option value="RELATIONSHIP_CREATED">Relationship Created</option>
               <option value="BOUNDARY_TRAVERSAL">Boundary Traversal</option>
+              <option value="IOC_STATUS_CHANGED">IOC Status Changed</option>
             </select>
             <select
               style={{ background: '#0d1117', border: '1px solid #30363d', borderRadius: '6px', padding: '6px 10px', color: '#e6edf3', fontSize: '13px' }}

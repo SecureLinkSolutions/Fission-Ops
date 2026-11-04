@@ -84,6 +84,12 @@ export default function MyTasks() {
                     📅 {new Date(task.due_date).toLocaleDateString()}{isOverdue ? ' ⚠' : ''}
                   </span>
                 )}
+                <Link
+                  to={`/incidents/${task.incident_id}?tab=tasks&task=${task.id}`}
+                  style={{ background: '#21262d', border: '1px solid #30363d', borderRadius: '4px', padding: '3px 10px', color: '#58a6ff', fontSize: '12px', fontWeight: 600, textDecoration: 'none', flexShrink: 0 }}
+                >
+                  Open →
+                </Link>
               </div>
             );
           })}

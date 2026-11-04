@@ -311,7 +311,13 @@ function ActionItem({
           </select>
         )}
         <button type="button"
-          onClick={() => canCreateTask && onCreateTask(text, assigneeId || undefined)}
+          onClick={() => {
+            if (!canCreateTask) return;
+            onCreateTask(text, assigneeId || undefined);
+            // Reset right away so the row reads as "handled" rather than leaving the
+            // assignee picked, which looked like nothing had been submitted yet.
+            setAssigneeId('');
+          }}
           onMouseEnter={() => setAddHover(true)}
           onMouseLeave={() => setAddHover(false)}
           disabled={!canCreateTask}

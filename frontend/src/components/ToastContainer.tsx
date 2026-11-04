@@ -111,7 +111,13 @@ export default function ToastContainer() {
               </button>
             </div>
             {notif.body && (
-              <div style={{ color: '#8b949e', fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{notif.body}</div>
+              // Wrap instead of truncating to one line — a one-line clamp was cutting
+              // off exactly the "— assigned to <name>" confirmation at the end of
+              // longer messages, which made a working assignment look like it failed.
+              <div style={{
+                color: '#8b949e', fontSize: '12px', lineHeight: '1.4', wordBreak: 'break-word',
+                display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+              }}>{notif.body}</div>
             )}
             <div style={{ color: '#484f58', fontSize: '11px' }}>{relativeTime(notif.created_at)}</div>
           </div>

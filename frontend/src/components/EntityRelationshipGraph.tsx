@@ -299,9 +299,11 @@ interface AddRelationshipFormProps {
   onClose: () => void;
   presetSource?: string;
   presetTarget?: string;
+  presetSourceHandle?: string;
+  presetTargetHandle?: string;
 }
 
-function AddRelationshipForm({ entities, incidentId, onCreated, onClose, presetSource, presetTarget }: AddRelationshipFormProps) {
+function AddRelationshipForm({ entities, incidentId, onCreated, onClose, presetSource, presetTarget, presetSourceHandle, presetTargetHandle }: AddRelationshipFormProps) {
   const [source, setSource] = useState(presetSource ?? '');
   const [target, setTarget] = useState(presetTarget ?? '');
   const [relType, setRelType] = useState('');
@@ -323,6 +325,9 @@ function AddRelationshipForm({ entities, incidentId, onCreated, onClose, presetS
       await apiClient.post(`/incidents/${incidentId}/relationships`, {
         source_entity_id: source, target_entity_id: target, relationship_type: relType,
         bidirectional, notes: notes || undefined,
+        // Only still valid if the source/target weren't changed from what was dragged.
+        source_handle: source === presetSource ? presetSourceHandle : undefined,
+        target_handle: target === presetTarget ? presetTargetHandle : undefined,
       });
       onCreated();
       onClose();
@@ -391,7 +396,7 @@ interface GraphInnerProps {
 function GraphInner({ incidentId }: GraphInnerProps) {
   const [selectedEntity, setSelectedEntity] = useState<Entity | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [connectPreset, setConnectPreset] = useState<{ source: string; target: string } | null>(null);
+  const [connectPreset, setConnectPreset] = useState<{ source: string; target: string; sourceHandle?: string; targetHandle?: string } | null>(null);
 
   const { data: entities } = useFetch<Entity[]>(
     () => apiClient.get(`/incidents/${incidentId}/entities`).then((r) => r.data),
@@ -420,6 +425,10 @@ function GraphInner({ incidentId }: GraphInnerProps) {
       id: r.id,
       source: r.source_entity_id,
       target: r.target_entity_id,
+      // Without these, React Flow falls back to a default handle (visually
+      // always the same side) instead of the point it was actually dragged from.
+      sourceHandle: r.source_handle ?? undefined,
+      targetHandle: r.target_handle ?? undefined,
       label: r.relationship_type,
       type: 'directional',
       data: { bidirectional: r.bidirectional },
@@ -499,9 +508,14 @@ function GraphInner({ incidentId }: GraphInnerProps) {
     setShowAddForm(false);
   }, []);
 
-  const handleConnect = useCallback((connection: { source: string | null; target: string | null }) => {
+  const handleConnect = useCallback((connection: { source: string | null; target: string | null; sourceHandle?: string | null; targetHandle?: string | null }) => {
     if (!connection.source || !connection.target) return;
-    setConnectPreset({ source: connection.source, target: connection.target });
+    setConnectPreset({
+      source: connection.source,
+      target: connection.target,
+      sourceHandle: connection.sourceHandle ?? undefined,
+      targetHandle: connection.targetHandle ?? undefined,
+    });
     setShowAddForm(true);
     setSelectedEntity(null);
   }, []);
@@ -554,6 +568,8 @@ function GraphInner({ incidentId }: GraphInnerProps) {
             onCreated={refetchRels}
             presetSource={connectPreset?.source}
             presetTarget={connectPreset?.target}
+            presetSourceHandle={connectPreset?.sourceHandle}
+            presetTargetHandle={connectPreset?.targetHandle}
             onClose={() => { setShowAddForm(false); setConnectPreset(null); }}
           />
         )}
