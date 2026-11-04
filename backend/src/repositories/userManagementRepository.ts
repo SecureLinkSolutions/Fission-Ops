@@ -22,6 +22,18 @@ export async function getUserById(id: string): Promise<ManagedUser | null> {
   return result.rows[0] ?? null;
 }
 
+// Minimal, non-admin-gated roster for "assign this to someone" pickers (task
+// assignees, etc). Any active org member is fair game — unlike incident
+// assignments, this isn't scoped to who's already been added to the incident,
+// so the picker never comes up empty for a step nobody remembered to do first.
+export async function listAssignableUsers(orgId: string): Promise<{ id: string; email: string; name: string }[]> {
+  const result = await pool.query(
+    `SELECT id, email, name FROM users WHERE org_id = $1 AND deactivated_at IS NULL ORDER BY name, email`,
+    [orgId],
+  );
+  return result.rows;
+}
+
 export async function listUsers(orgId?: string, platformAdminAccessOnly?: boolean): Promise<ManagedUser[]> {
   if (orgId) {
     const result = await pool.query(

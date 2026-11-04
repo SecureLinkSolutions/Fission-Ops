@@ -51,12 +51,12 @@ export async function createTask(data: {
   incident_id: string;
   org_id?: string;
   title: string;
-  description?: string;
-  assignee_id?: string;
+  description?: string | null;
+  assignee_id?: string | null;
   created_by: string;
   priority?: string;
   status?: string;
-  due_date?: string;
+  due_date?: string | null;
 }): Promise<Task> {
   const result = await pool.query(
     `INSERT INTO incident_tasks (incident_id, org_id, title, description, assignee_id, created_by, priority, status, due_date)
@@ -95,7 +95,7 @@ export async function createTask(data: {
 
 export async function updateTask(id: string, data: Partial<{
   title: string;
-  description: string;
+  description: string | null;
   assignee_id: string | null;
   priority: string;
   status: string;

@@ -9,11 +9,12 @@ const router = Router();
 
 const taskSchema = z.object({
   title: z.string().min(1),
-  description: z.string().optional(),
-  assignee_id: z.string().uuid().optional(),
+  description: z.string().nullable().optional(),
+  // Nullable so a PATCH can explicitly clear an assignee/due date, not just set one.
+  assignee_id: z.string().uuid().nullable().optional(),
   priority: z.enum(['critical', 'high', 'medium', 'low']).optional(),
   status: z.enum(['open', 'in_progress', 'complete']).optional(),
-  due_date: z.string().optional(),
+  due_date: z.string().nullable().optional(),
   entity_ids: z.array(z.string().uuid()).optional(),
 });
 
@@ -61,7 +62,7 @@ router.patch('/incidents/:incidentId/tasks/:taskId', authenticate, async (req: R
   // Verify the task belongs to the specified incident and (if platform_admin) org has granted access.
   if (req.user!.role === 'platform_admin') {
     const check = await pool.query(
-      `SELECT t.id FROM tasks t
+      `SELECT t.id FROM incident_tasks t
        JOIN incidents i ON i.id = t.incident_id
        JOIN organizations o ON o.id = i.org_id
        WHERE t.id = $1 AND t.incident_id = $2 AND o.platform_admin_access = TRUE`,
@@ -73,7 +74,7 @@ router.patch('/incidents/:incidentId/tasks/:taskId', authenticate, async (req: R
     }
   } else {
     const check = await pool.query(
-      `SELECT t.id FROM tasks t JOIN incidents i ON i.id = t.incident_id
+      `SELECT t.id FROM incident_tasks t JOIN incidents i ON i.id = t.incident_id
        WHERE t.id = $1 AND t.incident_id = $2 AND i.org_id = $3`,
       [req.params.taskId, req.params.incidentId, req.user!.org_id],
     );
@@ -95,7 +96,7 @@ router.patch('/incidents/:incidentId/tasks/:taskId', authenticate, async (req: R
 router.delete('/incidents/:incidentId/tasks/:taskId', authenticate, requireRole('senior_analyst'), async (req: Request, res: Response) => {
   if (req.user!.role === 'platform_admin') {
     const check = await pool.query(
-      `SELECT t.id FROM tasks t
+      `SELECT t.id FROM incident_tasks t
        JOIN incidents i ON i.id = t.incident_id
        JOIN organizations o ON o.id = i.org_id
        WHERE t.id = $1 AND t.incident_id = $2 AND o.platform_admin_access = TRUE`,
@@ -107,7 +108,7 @@ router.delete('/incidents/:incidentId/tasks/:taskId', authenticate, requireRole(
     }
   } else {
     const check = await pool.query(
-      `SELECT t.id FROM tasks t JOIN incidents i ON i.id = t.incident_id
+      `SELECT t.id FROM incident_tasks t JOIN incidents i ON i.id = t.incident_id
        WHERE t.id = $1 AND t.incident_id = $2 AND i.org_id = $3`,
       [req.params.taskId, req.params.incidentId, req.user!.org_id],
     );

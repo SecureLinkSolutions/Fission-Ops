@@ -78,10 +78,12 @@ export default function EntityDetail() {
   const { data: boundaries } = useFetch<NetworkBoundary[]>(
     () => apiClient.get(`/incidents/${id}/boundaries`).then((r) => r.data), [id],
   );
-  const { data: assignments } = useFetch<{ user_id: string; user_email: string; user_name: string }[]>(
-    () => apiClient.get(`/incidents/${id}/assignments`).then((r) => r.data), [id],
+  // Every active org member, not just people already added to the incident's
+  // assignment roster — see IncidentDetail.tsx for why.
+  const { data: assignableUsers } = useFetch<{ id: string; email: string; name: string }[]>(
+    () => apiClient.get(`/incidents/${id}/assignable-users`).then((r) => r.data), [id],
   );
-  const teamMembers = (assignments ?? []).map((a) => ({ id: a.user_id, email: a.user_email, name: a.user_name }));
+  const teamMembers = assignableUsers ?? [];
 
   async function handleSetIOC(status: 'suspected' | 'confirmed' | 'cleared') {
     setSettingIOC(true);

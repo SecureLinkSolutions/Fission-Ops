@@ -238,6 +238,19 @@ router.delete(
   },
 );
 
+// Every active org member, for task-assignee pickers — deliberately not
+// scoped to who's already an incident assignment, so the picker is never
+// empty just because nobody ran that separate step first.
+router.get('/:incidentId/assignable-users', authenticate, async (req: Request, res: Response) => {
+  const scope = await resolveOrgId(req.params.incidentId, req.user!.role, req.user!.org_id);
+  if (!scope) { res.status(404).json({ error: 'Incident not found', code: 'NOT_FOUND' }); return; }
+  // scope.orgId is undefined for platform_admin (not tied to one org), so fall
+  // back to the incident's own org — it's the org whose members can be assigned.
+  const orgId = scope.orgId ?? (await pool.query('SELECT org_id FROM incidents WHERE id = $1', [req.params.incidentId])).rows[0]?.org_id;
+  const users = orgId ? await assignRepo.listAssignableUsers(orgId) : [];
+  res.json(users);
+});
+
 
 // Remediation routes
 import * as remediationRepo from '../repositories/remediationRepository';

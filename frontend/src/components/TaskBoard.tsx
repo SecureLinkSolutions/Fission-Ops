@@ -2,6 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { apiClient } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { ROLE_RANK, ENTITY_TYPE_ICONS } from '../utils/constants';
+import { addToast } from './ToastContainer';
+
+function toastError(title: string, err: unknown) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const body = (err as any)?.response?.data?.error ?? 'Something went wrong. Please try again.';
+  addToast({ id: Date.now().toString(), type: 'error', title, body, read: false, created_at: new Date().toISOString() });
+}
 
 export interface TaskEntity { id: string; type: string; value: string; }
 
@@ -107,25 +114,47 @@ function TaskCard({ task, teamMembers, availableEntities, onRefresh, canManage, 
   }, [highlight]);
 
   async function handleSave() {
-    const payload: Record<string, unknown> = { title: form.title, priority: form.priority, status: form.status };
-    if (form.description) payload.description = form.description;
-    if (form.assignee_id) payload.assignee_id = form.assignee_id;
-    if (form.due_date) payload.due_date = form.due_date;
+    const payload: Record<string, unknown> = { title: form.title, priority: form.priority, status: form.status, description: form.description, assignee_id: form.assignee_id || null, due_date: form.due_date || null };
     payload.entity_ids = selectedEntityIds;
-    await apiClient.patch(`/incidents/${task.incident_id}/tasks/${task.id}`, payload).catch(() => {});
-    setEditing(false);
-    onRefresh();
+    try {
+      await apiClient.patch(`/incidents/${task.incident_id}/tasks/${task.id}`, payload);
+      setEditing(false);
+      onRefresh();
+    } catch (err) {
+      toastError('Task Not Saved', err);
+    }
   }
 
   async function handleStatusChange(status: string) {
-    await apiClient.patch(`/incidents/${task.incident_id}/tasks/${task.id}`, { status }).catch(() => {});
-    onRefresh();
+    try {
+      await apiClient.patch(`/incidents/${task.incident_id}/tasks/${task.id}`, { status });
+      onRefresh();
+    } catch (err) {
+      toastError('Status Change Failed', err);
+    }
   }
 
   async function handleDelete() {
     if (!confirm('Delete this task?')) return;
-    await apiClient.delete(`/incidents/${task.incident_id}/tasks/${task.id}`).catch(() => {});
-    onRefresh();
+    try {
+      await apiClient.delete(`/incidents/${task.incident_id}/tasks/${task.id}`);
+      onRefresh();
+    } catch (err) {
+      toastError('Task Not Deleted', err);
+    }
+  }
+
+  const [reassigning, setReassigning] = useState(false);
+  async function handleQuickAssign(assigneeId: string) {
+    setReassigning(true);
+    try {
+      await apiClient.patch(`/incidents/${task.incident_id}/tasks/${task.id}`, { assignee_id: assigneeId || null });
+      onRefresh();
+    } catch (err) {
+      toastError('Reassignment Failed', err);
+    } finally {
+      setReassigning(false);
+    }
   }
 
   const inputStyle: React.CSSProperties = { background: '#0d1117', border: '1px solid #30363d', borderRadius: '4px', padding: '4px 8px', color: '#e6edf3', fontSize: '12px', outline: 'none', width: '100%', boxSizing: 'border-box' };
@@ -140,11 +169,29 @@ function TaskCard({ task, teamMembers, availableEntities, onRefresh, canManage, 
         <span style={{ color: '#484f58', fontSize: '11px' }}>{expanded ? '▲' : '▼'}</span>
       </div>
 
-      {task.assignee_name && (
-        <div style={{ color: '#8b949e', fontSize: '11px', marginTop: '4px' }}>👤 {task.assignee_name}</div>
-      )}
-      {!task.assignee_name && task.assignee_email && (
-        <div style={{ color: '#8b949e', fontSize: '11px', marginTop: '4px' }}>👤 {task.assignee_email}</div>
+      {canManage ? (
+        <div style={{ marginTop: '4px', display: 'flex', alignItems: 'center', gap: '5px' }} onClick={(e) => e.stopPropagation()}>
+          <span style={{ fontSize: '11px' }}>👤</span>
+          <select
+            value={task.assignee_id ?? ''}
+            disabled={reassigning}
+            onChange={(e) => handleQuickAssign(e.target.value)}
+            title="Reassign"
+            style={{
+              background: 'transparent', border: '1px solid transparent', borderRadius: '4px', padding: '1px 2px',
+              color: task.assignee_id ? '#8b949e' : '#6e7681', fontSize: '11px', cursor: reassigning ? 'wait' : 'pointer', maxWidth: '160px',
+            }}
+            onMouseOver={(e) => { e.currentTarget.style.borderColor = '#30363d'; }}
+            onMouseOut={(e) => { e.currentTarget.style.borderColor = 'transparent'; }}
+          >
+            <option value="">Unassigned</option>
+            {teamMembers.map((m) => <option key={m.id} value={m.id}>{m.name || m.email}</option>)}
+          </select>
+        </div>
+      ) : (
+        (task.assignee_name || task.assignee_email) && (
+          <div style={{ color: '#8b949e', fontSize: '11px', marginTop: '4px' }}>👤 {task.assignee_name || task.assignee_email}</div>
+        )
       )}
       {task.due_date && (
         <div style={{ color: isOverdue ? '#f85149' : '#8b949e', fontSize: '11px' }}>
@@ -172,7 +219,14 @@ function TaskCard({ task, teamMembers, availableEntities, onRefresh, canManage, 
                 {s.replace(/_/g, ' ')}
               </button>
             ))}
-            {canManage && <button type="button" onClick={() => { setSelectedEntityIds((task.entities ?? []).map((e) => e.id)); setEditing(true); }} style={{ background: 'transparent', border: '1px solid #30363d', borderRadius: '4px', padding: '3px 8px', color: '#8b949e', fontSize: '11px', cursor: 'pointer' }}>Edit</button>}
+            {canManage && <button type="button" onClick={() => {
+              // Re-pull from the current task rather than whatever was in state from
+              // this card's initial mount, so a reassignment made elsewhere (e.g. the
+              // entity's suggested-actions panel) since then isn't silently clobbered.
+              setForm({ title: task.title, description: task.description ?? '', assignee_id: task.assignee_id ?? '', priority: task.priority, status: task.status, due_date: task.due_date ?? '' });
+              setSelectedEntityIds((task.entities ?? []).map((e) => e.id));
+              setEditing(true);
+            }} style={{ background: 'transparent', border: '1px solid #30363d', borderRadius: '4px', padding: '3px 8px', color: '#8b949e', fontSize: '11px', cursor: 'pointer' }}>Edit</button>}
             {canManage && <button type="button" onClick={handleDelete} style={{ background: 'transparent', border: '1px solid #f8514944', borderRadius: '4px', padding: '3px 8px', color: '#f85149', fontSize: '11px', cursor: 'pointer' }}>Delete</button>}
           </div>
           {commentsLoaded && (
@@ -264,11 +318,15 @@ export default function TaskBoard({ incidentId, tasks, teamMembers = [], availab
     if (form.assignee_id) payload.assignee_id = form.assignee_id;
     if (form.due_date) payload.due_date = form.due_date;
     if (selectedEntityIds.length) payload.entity_ids = selectedEntityIds;
-    await apiClient.post(`/incidents/${incidentId}/tasks`, payload).catch(() => {});
-    setForm({ title: '', description: '', assignee_id: '', priority: 'medium', due_date: '' });
-    setSelectedEntityIds([]);
-    setShowForm(false);
-    onRefresh();
+    try {
+      await apiClient.post(`/incidents/${incidentId}/tasks`, payload);
+      setForm({ title: '', description: '', assignee_id: '', priority: 'medium', due_date: '' });
+      setSelectedEntityIds([]);
+      setShowForm(false);
+      onRefresh();
+    } catch (err) {
+      toastError('Task Not Created', err);
+    }
   }
 
   const inputStyle: React.CSSProperties = { background: '#0d1117', border: '1px solid #30363d', borderRadius: '4px', padding: '6px 8px', color: '#e6edf3', fontSize: '13px', outline: 'none', width: '100%', boxSizing: 'border-box' };

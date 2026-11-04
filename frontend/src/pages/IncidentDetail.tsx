@@ -92,8 +92,11 @@ export default function IncidentDetail() {
   const { data: tasks, refetch: refetchTasks } = useFetch<Task[]>(
     () => apiClient.get(`/incidents/${id}/tasks`).then((r) => r.data), [id],
   );
-  const { data: assignments } = useFetch<{ user_id: string; user_email: string; user_name: string }[]>(
-    () => apiClient.get(`/incidents/${id}/assignments`).then((r) => r.data), [id],
+  // Every active org member, not just people already added to the incident's
+  // assignment roster — a task-assignee picker that's empty because nobody
+  // ran that separate step first is the last thing you want mid-incident.
+  const { data: assignableUsers } = useFetch<{ id: string; email: string; name: string }[]>(
+    () => apiClient.get(`/incidents/${id}/assignable-users`).then((r) => r.data), [id],
   );
 
   const { data: checklistSummary } = useFetch<{ entity_id: string; total: number; checked: number }[]>(
@@ -171,7 +174,7 @@ export default function IncidentDetail() {
     new Map((timeline ?? []).map((e) => [e.user_id, e.user_email])).entries(),
   );
 
-  const teamMembers = (assignments ?? []).map((a) => ({ id: a.user_id, email: a.user_email, name: a.user_name }));
+  const teamMembers = assignableUsers ?? [];
   const canChangeIncidentStatus = ROLE_RANK[user?.role ?? ''] >= ROLE_RANK['senior_analyst'];
   const canChangeStatusField = ROLE_RANK[user?.role ?? ''] >= ROLE_RANK['incident_commander'];
 
