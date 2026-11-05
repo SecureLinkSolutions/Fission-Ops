@@ -1,6 +1,11 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
+// Separate v4 import solely for the Anthropic structured-output schema below —
+// zodOutputFormat requires a zod/v4 schema; the rest of this file keeps using
+// the classic `z` import so no other route is affected.
+import { z as z4 } from 'zod/v4';
 import Anthropic from '@anthropic-ai/sdk';
+import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
 import { authenticate } from '../middleware/auth';
 import { requireRole } from '../middleware/rbac';
 import { createError } from '../middleware/errorHandler';
@@ -248,6 +253,35 @@ router.post('/sessions/:sessionId/release/:injectId', authenticate, requireRole(
 
 // ─── AI Scenario Generation ────────────────────────────────────────────────────
 
+// Mirrors the shape TabletopDetail.tsx expects back from this endpoint.
+// Using this as an Anthropic structured-output schema (via zodOutputFormat)
+// makes the response guaranteed-valid JSON matching this shape — the model
+// can no longer return prose, markdown fences, or malformed JSON (e.g. a
+// literal newline inside a string field instead of an escaped \n, which is
+// what free-text generation would periodically produce for these multi-line
+// scenario/objectives/discussion_prompts fields and break JSON.parse on).
+const scenarioSchema = z4.object({
+  title: z4.string(),
+  scenario: z4.string(),
+  objectives: z4.string(),
+  injects: z4.array(z4.object({
+    title: z4.string(),
+    description: z4.string(),
+    // Deliberately a plain string, not z4.enum(...): this SDK/zod version
+    // renders enum constraints into the JSON schema's `description` instead
+    // of a real `enum` array, so the model isn't actually constrained to the
+    // 5 valid values at generation time — only the prompt text below is. A
+    // strict enum here would then make client-side re-validation (which IS
+    // strict) reject an out-of-range value and fail the whole generation.
+    // TabletopDetail.tsx already normalizes any unrecognized value to
+    // 'information' before saving, so a loose string here is safe.
+    inject_type: z4.string(),
+    trigger_minutes: z4.number(),
+    expected_actions: z4.string(),
+    discussion_prompts: z4.string(),
+  })),
+});
+
 router.post('/exercises/generate-scenario', authenticate, requireRole('senior_analyst'), async (req: Request, res: Response) => {
   const { scenarioType } = z.object({
     scenarioType: z.enum(['ransomware', 'phishing', 'insider_threat', 'supply_chain', 'ddos', 'data_breach', 'apt']),
@@ -269,34 +303,17 @@ router.post('/exercises/generate-scenario', authenticate, requireRole('senior_an
 
   const prompt = `You are a cybersecurity incident response expert creating a realistic tabletop exercise for a SOC team.
 
-Create a detailed IR tabletop exercise scenario for a ${scenarioType} incident. Return ONLY valid JSON with this exact structure:
-{
-  "title": "Exercise title (concise, specific)",
-  "scenario": "2-3 paragraph background scenario describing the situation, threat actor, initial indicators, and organizational context",
-  "objectives": "3-5 learning objectives separated by newlines",
-  "injects": [
-    {
-      "title": "Inject title",
-      "description": "Detailed inject description with specific technical details, IoCs, or new information",
-      "inject_type": "information|decision|complication|escalation|resolution",
-      "trigger_minutes": 0,
-      "expected_actions": "What the team should do in response",
-      "discussion_prompts": "Discussion question 1\nDiscussion question 2\nDiscussion question 3"
-    }
-  ]
-}
+Create a detailed IR tabletop exercise scenario for a ${scenarioType} incident: a concise, specific title; a 2-3 paragraph background scenario describing the situation, threat actor, initial indicators, and organizational context; 3-5 learning objectives separated by newlines; and 7-18 injects that progress logically through the incident lifecycle, each with a title, a detailed description with specific technical details (IP addresses, domain names, file hashes, etc.), an inject type (one of: information, decision, complication, escalation, resolution), what the team is expected to do in response, and 2-3 discussion questions separated by newlines. Vary inject types across the timeline. trigger_minutes should be cumulative (0, 10, 25, 40, etc.).`;
 
-Include 7-18 injects that progress logically through the incident lifecycle. Use realistic technical details (IP addresses, domain names, file hashes, etc.). Vary inject types across the timeline. trigger_minutes should be cumulative (0, 10, 25, 40, etc.).`;
-
-  let text: string;
+  const client = new Anthropic({ apiKey });
+  let message: Awaited<ReturnType<typeof client.messages.parse>>;
   try {
-    const client = new Anthropic({ apiKey });
-    const message = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 4096,
+    message = await client.messages.parse({
+      model: 'claude-haiku-5-5',
+      max_tokens: 8192,
       messages: [{ role: 'user', content: prompt }],
+      output_config: { format: zodOutputFormat(scenarioSchema) },
     });
-    text = message.content[0].type === 'text' ? message.content[0].text : '{}';
   } catch (err: unknown) {
     const msg = (err as Error)?.message ?? 'Anthropic API call failed';
     console.error('[tabletop/generate-scenario] Anthropic error:', msg);
@@ -304,23 +321,24 @@ Include 7-18 injects that progress logically through the incident lifecycle. Use
     return;
   }
 
-  try {
-    const parsed = JSON.parse(text);
-    res.json(parsed);
-  } catch {
-    const match = text.match(/\{[\s\S]*\}/);
-    if (match) {
-      try {
-        res.json(JSON.parse(match[0]));
-      } catch {
-        console.error('[tabletop/generate-scenario] JSON parse failed, raw text:', text.slice(0, 200));
-        res.status(500).json({ error: 'Failed to parse AI response', code: 'AI_PARSE_ERROR' });
-      }
-    } else {
-      console.error('[tabletop/generate-scenario] No JSON found in response:', text.slice(0, 200));
-      res.status(500).json({ error: 'Failed to parse AI response', code: 'AI_PARSE_ERROR' });
-    }
+  if (message.stop_reason === 'max_tokens') {
+    console.error('[tabletop/generate-scenario] Response truncated at max_tokens');
+    res.status(200).json({ error: 'AI response was cut off before completing — please try again.' });
+    return;
   }
+  if (message.stop_reason === 'refusal') {
+    console.error('[tabletop/generate-scenario] Model declined:', message.stop_details);
+    res.status(200).json({ error: 'The model declined to generate this scenario. Try a different scenario type.' });
+    return;
+  }
+
+  const parsed = message.parsed_output;
+  if (!parsed) {
+    console.error('[tabletop/generate-scenario] parsed_output was null, stop_reason:', message.stop_reason);
+    res.status(500).json({ error: 'Failed to parse AI response', code: 'AI_PARSE_ERROR' });
+    return;
+  }
+  res.json(parsed);
 });
 
 export default router;
