@@ -42,6 +42,8 @@ const SCENARIO_TYPES = [
   { value: 'ddos', label: 'DDoS' },
   { value: 'data_breach', label: 'Data Breach' },
   { value: 'apt', label: 'APT' },
+  { value: 'ot_ics_intrusion', label: 'OT/ICS Intrusion' },
+  { value: 'ot_ransomware', label: 'OT Ransomware & Safety Impact' },
 ];
 
 interface InjectFormData {

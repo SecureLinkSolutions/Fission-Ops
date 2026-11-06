@@ -282,9 +282,29 @@ const scenarioSchema = z4.object({
   })),
 });
 
+const SCENARIO_TYPE_LABELS: Record<string, string> = {
+  ransomware: 'ransomware',
+  phishing: 'phishing',
+  insider_threat: 'insider threat',
+  supply_chain: 'supply chain compromise',
+  ddos: 'DDoS',
+  data_breach: 'data breach',
+  apt: 'advanced persistent threat (APT)',
+  ot_ics_intrusion: 'OT/ICS network intrusion',
+  ot_ransomware: 'OT-targeting ransomware with safety-system impact',
+};
+
+// Extra guidance folded into the prompt only for OT/ICS scenario types, so the
+// model produces genuinely OT-flavored injects (protocols, field devices,
+// physical process impact) instead of a generic IT scenario with "OT" in the
+// title. IT-flavored IOCs (hashes, random internet domains) are still fine
+// for the IT-side foothold/pivot — most real OT incidents start there.
+const OT_GUIDANCE = `
+This is an OT/ICS-focused exercise. Ground it in how a real industrial environment is actually attacked: an initial foothold on the IT/corporate network (phishing, VPN compromise, exposed RDP, etc.), then lateral movement across the IT/OT boundary (jump host, dual-homed engineering workstation, poorly segmented firewall rule) into the OT network. Use realistic OT/ICS details: industrial protocols (Modbus/TCP, DNP3, OPC-UA, EtherNet/IP, S7comm), PLC/RTU/HMI/engineering workstation/historian terminology, specific vendor-neutral device references (e.g. "the PLC controlling the feedwater pump", "the HMI in the control room"), and a safety instrumented system (SIS) or process safety angle where relevant. Reflect realistic consequences: process upset, unplanned shutdown, a safety interlock tripping, physical/environmental or safety risk — not just data loss. Include injects that force cross-functional decisions between the SOC/IR team and OT/engineering/plant operations staff (e.g. whether to take a system offline during active production, how to safely isolate OT without disrupting a physical process). Reference relevant ICS kill chain stages and, where natural, MITRE ATT&CK for ICS-style tactics (e.g. ICS reconnaissance, engineering workstation compromise, inhibit response function, impair process control).`;
+
 router.post('/exercises/generate-scenario', authenticate, requireRole('senior_analyst'), async (req: Request, res: Response) => {
   const { scenarioType } = z.object({
-    scenarioType: z.enum(['ransomware', 'phishing', 'insider_threat', 'supply_chain', 'ddos', 'data_breach', 'apt']),
+    scenarioType: z.enum(['ransomware', 'phishing', 'insider_threat', 'supply_chain', 'ddos', 'data_breach', 'apt', 'ot_ics_intrusion', 'ot_ransomware']),
   }).parse(req.body);
 
   // Prefer org-stored key over env var
@@ -301,9 +321,11 @@ router.post('/exercises/generate-scenario', authenticate, requireRole('senior_an
     return;
   }
 
+  const isOt = scenarioType === 'ot_ics_intrusion' || scenarioType === 'ot_ransomware';
   const prompt = `You are a cybersecurity incident response expert creating a realistic tabletop exercise for a SOC team.
 
-Create a detailed IR tabletop exercise scenario for a ${scenarioType} incident: a concise, specific title; a 2-3 paragraph background scenario describing the situation, threat actor, initial indicators, and organizational context; 3-5 learning objectives separated by newlines; and 7-18 injects that progress logically through the incident lifecycle, each with a title, a detailed description with specific technical details (IP addresses, domain names, file hashes, etc.), an inject type (one of: information, decision, complication, escalation, resolution), what the team is expected to do in response, and 2-3 discussion questions separated by newlines. Vary inject types across the timeline. trigger_minutes should be cumulative (0, 10, 25, 40, etc.).`;
+Create a detailed IR tabletop exercise scenario for a ${SCENARIO_TYPE_LABELS[scenarioType]} incident: a concise, specific title; a 2-3 paragraph background scenario describing the situation, threat actor, initial indicators, and organizational context; 3-5 learning objectives separated by newlines; and 7-18 injects that progress logically through the incident lifecycle, each with a title, a detailed description with specific technical details (IP addresses, domain names, file hashes, etc.), an inject type (one of: information, decision, complication, escalation, resolution), what the team is expected to do in response, and 2-3 discussion questions separated by newlines. Vary inject types across the timeline. trigger_minutes should be cumulative (0, 10, 25, 40, etc.).
+${isOt ? OT_GUIDANCE : ''}`;
 
   const client = new Anthropic({ apiKey });
   let message: Awaited<ReturnType<typeof client.messages.parse>>;
