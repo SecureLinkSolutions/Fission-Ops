@@ -5,8 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLicense } from '../context/LicenseContext';
 import { Incident } from '../types';
 import { ROLE_RANK } from '../utils/constants';
-
-const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
+import { downloadReportPdf } from '../utils/downloadPdf';
 
 type Template = 'full' | 'executive';
 
@@ -247,7 +246,7 @@ export default function PIRReport() {
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' as const }}>
             {isFeatureEnabled('pdf_export') ? (
               <button type="button"
-                onClick={() => window.open(`${API_BASE}/incidents/${id}/pir-report?template=${template}`, '_blank')}
+                onClick={() => downloadReportPdf(`/incidents/${id}/pir-report?template=${template}`, `pir-report-${id}.pdf`)}
                 style={s.outlineBtn}
               >
                 Export PDF

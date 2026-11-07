@@ -4,6 +4,7 @@ import { useFetch } from '../hooks/useFetch';
 import { apiClient } from '../api/client';
 import { Incident, Entity, TimelineEntry } from '../types';
 import { addToast } from '../components/ToastContainer';
+import { downloadReportPdf } from '../utils/downloadPdf';
 import EntityStatusBadge from '../components/EntityStatusBadge';
 import IncidentStatusBadge, { INCIDENT_STATUS_CONFIG } from '../components/IncidentStatusBadge';
 import EntityForm from '../components/EntityForm';
@@ -25,7 +26,6 @@ import { useLicense } from '../context/LicenseContext';
 import { relativeTime } from '../utils/time';
 import { ROLE_RANK, SEVERITY_COLORS, INCIDENT_STATUS_COLORS, ENTITY_TYPE_ICONS, ENTITY_TYPE_COLORS, ENTITY_TYPE_LABELS } from '../utils/constants';
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
 const STATUS_COLORS = INCIDENT_STATUS_COLORS;
 const IOC_STATUS_DISPLAY: Record<string, { label: string; color: string }> = {
   confirmed: { label: 'CONFIRMED', color: '#f85149' },
@@ -284,7 +284,7 @@ export default function IncidentDetail() {
           </Link>
           {isFeatureEnabled('pdf_export') ? (
             <button type="button"
-              onClick={() => window.open(`${API_BASE}/incidents/${id}/report`, '_blank')}
+              onClick={() => downloadReportPdf(`/incidents/${id}/report`, `incident-${id}.pdf`)}
               style={{
                 background: '#21262d', border: '1px solid #30363d', borderRadius: '6px',
                 padding: '8px 16px', color: '#8b949e', fontSize: '13px', cursor: 'pointer',
