@@ -351,5 +351,17 @@ async function runMigrations(): Promise<void> {
     await pool.query(sql027);
     console.log('✅ Migration 027 applied');
   }
+
+  // Migration 028: incident_pir_reports table
+  const needsMigration028 = await pool.query(
+    `SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'incident_pir_reports'`,
+  );
+  if ((needsMigration028.rowCount ?? 0) === 0) {
+    console.log('⚙️  Running migration 028...');
+    const migrationPath028 = join(__dirname, '../../../../db/migrate_028.sql');
+    const sql028 = readFileSync(migrationPath028, 'utf8');
+    await pool.query(sql028);
+    console.log('✅ Migration 028 applied');
+  }
 }
 // Note: migration 014 block is appended below

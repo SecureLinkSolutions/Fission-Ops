@@ -13,6 +13,7 @@ import IncidentNew from './pages/IncidentNew';
 import IncidentDetail from './pages/IncidentDetail';
 import EntityDetail from './pages/EntityDetail';
 import ExecutiveSummary from './pages/ExecutiveSummary';
+import PIRReport from './pages/PIRReport';
 import WarRoom from './pages/WarRoom';
 import MyTasks from './pages/MyTasks';
 import SSOCallback from './pages/SSOCallback';
@@ -80,6 +81,7 @@ export default function App() {
             <Route path="/incidents/new" element={<ProtectedRoute><IncidentNew /></ProtectedRoute>} />
             <Route path="/incidents/:id" element={<ProtectedRoute><IncidentDetailKeyed /></ProtectedRoute>} />
             <Route path="/incidents/:id/executive-summary" element={<ProtectedRoute><ExecutiveSummary /></ProtectedRoute>} />
+            <Route path="/incidents/:id/pir-report" element={<ProtectedRoute><PIRReport /></ProtectedRoute>} />
             <Route path="/incidents/:id/war-room" element={<ProtectedRoute><WarRoom /></ProtectedRoute>} />
             <Route path="/incidents/:id/entities/:entityId" element={<ProtectedRoute><EntityDetailKeyed /></ProtectedRoute>} />
             <Route path="/admin/audit" element={<ProtectedRoute><AuditLog /></ProtectedRoute>} />

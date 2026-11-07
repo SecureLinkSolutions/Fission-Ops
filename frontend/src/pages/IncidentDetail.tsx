@@ -339,6 +339,14 @@ export default function IncidentDetail() {
         >
           Executive Summary
         </Link>
+        <Link
+          to={`/incidents/${id}/pir-report`}
+          style={{ ...tabStyle(false, 'pir'), textDecoration: 'none', display: 'inline-block' }}
+          onMouseEnter={() => setTabHover('pir')}
+          onMouseLeave={() => setTabHover(null)}
+        >
+          PIR Report
+        </Link>
       </div>
 
       <div style={{ display: activeTab === 'entities' ? undefined : 'none' }}>

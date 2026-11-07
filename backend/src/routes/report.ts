@@ -1,6 +1,8 @@
 import { Router, Request, Response } from 'express';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const PdfPrinter = require('pdfmake/js/Printer').default;
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const URLResolver = require('pdfmake/js/URLResolver').default;
 import { TDocumentDefinitions, Content, TableCell } from 'pdfmake/interfaces';
 import { authenticate } from '../middleware/auth';
 import { createError } from '../middleware/errorHandler';
@@ -25,7 +27,12 @@ const fonts = {
   },
 };
 
-const printer = new PdfPrinter(fonts);
+// pdfmake 0.3.x's createPdfKitDocument() always calls urlResolver.resolve() for
+// every font descriptor, even plain built-in font names — an unset urlResolver
+// throws immediately. URLResolver's resolve() only ever touches its `fs` arg
+// for actual http(s):// URLs, which standard font names never are, so a
+// filesystem-less resolver is safe here.
+const printer = new PdfPrinter(fonts, undefined, new URLResolver(undefined));
 
 router.get('/:id/report', authenticate, async (req: Request, res: Response) => {
   const incident = await incidentRepo.getIncidentById(req.params.id);
@@ -196,7 +203,8 @@ router.get('/:id/report', authenticate, async (req: Request, res: Response) => {
     ],
   };
 
-  const pdfDoc = printer.createPdfKitDocument(docDefinition);
+  // pdfmake 0.3.x made this async (it used to return the document directly).
+  const pdfDoc = await printer.createPdfKitDocument(docDefinition);
 
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `attachment; filename="incident-${incident.id}.pdf"`);
