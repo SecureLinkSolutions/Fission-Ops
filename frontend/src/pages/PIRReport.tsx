@@ -4,7 +4,7 @@ import { apiClient } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useLicense } from '../context/LicenseContext';
 import { Incident } from '../types';
-import { ROLE_RANK } from '../utils/constants';
+import { ROLE_RANK, SEVERITY_COLORS } from '../utils/constants';
 import { downloadReportPdf } from '../utils/downloadPdf';
 
 type Template = 'full' | 'executive';
@@ -74,7 +74,7 @@ function buildAutoPopulate(incident: Incident, data: PreviewData): Partial<PirRe
   for (const e of entities) typeCounts[e.type] = (typeCounts[e.type] ?? 0) + 1;
   const entitySummary = Object.entries(typeCounts).map(([t, n]) => `${n} ${t}${n > 1 ? 's' : ''}`).join(', ');
   const confirmedCount = entities.filter((e) => e.ioc_status === 'confirmed' || e.status === 'confirmed_malicious').length;
-  const detected = new Date(incident.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  const detected = new Date(incident.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
 
   const executive_summary = [
     `This report documents the investigation and response to "${incident.title}", a ${incident.severity} severity incident detected on ${detected} and currently ${incident.status}.`,
@@ -94,7 +94,7 @@ function buildAutoPopulate(incident: Incident, data: PreviewData): Partial<PirRe
     impactLines.push(`This is a ${incident.severity.toUpperCase()} severity incident.`);
   }
   if (highValue.length > 0) {
-    impactLines.push(`${highValue.length} high-value asset(s) involved (${highValue.slice(0, 5).map((e) => e.value).join(', ')}${highValue.length > 5 ? '…' : ''}).`);
+    impactLines.push(`${highValue.length} high-value entit${highValue.length > 1 ? 'ies' : 'y'} involved (${highValue.slice(0, 5).map((e) => e.value).join(', ')}${highValue.length > 5 ? '…' : ''}).`);
   }
   if (relationships.length > 0) {
     impactLines.push(`${relationships.length} entity relationship(s) identified, indicating possible lateral movement or propagation.`);
@@ -113,7 +113,7 @@ function buildAutoPopulate(incident: Incident, data: PreviewData): Partial<PirRe
 
   const recLines = ['Recommended next steps:'];
   const isolated = entities.filter((e) => e.status === 'isolated');
-  if (isolated.length > 0) recLines.push(`  • Complete remediation of ${isolated.length} isolated asset(s) before returning to production.`);
+  if (isolated.length > 0) recLines.push(`  • Complete remediation of ${isolated.length} isolated entit${isolated.length > 1 ? 'ies' : 'y'} before returning to production.`);
   recLines.push('  • Validate all confirmed indicators against current threat intelligence.');
   recLines.push('  • Review and tighten any network boundary controls identified during the investigation.');
   recLines.push('  • Schedule a post-incident review with all involved stakeholders.');
@@ -122,7 +122,6 @@ function buildAutoPopulate(incident: Incident, data: PreviewData): Partial<PirRe
   return { executive_summary, root_cause, impact_assessment, response_summary, lessons_learned, recommendations };
 }
 
-const RISK_COLORS: Record<string, string> = { low: '#3fb950', medium: '#d29922', high: '#f0883e', critical: '#f85149' };
 
 const s: Record<string, React.CSSProperties> = {
   page: { minHeight: '100vh', background: '#0d1117', padding: '32px 24px', color: '#e6edf3' },
@@ -316,7 +315,7 @@ export default function PIRReport() {
               ) : <div style={s.value}>{pir?.prepared_by || <span style={{ color: '#484f58' }}>Not set</span>}</div>}
             </div>
             <div>
-              <span style={{ background: `${RISK_COLORS[incident.severity] ?? '#8b949e'}22`, color: RISK_COLORS[incident.severity] ?? '#8b949e', border: `1px solid ${RISK_COLORS[incident.severity] ?? '#8b949e'}44`, borderRadius: '12px', padding: '4px 14px', fontSize: '13px', fontWeight: 700 }}>
+              <span style={{ background: `${SEVERITY_COLORS[incident.severity] ?? '#8b949e'}22`, color: SEVERITY_COLORS[incident.severity] ?? '#8b949e', border: `1px solid ${SEVERITY_COLORS[incident.severity] ?? '#8b949e'}44`, borderRadius: '12px', padding: '4px 14px', fontSize: '13px', fontWeight: 700 }}>
                 {incident.severity.toUpperCase()}
               </span>
             </div>

@@ -104,7 +104,7 @@ export default function LicenseAdmin() {
           <div style={{ background: '#0d1117', borderRadius: '8px', padding: '14px' }}>
             <div style={{ color: '#8b949e', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Expiry</div>
             <div style={{ color: daysUntilExpiry !== null && daysUntilExpiry < 30 ? '#d29922' : '#e6edf3', fontSize: '15px', fontWeight: 600 }}>
-              {expiresDate ? expiresDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
+              {expiresDate ? expiresDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
             </div>
             {daysUntilExpiry !== null && (
               <div style={{ color: '#8b949e', fontSize: '11px', marginTop: '2px' }}>{daysUntilExpiry} days remaining</div>

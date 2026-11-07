@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { apiClient } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { Incident } from '../types';
-import { ROLE_RANK } from '../utils/constants';
+import { ROLE_RANK, SEVERITY_COLORS } from '../utils/constants';
 
 async function buildAutoPopulate(incidentId: string, incident: Incident): Promise<Partial<Summary>> {
   const [entitiesRes, matrixRes, timelineRes, relationshipsRes] = await Promise.allSettled([
@@ -28,7 +28,7 @@ async function buildAutoPopulate(incidentId: string, incident: Incident): Promis
     .map(([t, n]) => `${n} ${t}${n > 1 ? 's' : ''}`)
     .join(', ');
   const maliciousCount = entities.filter((e) => e.status === 'confirmed_malicious').length;
-  const createdDate = new Date(incident.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  const createdDate = new Date(incident.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
   const overview = [
     `Incident: ${incident.title}`,
     `Severity: ${incident.severity.toUpperCase()} | Status: ${incident.status.toUpperCase()}`,
@@ -53,7 +53,7 @@ async function buildAutoPopulate(incidentId: string, incident: Incident): Promis
       new Date(a.ts as string).getTime() - new Date(b.ts as string).getTime(),
     );
     for (const evt of sorted) {
-      const d = new Date(evt.ts as string).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
+      const d = new Date(evt.ts as string).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
       const actionLabel = (evt.action_type as string)?.replace(/_/g, ' ') ?? 'EVENT';
       const actor = (evt.user_email as string) ?? 'unknown';
       timelineLines.push(`[${d}] ${actionLabel} (${actor}): ${evt.description as string}`);
@@ -87,10 +87,10 @@ async function buildAutoPopulate(incidentId: string, incident: Incident): Promis
     impactLines.push(`This is a ${incident.severity.toUpperCase()} severity incident requiring immediate attention.`);
   }
   if (highValueEntities.length > 0) {
-    impactLines.push(`${highValueEntities.length} high-value asset${highValueEntities.length > 1 ? 's' : ''} involved (${highValueEntities.slice(0, 5).map((e) => e.value as string).join(', ')}${highValueEntities.length > 5 ? '…' : ''}).`);
+    impactLines.push(`${highValueEntities.length} high-value entit${highValueEntities.length > 1 ? 'ies' : 'y'} involved (${highValueEntities.slice(0, 5).map((e) => e.value as string).join(', ')}${highValueEntities.length > 5 ? '…' : ''}).`);
   }
   if (isolatedOrContained.length > 0) {
-    impactLines.push(`${isolatedOrContained.length} asset${isolatedOrContained.length > 1 ? 's' : ''} isolated or contained as a result of the incident.`);
+    impactLines.push(`${isolatedOrContained.length} entit${isolatedOrContained.length > 1 ? 'ies' : 'y'} isolated or contained as a result of the incident.`);
   }
   if (relationships.length > 0) {
     impactLines.push(`${relationships.length} entity relationship${relationships.length > 1 ? 's' : ''} identified, indicating lateral movement or propagation paths.`);
@@ -139,7 +139,7 @@ async function buildAutoPopulate(incidentId: string, incident: Incident): Promis
   const containedEntities = entities.filter((e) => e.status === 'contained');
   const underInvestigation = entities.filter((e) => e.status === 'under_investigation');
   if (isolatedEntities.length > 0) {
-    remLines.push(`Isolated assets requiring remediation (${isolatedEntities.length}): ${isolatedEntities.slice(0, 5).map((e) => e.value as string).join(', ')}${isolatedEntities.length > 5 ? '…' : ''}.`);
+    remLines.push(`Isolated entities requiring remediation (${isolatedEntities.length}): ${isolatedEntities.slice(0, 5).map((e) => e.value as string).join(', ')}${isolatedEntities.length > 5 ? '…' : ''}.`);
   }
   if (containedEntities.length > 0) {
     remLines.push(`Contained entities pending clearance (${containedEntities.length}): ${containedEntities.slice(0, 5).map((e) => e.value as string).join(', ')}${containedEntities.length > 5 ? '…' : ''}.`);
@@ -177,12 +177,6 @@ interface Summary {
   updated_at?: string;
 }
 
-const RISK_COLORS: Record<string, string> = {
-  low: '#3fb950',
-  medium: '#d29922',
-  high: '#f0883e',
-  critical: '#f85149',
-};
 
 const s: Record<string, React.CSSProperties> = {
   page: { minHeight: '100vh', background: '#0d1117', padding: '32px 24px', color: '#e6edf3' },
@@ -292,7 +286,7 @@ export default function ExecutiveSummary() {
             </select>
           ) : (
             summary?.risk_rating ? (
-              <span style={{ background: `${RISK_COLORS[summary.risk_rating]}22`, color: RISK_COLORS[summary.risk_rating], border: `1px solid ${RISK_COLORS[summary.risk_rating]}44`, borderRadius: '12px', padding: '4px 14px', fontSize: '13px', fontWeight: 700 }}>
+              <span style={{ background: `${SEVERITY_COLORS[summary.risk_rating]}22`, color: SEVERITY_COLORS[summary.risk_rating], border: `1px solid ${SEVERITY_COLORS[summary.risk_rating]}44`, borderRadius: '12px', padding: '4px 14px', fontSize: '13px', fontWeight: 700 }}>
                 {summary.risk_rating.toUpperCase()}
               </span>
             ) : <span style={{ color: '#8b949e', fontSize: '13px' }}>Not set</span>

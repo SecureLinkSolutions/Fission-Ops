@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { apiClient } from '../api/client';
+import { SEVERITY_COLORS } from '../utils/constants';
 
 interface SearchIncident {
   id: string;
@@ -24,12 +25,6 @@ interface SearchResults {
   entities: SearchEntity[];
 }
 
-const SEVERITY_COLORS: Record<string, string> = {
-  critical: '#f85149',
-  high: '#f0883e',
-  medium: '#d29922',
-  low: '#3fb950',
-};
 
 const ENTITY_ICONS: Record<string, string> = {
   hostname: '🖥',

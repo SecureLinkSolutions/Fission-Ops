@@ -155,7 +155,7 @@ export default function LicenseActivation() {
             </div>
             {success.expires_at && (
               <p style={{ color: '#8b949e', fontSize: '13px', marginBottom: '12px' }}>
-                Valid until {new Date(success.expires_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                Valid until {new Date(success.expires_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
               </p>
             )}
             <div style={{ marginBottom: '20px', textAlign: 'left' }}>

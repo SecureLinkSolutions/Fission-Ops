@@ -291,7 +291,7 @@ export default function IncidentDetail() {
                 display: 'flex', alignItems: 'center', gap: '6px',
               }}
             >
-              Export Report
+              Export PDF
             </button>
           ) : (
             <button type="button"
@@ -303,7 +303,7 @@ export default function IncidentDetail() {
                 display: 'flex', alignItems: 'center', gap: '6px', opacity: 0.5,
               }}
             >
-              Export Report
+              Export PDF
             </button>
           )}
         </div>
