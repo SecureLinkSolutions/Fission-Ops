@@ -47,7 +47,7 @@ export default function Register() {
     <div style={{ minHeight: '100vh', background: '#0d1117', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
       <div style={{ width: '100%', maxWidth: '440px' }}>
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={{ fontSize: '32px', fontWeight: 800, color: '#58a6ff', marginBottom: '8px' }}>⚡ Fission Ops</div>
+          <div style={{ fontSize: '32px', fontWeight: 800, color: '#58a6ff', marginBottom: '8px' }}>Fission Ops</div>
           <div style={{ color: '#8b949e', fontSize: '14px' }}>Create your organization account</div>
         </div>
         <form onSubmit={handleSubmit} style={{ background: '#161b22', border: '1px solid #30363d', borderRadius: '12px', padding: '32px', display: 'flex', flexDirection: 'column', gap: '16px' }}>

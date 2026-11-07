@@ -30,7 +30,7 @@ export default function ResetPassword() {
     return (
       <div style={s.page}>
         <div style={s.card}>
-          <div style={s.title}>⚡ Fission Ops</div>
+          <div style={s.title}>Fission Ops</div>
           <div style={s.error}>Invalid reset link. Please request a new one.</div>
           <Link to="/forgot-password" style={s.backLink}>Request a new reset link</Link>
         </div>
@@ -60,7 +60,7 @@ export default function ResetPassword() {
   return (
     <div style={s.page}>
       <div style={s.card}>
-        <div style={s.title}>⚡ Fission Ops</div>
+        <div style={s.title}>Fission Ops</div>
         <div style={s.sub}>Set a new password</div>
 
         {success ? (

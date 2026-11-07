@@ -280,7 +280,7 @@ export default function IncidentDetail() {
               letterSpacing: '0.03em',
             }}
           >
-            ⚡ War Room
+            War Room
           </Link>
           {isFeatureEnabled('pdf_export') ? (
             <button type="button"
@@ -594,7 +594,6 @@ export default function IncidentDetail() {
           boxShadow: '-2px 0 12px rgba(0,0,0,0.4)',
         }}
       >
-        <span style={{ fontSize: '16px' }}>💬</span>
         <span style={{
           writingMode: 'vertical-rl',
           textOrientation: 'mixed',
@@ -625,7 +624,6 @@ export default function IncidentDetail() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #30363d', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '15px' }}>💬</span>
             <span style={{ fontWeight: 600, fontSize: '14px', color: '#e6edf3' }}>Discussion</span>
           </div>
           <button type="button"

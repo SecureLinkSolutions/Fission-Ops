@@ -171,7 +171,7 @@ function TaskCard({ task, teamMembers, availableEntities, onRefresh, canManage, 
 
       {canManage ? (
         <div style={{ marginTop: '4px', display: 'flex', alignItems: 'center', gap: '5px' }} onClick={(e) => e.stopPropagation()}>
-          <span style={{ fontSize: '11px' }}>👤</span>
+          <span style={{ fontSize: '11px', color: '#6e7681' }}>Assignee:</span>
           <select
             value={task.assignee_id ?? ''}
             disabled={reassigning}
@@ -190,12 +190,12 @@ function TaskCard({ task, teamMembers, availableEntities, onRefresh, canManage, 
         </div>
       ) : (
         (task.assignee_name || task.assignee_email) && (
-          <div style={{ color: '#8b949e', fontSize: '11px', marginTop: '4px' }}>👤 {task.assignee_name || task.assignee_email}</div>
+          <div style={{ color: '#8b949e', fontSize: '11px', marginTop: '4px' }}>{task.assignee_name || task.assignee_email}</div>
         )
       )}
       {task.due_date && (
         <div style={{ color: isOverdue ? '#f85149' : '#8b949e', fontSize: '11px' }}>
-          📅 {new Date(task.due_date).toLocaleDateString()}{isOverdue ? ' OVERDUE' : ''}
+          Due {new Date(task.due_date).toLocaleDateString()}{isOverdue ? ' — OVERDUE' : ''}
         </div>
       )}
 

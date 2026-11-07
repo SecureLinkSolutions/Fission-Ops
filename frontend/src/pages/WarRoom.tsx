@@ -196,7 +196,7 @@ export default function WarRoom() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 24px', borderBottom: '1px solid #30363d', background: '#161b22', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: 0 }}>
-          <span style={{ color: '#f97316', fontWeight: 800, fontSize: '15px', letterSpacing: '0.05em', flexShrink: 0 }}>⚡ FISSION OPS</span>
+          <span style={{ color: '#f97316', fontWeight: 800, fontSize: '15px', letterSpacing: '0.05em', flexShrink: 0 }}>FISSION OPS</span>
           <span style={{ color: '#e6edf3', fontSize: '28px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {incident?.title ?? 'Loading…'}
           </span>
@@ -234,19 +234,19 @@ export default function WarRoom() {
       {/* Stat Tiles */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', padding: '14px 24px', flexShrink: 0 }}>
         <div style={{ background: '#161b22', border: '1px solid #30363d', borderRadius: '10px', padding: '14px 20px', textAlign: 'center' as const }}>
-          <div style={{ color: '#8b949e', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: '6px' }}>⏱ DURATION</div>
+          <div style={{ color: '#8b949e', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: '6px' }}>DURATION</div>
           <div style={{ color: '#e6edf3', fontSize: '40px', fontWeight: 800, fontFamily: 'monospace', lineHeight: 1 }}>{formatDuration(duration)}</div>
         </div>
         <div style={{ background: '#161b22', border: '1px solid #f8514944', borderRadius: '10px', padding: '14px 20px', textAlign: 'center' as const }}>
-          <div style={{ color: '#f85149', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: '6px' }}>🔴 CONFIRMED IOC</div>
+          <div style={{ color: '#f85149', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: '6px' }}>CONFIRMED IOC</div>
           <div style={{ color: '#ffffff', fontSize: '48px', fontWeight: 800, lineHeight: 1 }}>{confirmedIOC}</div>
         </div>
         <div style={{ background: '#161b22', border: '1px solid #d2992244', borderRadius: '10px', padding: '14px 20px', textAlign: 'center' as const }}>
-          <div style={{ color: '#d29922', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: '6px' }}>🟡 SUSPECTED IOC</div>
+          <div style={{ color: '#d29922', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: '6px' }}>SUSPECTED IOC</div>
           <div style={{ color: '#ffffff', fontSize: '48px', fontWeight: 800, lineHeight: 1 }}>{suspectedIOC}</div>
         </div>
         <div style={{ background: '#161b22', border: '1px solid #30363d', borderRadius: '10px', padding: '14px 20px', textAlign: 'center' as const }}>
-          <div style={{ color: '#8b949e', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: '6px' }}>📦 ENTITIES</div>
+          <div style={{ color: '#8b949e', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: '6px' }}>ENTITIES</div>
           <div style={{ color: '#ffffff', fontSize: '48px', fontWeight: 800, lineHeight: 1 }}>{totalEntities}</div>
         </div>
       </div>

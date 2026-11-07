@@ -145,7 +145,7 @@ export default function EnrichmentHistory({ entityId }: Props) {
               <div key={entry.id}>
                 {hasChange && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 8px', background: '#d2992222', border: '1px solid #d2992244', borderRadius: '4px', marginBottom: '4px' }}>
-                    <span style={{ color: '#d29922', fontSize: '12px', fontWeight: 600 }}>⚠ Verdict changed</span>
+                    <span style={{ color: '#d29922', fontSize: '12px', fontWeight: 600 }}>Verdict changed</span>
                   </div>
                 )}
                 <div style={{ background: '#0d1117', border: '1px solid #30363d', borderRadius: '6px', padding: '12px' }}>

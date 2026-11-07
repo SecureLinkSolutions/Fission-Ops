@@ -35,7 +35,7 @@ export default function ForgotPassword() {
   return (
     <div style={s.page}>
       <div style={s.card}>
-        <div style={s.title}>⚡ Fission Ops</div>
+        <div style={s.title}>Fission Ops</div>
         <div style={s.sub}>Reset your password</div>
 
         {submitted ? (

@@ -66,7 +66,7 @@ export default function TTPSuggestionPanel({
       padding: '12px 14px',
     }}>
       <div style={{ fontSize: '12px', color: '#58a6ff', fontWeight: 600, marginBottom: '8px' }}>
-        💡 Analysts commonly see these TTPs alongside{' '}
+        Analysts commonly see these TTPs alongside{' '}
         <span style={{ fontFamily: 'monospace' }}>{triggerTechniqueId}</span>{' '}
         {triggerTechniqueName}:
       </div>

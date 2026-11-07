@@ -250,13 +250,13 @@ export default function PIRReport() {
                 onClick={() => window.open(`${API_BASE}/incidents/${id}/pir-report?template=${template}`, '_blank')}
                 style={s.outlineBtn}
               >
-                📄 Export PDF
+                Export PDF
               </button>
             ) : (
               <button type="button" title="PDF Export requires Professional license" disabled
                 style={{ ...s.outlineBtn, color: '#484f58', cursor: 'not-allowed', opacity: 0.5 }}
               >
-                📄 Export PDF
+                Export PDF
               </button>
             )}
             {canEdit && (
@@ -266,7 +266,7 @@ export default function PIRReport() {
                 title="Pre-fill narrative sections from this incident's entities, timeline, kill chain and tasks. You can edit before saving."
                 style={{ background: '#1f6feb', border: 'none', borderRadius: '6px', padding: '8px 16px', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: populating ? 'wait' : 'pointer', opacity: populating ? 0.7 : 1 }}
               >
-                {populating ? '⏳ Populating…' : '⚡ Auto-populate'}
+                {populating ? 'Populating…' : 'Auto-populate'}
               </button>
             )}
             {canEdit && !editing && <button type="button" onClick={startEdit} style={s.btn}>Edit</button>}

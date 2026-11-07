@@ -579,7 +579,6 @@ function GraphInner({ incidentId }: GraphInnerProps) {
         <div style={{ flex: 1, background: '#0d1117', border: '1px solid #30363d', borderRadius: selectedEntity ? '8px 0 0 8px' : '8px', overflow: 'hidden', position: 'relative' }}>
           {isEmpty ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#8b949e' }}>
-              <div style={{ fontSize: '40px', marginBottom: '12px' }}>🕸</div>
               <div style={{ fontSize: '14px', fontWeight: 600, color: '#e6edf3' }}>No entities yet</div>
               <div style={{ fontSize: '13px', marginTop: '4px' }}>Add entities to the incident first, then map relationships.</div>
             </div>

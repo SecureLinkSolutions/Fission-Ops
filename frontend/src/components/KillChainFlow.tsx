@@ -166,7 +166,7 @@ function EntityCard({ row, onRemove, onClick }: EntityCardProps) {
           title="Remove from kill chain"
           style={{ background: 'transparent', border: 'none', color: '#484f58', cursor: 'pointer', padding: '0 2px', fontSize: '12px', lineHeight: 1, flexShrink: 0 }}
         >
-          🗑
+          ✕
         </button>
       </div>
       <EntityEnrichment type={row.type} details={row.entity_details} />
@@ -396,7 +396,6 @@ function NarrativePanel({ incidentId }: NarrativePanelProps) {
     <div style={{ background: '#0d1117', border: '1px solid #30363d', borderRadius: '8px', padding: '20px', marginTop: '16px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '14px' }}>🤖</span>
           <span style={{ fontSize: '14px', fontWeight: 700, color: '#e6edf3' }}>Attack Narrative</span>
         </div>
         <button type="button"
@@ -556,7 +555,7 @@ export default function KillChainFlow({ incidentId }: KillChainFlowProps) {
                 opacity: locked ? 0.5 : 1,
               }}
             >
-              {FRAMEWORK_LABELS[fw]}{locked ? ' 🔒' : ''}
+              {FRAMEWORK_LABELS[fw]}
             </button>
           );
         })}

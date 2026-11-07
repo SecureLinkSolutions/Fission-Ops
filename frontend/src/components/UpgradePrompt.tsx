@@ -36,9 +36,9 @@ export default function UpgradePrompt({ feature, requiredTier }: UpgradePromptPr
         border: `2px solid ${color}44`,
         borderRadius: '50%',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: '24px',
+        fontSize: '20px', fontWeight: 700, color,
       }}>
-        🔒
+        {tierLabel.charAt(0)}
       </div>
       <div>
         <div style={{ fontSize: '16px', fontWeight: 700, color: '#e6edf3', marginBottom: '6px' }}>

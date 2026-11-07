@@ -351,7 +351,7 @@ function ActionItem({
             fontWeight: 600,
           }}
         >
-          {copyFailed ? '✗' : copied ? '✓' : '📋'}
+          {copyFailed ? '✗' : copied ? '✓' : 'Copy'}
         </button>
       </div>
     </div>
@@ -359,11 +359,10 @@ function ActionItem({
 }
 
 function ActionSection({
-  title, color, icon, actions, onCreateTask, canCreateTask, teamMembers,
+  title, color, actions, onCreateTask, canCreateTask, teamMembers,
 }: {
   title: string;
   color: string;
-  icon: string;
   actions: string[];
   canCreateTask: boolean;
   teamMembers: TeamMember[];
@@ -380,7 +379,6 @@ function ActionSection({
           padding: '0 0 10px 0', textAlign: 'left',
         }}
       >
-        <span style={{ fontSize: '13px' }}>{icon}</span>
         <span style={{ fontWeight: 700, fontSize: '13px', color }}>{title}</span>
         <span style={{
           background: `${color}22`, color, border: `1px solid ${color}44`,
@@ -421,7 +419,7 @@ export default function SuggestedActions({ entity, onCreateTask, canCreateTask =
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
         <span style={{ fontWeight: 700, fontSize: '14px', color: isConfirmed ? '#f85149' : '#58a6ff' }}>
-          {isConfirmed ? '⚡ Response & Remediation Actions' : '🔍 Investigation Actions'}
+          {isConfirmed ? 'Response & Remediation Actions' : 'Investigation Actions'}
         </span>
         <span style={{
           background: isConfirmed ? '#f8514922' : '#58a6ff22',
@@ -435,7 +433,7 @@ export default function SuggestedActions({ entity, onCreateTask, canCreateTask =
 
       {isInternalIp && (
         <div style={{ background: '#e3b34122', border: '1px solid #e3b34144', borderRadius: '6px', padding: '8px 12px', marginBottom: '14px', fontSize: '12px', color: '#e3b341' }}>
-          ⚠️ <strong>{entity.value}</strong> is a private / non-routable IP address. External threat intel lookups (VirusTotal, Shodan, AbuseIPDB, WHOIS) are not applicable — showing internal investigation playbook instead.
+          <strong>{entity.value}</strong> is a private / non-routable IP address. External threat intel lookups (VirusTotal, Shodan, AbuseIPDB, WHOIS) are not applicable — showing internal investigation playbook instead.
         </div>
       )}
 
@@ -443,7 +441,6 @@ export default function SuggestedActions({ entity, onCreateTask, canCreateTask =
       <ActionSection
         title="Investigation & Triage"
         color="#58a6ff"
-        icon="🔍"
         actions={investigateActions}
         onCreateTask={onCreateTask}
         canCreateTask={canCreateTask}
@@ -455,7 +452,6 @@ export default function SuggestedActions({ entity, onCreateTask, canCreateTask =
         <ActionSection
           title="Containment & Response"
           color="#f85149"
-          icon="🛡"
           actions={respondActions}
           onCreateTask={onCreateTask}
           canCreateTask={canCreateTask}

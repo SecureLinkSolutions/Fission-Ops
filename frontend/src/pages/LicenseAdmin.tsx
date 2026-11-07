@@ -61,8 +61,8 @@ export default function LicenseAdmin() {
           fontSize: '13px',
         }}>
           {license.grace_mode_expired
-            ? '⛔ Grace period expired. Enterprise features are locked. Please update your license.'
-            : '⚠️ License server unreachable. Running in grace mode — features remain active temporarily.'}
+            ? 'Grace period expired. Enterprise features are locked. Please update your license.'
+            : 'License server unreachable. Running in grace mode — features remain active temporarily.'}
         </div>
       )}
 
@@ -73,7 +73,7 @@ export default function LicenseAdmin() {
           borderRadius: '8px', padding: '14px 16px', marginBottom: '20px',
           color: '#d29922', fontSize: '13px',
         }}>
-          ⚠️ Deployment fingerprint mismatch detected. If this is unexpected, contact your vendor.
+          Deployment fingerprint mismatch detected. If this is unexpected, contact your vendor.
         </div>
       )}
 

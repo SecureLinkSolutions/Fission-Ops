@@ -265,7 +265,7 @@ export default function ExecutiveSummary() {
             {incident && <div style={{ color: '#8b949e', fontSize: '14px' }}>{incident.title}</div>}
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
-            <button type="button" onClick={() => window.print()} style={s.printBtn}>🖨 Print / Export PDF</button>
+            <button type="button" onClick={() => window.print()} style={s.printBtn}>Print / Export PDF</button>
             {canEdit && (
               <button type="button"
                 onClick={handleAutoPopulate}
@@ -273,7 +273,7 @@ export default function ExecutiveSummary() {
                 title="Pre-fill all fields from incident entities, kill chain, TTPs and timeline. You can edit before saving."
                 style={{ background: '#1f6feb', border: 'none', borderRadius: '6px', padding: '8px 16px', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: populating ? 'wait' : 'pointer', opacity: populating ? 0.7 : 1 }}
               >
-                {populating ? '⏳ Populating…' : '⚡ Auto-populate'}
+                {populating ? 'Populating…' : 'Auto-populate'}
               </button>
             )}
             {canEdit && !editing && <button type="button" onClick={startEdit} style={s.btn}>Edit</button>}

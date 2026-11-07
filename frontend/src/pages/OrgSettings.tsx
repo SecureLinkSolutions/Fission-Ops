@@ -489,12 +489,11 @@ export default function OrgSettings() {
                           onChange={(e) => setKeyInputs((prev) => ({ ...prev, [service]: e.target.value }))}
                         />
                         <button type="button"
-                         
-                          
                           onClick={() => setShowKey((prev) => ({ ...prev, [service]: !prev[service] }))}
-                          style={{ position: 'absolute' as const, right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#8b949e', cursor: 'pointer', fontSize: '14px', padding: '0' }}
+                          title={showKey[service] ? 'Hide key' : 'Show key'}
+                          style={{ position: 'absolute' as const, right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#8b949e', cursor: 'pointer', fontSize: '11px', padding: '0', fontWeight: 600 }}
                         >
-                          👁
+                          {showKey[service] ? 'Hide' : 'Show'}
                         </button>
                       </div>
                       <button type="button"

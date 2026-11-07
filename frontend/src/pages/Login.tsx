@@ -42,7 +42,7 @@ export default function Login() {
   return (
     <div style={s.page}>
       <div style={s.card}>
-        <div style={s.title}>⚡ Fission Ops</div>
+        <div style={s.title}>Fission Ops</div>
         <div style={s.sub}>Incident Response Platform</div>
         {error && <div style={s.error}>{error}</div>}
         <form onSubmit={handleSubmit}>

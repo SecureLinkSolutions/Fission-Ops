@@ -92,7 +92,7 @@ export default function TabletopExercises() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 700 }}>🎯 Tabletop Exercises</h1>
+          <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 700 }}>Tabletop Exercises</h1>
           <p style={{ margin: '4px 0 0', color: '#8b949e', fontSize: '13px' }}>
             Build and run IR tabletop exercises for your team
           </p>
@@ -149,7 +149,6 @@ export default function TabletopExercises() {
           borderRadius: '8px',
           border: '1px solid #30363d',
         }}>
-          <div style={{ fontSize: '40px', marginBottom: '12px' }}>🎯</div>
           <div style={{ fontSize: '16px', fontWeight: 600, color: '#e6edf3', marginBottom: '8px' }}>No exercises yet</div>
           <div style={{ fontSize: '13px', marginBottom: '20px' }}>Create your first tabletop exercise to get started</div>
           {canCreate && (
@@ -209,10 +208,10 @@ export default function TabletopExercises() {
                     {ex.scenario.length > 100 ? ex.scenario.substring(0, 100) + '…' : ex.scenario}
                   </p>
                   <div style={{ display: 'flex', gap: '16px', fontSize: '12px', color: '#484f58' }}>
-                    <span>📌 {ex.inject_count ?? 0} injects</span>
-                    {ex.duration_minutes ? <span>⏱ {ex.duration_minutes >= 1440 ? `${Math.round(ex.duration_minutes / 1440)}d` : ex.duration_minutes >= 60 ? `${Math.round(ex.duration_minutes / 60)}h` : `${ex.duration_minutes}m`}</span> : null}
+                    <span>{ex.inject_count ?? 0} injects</span>
+                    {ex.duration_minutes ? <span>{ex.duration_minutes >= 1440 ? `${Math.round(ex.duration_minutes / 1440)}d` : ex.duration_minutes >= 60 ? `${Math.round(ex.duration_minutes / 60)}h` : `${ex.duration_minutes}m`}</span> : null}
                     {ex.scheduled_at && (
-                      <span>📅 {new Date(ex.scheduled_at).toLocaleDateString()}</span>
+                      <span>{new Date(ex.scheduled_at).toLocaleDateString()}</span>
                     )}
                     <span>{new Date(ex.created_at).toLocaleDateString()}</span>
                   </div>

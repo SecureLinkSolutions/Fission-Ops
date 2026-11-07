@@ -42,12 +42,11 @@ function ConnectionDot({ state }: ConnectionDotProps) {
 
 interface NavLinkProps {
   to: string;
-  icon: string;
   label: string;
   active: boolean;
 }
 
-function NavLink({ to, icon, label, active }: NavLinkProps) {
+function NavLink({ to, label, active }: NavLinkProps) {
   const [hover, setHover] = useState(false);
   return (
     <Link
@@ -55,9 +54,7 @@ function NavLink({ to, icon, label, active }: NavLinkProps) {
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
+        display: 'block',
         padding: '8px 12px',
         textDecoration: 'none',
         borderRadius: '6px',
@@ -69,7 +66,6 @@ function NavLink({ to, icon, label, active }: NavLinkProps) {
         fontSize: '13px',
       }}
     >
-      <span style={{ fontSize: '14px', lineHeight: 1 }}>{icon}</span>
       {label}
     </Link>
   );
@@ -237,21 +233,21 @@ export default function NavBar({ connectionState }: NavBarProps) {
 
       {/* Nav links */}
       <div style={{ padding: '12px 8px', flex: 1 }}>
-        <NavLink to="/incidents" icon="⚡" label="Incidents" active={location.pathname.startsWith('/incidents')} />
-        <NavLink to="/tasks/mine" icon="✅" label="My Tasks" active={location.pathname.startsWith('/tasks')} />
+        <NavLink to="/incidents" label="Incidents" active={location.pathname.startsWith('/incidents')} />
+        <NavLink to="/tasks/mine" label="My Tasks" active={location.pathname.startsWith('/tasks')} />
 
         <div style={{ padding: '12px 12px 4px', color: '#484f58', fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '8px' }}>Modules</div>
-        <NavLink to="/tabletop" icon="🎯" label="Tabletop" active={location.pathname.startsWith('/tabletop')} />
-        <NavLink to="/pcap-analysis" icon="📡" label="PCAP Analysis" active={location.pathname.startsWith('/pcap-analysis')} />
+        <NavLink to="/tabletop" label="Tabletop" active={location.pathname.startsWith('/tabletop')} />
+        <NavLink to="/pcap-analysis" label="PCAP Analysis" active={location.pathname.startsWith('/pcap-analysis')} />
 
         {isAdmin && (
           <>
             <div style={{ padding: '12px 12px 4px', color: '#484f58', fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '8px' }}>Admin</div>
-            <NavLink to="/admin/audit" icon="📋" label="Audit Log" active={location.pathname === '/admin/audit'} />
-            <NavLink to="/admin/users" icon="👥" label="Users" active={location.pathname === '/admin/users'} />
-            <NavLink to="/settings/org" icon="🔐" label="Org Settings" active={location.pathname === '/settings/org'} />
+            <NavLink to="/admin/audit" label="Audit Log" active={location.pathname === '/admin/audit'} />
+            <NavLink to="/admin/users" label="Users" active={location.pathname === '/admin/users'} />
+            <NavLink to="/settings/org" label="Org Settings" active={location.pathname === '/settings/org'} />
             {user?.role === 'platform_admin' && (
-              <NavLink to="/superadmin" icon="🛡" label="Platform Admin" active={location.pathname === '/superadmin'} />
+              <NavLink to="/superadmin" label="Platform Admin" active={location.pathname === '/superadmin'} />
             )}
           </>
         )}
@@ -277,7 +273,7 @@ export default function NavBar({ connectionState }: NavBarProps) {
           }}
           title={user?.email}
         >
-          👤 {user?.email}
+          {user?.email}
         </button>
         <button type="button"
           onClick={() => { logout(); navigate('/login'); }}

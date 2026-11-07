@@ -535,7 +535,6 @@ export default function TabletopDetail() {
               borderTopColor: '#58a6ff',
               animation: 'tabletop-spin 0.9s linear infinite',
             }} />
-            <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>✨</span>
           </div>
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '18px', fontWeight: 600, color: '#e6edf3', marginBottom: '8px' }}>
@@ -568,9 +567,9 @@ export default function TabletopDetail() {
               <StatusBadge status={exercise.status} />
             </div>
             <div style={{ color: '#8b949e', fontSize: '13px', display: 'flex', gap: '16px' }}>
-              <span>⏱ {exercise.duration_minutes}m</span>
-              {exercise.scheduled_at && <span>📅 {new Date(exercise.scheduled_at).toLocaleString()}</span>}
-              <span>📌 {injects.length} injects</span>
+              <span>{exercise.duration_minutes}m</span>
+              {exercise.scheduled_at && <span>{new Date(exercise.scheduled_at).toLocaleString()}</span>}
+              <span>{injects.length} injects</span>
             </div>
           </div>
           <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
@@ -702,7 +701,7 @@ export default function TabletopDetail() {
                 {exercise.incident_id && (
                   <a href={`/incidents/${exercise.incident_id}`} target="_blank" rel="noreferrer"
                     style={{ background: '#1f6feb', border: '1px solid #388bfd', borderRadius: '6px', padding: '7px 14px', color: '#e6edf3', fontSize: '13px', textDecoration: 'none', whiteSpace: 'nowrap' }}>
-                    🔗 Open Incident
+                    Open Incident
                   </a>
                 )}
               </div>
@@ -765,7 +764,7 @@ export default function TabletopDetail() {
                       padding: '7px 12px', borderRadius: '6px', cursor: generating ? 'not-allowed' : 'pointer', fontSize: '12px',
                     }}
                   >
-                    {generating ? '⏳ Generating…' : '✨ Generate with AI ▾'}
+                    {generating ? 'Generating…' : 'Generate with AI ▾'}
                   </button>
                   {showScenarioDropdown && (
                     <div style={{
@@ -810,7 +809,7 @@ export default function TabletopDetail() {
               <h3 style={{ margin: '0 0 10px', fontSize: '13px', color: '#8b949e', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Linked Incident</h3>
               {exercise.incident_id ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ color: '#58a6ff', fontSize: '13px' }}>🔗 {exercise.incident_title ?? exercise.incident_id}</span>
+                  <span style={{ color: '#58a6ff', fontSize: '13px' }}>{exercise.incident_title ?? exercise.incident_id}</span>
                   <a href={`/incidents/${exercise.incident_id}`} target="_blank" rel="noreferrer" style={{ color: '#8b949e', fontSize: '12px', textDecoration: 'underline' }}>Open Incident</a>
                   <button type="button" onClick={() => handleLinkIncident(null)} style={{ background: 'transparent', border: '1px solid #f8514944', color: '#f85149', padding: '3px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>Unlink</button>
                 </div>
@@ -933,7 +932,7 @@ export default function TabletopDetail() {
               {/* Linked incident banner */}
               {exercise.incident_id && (
                 <div style={{ background: '#58a6ff11', border: '1px solid #58a6ff33', borderRadius: '8px', padding: '10px 16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <span style={{ color: '#58a6ff', fontSize: '13px' }}>🔗 Linked to Incident: <strong>{exercise.incident_title ?? exercise.incident_id}</strong></span>
+                  <span style={{ color: '#58a6ff', fontSize: '13px' }}>Linked to Incident: <strong>{exercise.incident_title ?? exercise.incident_id}</strong></span>
                   <a href={`/incidents/${exercise.incident_id}`} target="_blank" rel="noreferrer" style={{ background: '#1f6feb', border: '1px solid #388bfd', color: '#e6edf3', padding: '4px 10px', borderRadius: '5px', fontSize: '12px', textDecoration: 'none' }}>Open Incident ↗</a>
                 </div>
               )}
@@ -979,7 +978,7 @@ export default function TabletopDetail() {
                                 Released at {new Date(release.released_at).toLocaleTimeString()}{release.released_by_name ? ` by ${release.released_by_name}` : ''}
                               </span>
                             ) : !canEdit ? (
-                              <span style={{ fontSize: '11px', color: '#484f58' }}>🔒 Awaiting release…</span>
+                              <span style={{ fontSize: '11px', color: '#484f58' }}>Awaiting release…</span>
                             ) : null}
                           </div>
                         </div>

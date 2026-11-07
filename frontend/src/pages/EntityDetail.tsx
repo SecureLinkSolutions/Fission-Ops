@@ -16,8 +16,8 @@ import CustodyLog from '../components/CustodyLog';
 import { ROLE_RANK, ENTITY_TYPE_ICONS, ENTITY_TYPE_COLORS } from '../utils/constants';
 
 const IOC_STATUS_DISPLAY: Record<string, { label: string; color: string }> = {
-  confirmed: { label: '💀 CONFIRMED', color: '#f85149' },
-  suspected: { label: '⚠ SUSPECTED', color: '#d29922' },
+  confirmed: { label: 'CONFIRMED', color: '#f85149' },
+  suspected: { label: 'SUSPECTED', color: '#d29922' },
   cleared: { label: '✓ CLEARED', color: '#3fb950' },
 };
 
@@ -151,7 +151,7 @@ export default function EntityDetail() {
                 borderRadius: '6px', padding: '6px 14px', color: '#a371f7', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
               }}
             >
-              🧬 Generate YARA Rule
+              Generate YARA Rule
             </button>
           )}
         </div>
@@ -173,7 +173,7 @@ export default function EntityDetail() {
                       {label}
                       {isTi && (
                         <span style={{ background: '#58a6ff22', color: '#58a6ff', border: '1px solid #58a6ff44', borderRadius: '4px', padding: '1px 5px', fontSize: '10px', fontWeight: 700 }}>
-                          🔍 TI
+                          TI
                         </span>
                       )}
                     </div>
@@ -272,7 +272,7 @@ export default function EntityDetail() {
             disabled={settingIOC}
             style={{ background: '#d2992222', border: '1px solid #d2992244', borderRadius: '6px', padding: '6px 14px', color: '#d29922', fontSize: '13px', cursor: 'pointer' }}
           >
-            ⚠ Mark Suspected
+            Mark Suspected
           </button>
           {canConfirmIOC && (
             <>
@@ -281,7 +281,7 @@ export default function EntityDetail() {
                 disabled={settingIOC}
                 style={{ background: '#f8514922', border: '1px solid #f8514944', borderRadius: '6px', padding: '6px 14px', color: '#f85149', fontSize: '13px', cursor: 'pointer' }}
               >
-                💀 Confirm IOC
+                Confirm IOC
               </button>
               <button type="button"
                 onClick={() => handleSetIOC('cleared')}

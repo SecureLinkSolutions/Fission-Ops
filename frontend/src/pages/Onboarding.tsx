@@ -62,7 +62,7 @@ export default function Onboarding() {
 
         {step === 1 && (
           <>
-            <div style={s.title}>Welcome to Fission Ops{user?.org_id ? '' : ''}! 🎉</div>
+            <div style={s.title}>Welcome to Fission Ops{user?.org_id ? '' : ''}!</div>
             <div style={s.sub}>Your organization is ready. Let&apos;s set up your first incident so you can see the platform in action.</div>
             <button type="button" style={s.btnPrimary} onClick={() => setStep(2)}>Get Started →</button>
             <button type="button" style={s.btnSecondary} onClick={() => navigate('/incidents')}>Skip setup</button>
@@ -94,7 +94,7 @@ export default function Onboarding() {
 
         {step === 3 && (
           <>
-            <div style={s.title}>You&apos;re ready! ✅</div>
+            <div style={s.title}>You&apos;re ready!</div>
             <div style={s.sub}>Your organization is set up and you&apos;re ready to start investigating incidents.</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
               {createdIncidentId && (

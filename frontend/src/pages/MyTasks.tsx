@@ -81,7 +81,7 @@ export default function MyTasks() {
                 </span>
                 {task.due_date && (
                   <span style={{ color: isOverdue ? '#f85149' : '#8b949e', fontSize: '12px', flexShrink: 0 }}>
-                    📅 {new Date(task.due_date).toLocaleDateString()}{isOverdue ? ' ⚠' : ''}
+                    Due {new Date(task.due_date).toLocaleDateString()}{isOverdue ? ' — OVERDUE' : ''}
                   </span>
                 )}
                 <Link

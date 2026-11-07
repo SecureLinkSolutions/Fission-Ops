@@ -218,7 +218,7 @@ export default function CustodyLog({ entityId }: Props) {
 
       {/* Footer */}
       <div style={{ marginTop: '20px', color: '#6e7681', fontSize: '11px', borderTop: '1px solid #21262d', paddingTop: '12px' }}>
-        🔒 This log is append-only and cannot be modified by any user.
+        This log is append-only and cannot be modified by any user.
       </div>
     </div>
   );

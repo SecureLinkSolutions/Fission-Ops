@@ -51,7 +51,6 @@ export default function LicenseActivation() {
     }}>
       <div style={{ width: '100%', maxWidth: '520px' }}>
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={{ fontSize: '40px', marginBottom: '12px' }}>⚡</div>
           <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#e6edf3', marginBottom: '8px' }}>
             Activate Fission Ops
           </h1>
@@ -139,7 +138,6 @@ export default function LicenseActivation() {
             padding: '28px',
             textAlign: 'center',
           }}>
-            <div style={{ fontSize: '32px', marginBottom: '12px' }}>✅</div>
             <h2 style={{ fontSize: '18px', color: '#3fb950', marginBottom: '8px' }}>License Activated!</h2>
             <div style={{ marginBottom: '20px' }}>
               <span style={{
